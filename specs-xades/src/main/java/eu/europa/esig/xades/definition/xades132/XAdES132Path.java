@@ -56,10 +56,16 @@ public class XAdES132Path extends AbstractPath implements XAdESPath {
 		return XAdESNamespace.XADES_132;
 	}
 
+	// This is an invalid URI according to the specification.
+	// However, for interop with a faulty library, we must use this.
 	@Override
 	public String getSignedPropertiesUri() {
-		return "http://uri.etsi.org/01903#SignedProperties";
+		return "http://uri.etsi.org/01903/v1.3.2#SignedProperties";
 	}
+
+	//public string getSignedPropertiesUri() {
+	//	return "http://uri.etsi.org/01903#SignedProperties";
+	// }
 
 	@Override
 	public String getCounterSignatureUri() {
