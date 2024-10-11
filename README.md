@@ -2,7 +2,7 @@
 
 This is a fork of the official repository for project DSS : https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/Digital+Signature+Service+-++DSS. 
 
-This branch produces XAdES signatures that outside specification, so do **not** use this unless you need exactly that. 
+This branch produces XAdES signatures that are outside the specification, so do **not** use this unless you need exactly that. 
 
 # Changes
 This fork has the following changes: 
