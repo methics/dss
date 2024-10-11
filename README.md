@@ -1,10 +1,13 @@
 ## DSS : Digital Signature Service
 
-This is the official repository for project DSS : https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/Digital+Signature+Service+-++DSS. 
+This is a fork of the official repository for project DSS : https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/Digital+Signature+Service+-++DSS. 
 
-# Issue Tracker
+This branch produces XAdES signatures that outside specification, so do **not** use this unless you need exactly that. 
 
-Please, use the new JIRA for project is on https://ec.europa.eu/digital-building-blocks/tracker/projects/DSS/issues. 
+# Changes
+This fork has the following changes: 
+1. Apply fixes for empty XML namespace prefixes from https://github.com/esig/dss/commit/f11cf6751287449b5dcc3067b7fabd89877ba5b7
+2. Change SignedProperties URI from  "http://uri.etsi.org/01903/#SignedProperties" to  "http://uri.etsi.org/01903/v1.3.2#SignedProperties". This produces **invalid** xades according to the specification, but is needed for interop with a faulty library. 
 
 # Requirements
 
@@ -87,18 +90,6 @@ mvn clean install -P asciidoctor
 # JavaDoc
 
 The JavaDoc is available on https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/apidocs/index.html
-
-# Demonstration
-
-The release is deployed on https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo
-
-The source code of the demonstrations is available on https://github.com/esig/dss-demonstrations
-
-# Ready-to-use bundles
-
-Bundles which contain the above demonstration can be downloaded from the [Maven repository](https://ec.europa.eu/digital-building-blocks/artifact/service/rest/repository/browse/esignaturedss/eu/europa/ec/joinup/sd-dss/dss-demo-bundle/).
-
-The code of the demonstration can be found on https://ec.europa.eu/digital-building-blocks/code/projects/ESIG/repos/dss-demos/browse
 
 # Licenses
 
