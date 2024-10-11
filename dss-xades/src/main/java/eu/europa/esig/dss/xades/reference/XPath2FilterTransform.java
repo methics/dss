@@ -29,6 +29,8 @@ import eu.europa.esig.xmldsig.definition.XMLDSigNamespace;
 import org.apache.xml.security.transforms.Transforms;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import eu.europa.esig.dss.utils.Utils;
+
 
 import java.util.Objects;
 
@@ -78,7 +80,8 @@ public class XPath2FilterTransform extends XPathTransform {
 		xPathElement.setPrefix(XAdESNamespace.XMLDSIG_FILTER2.getPrefix());
 		xPathElement.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:" + XAdESNamespace.XMLDSIG_FILTER2.getPrefix(),
 				XAdESNamespace.XMLDSIG_FILTER2.getUri());
-		xPathElement.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:" + namespace.getPrefix(), namespace.getUri());
+		xPathElement.setAttributeNS("http://www.w3.org/2000/xmlns/",
+				"xmlns" + (Utils.isStringNotEmpty(namespace.getPrefix()) ? ":" + namespace.getPrefix() : ""), namespace.getUri());
 		xPathElement.setAttribute(FILTER_ATTRIBUTE, filter);
 		return xPathElement;
 	}

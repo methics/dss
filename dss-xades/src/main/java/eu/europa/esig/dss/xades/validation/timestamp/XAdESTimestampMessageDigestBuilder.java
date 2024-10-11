@@ -607,16 +607,8 @@ public class XAdESTimestampMessageDigestBuilder implements TimestampMessageDiges
 	}
 	
 	private Element getUnsignedSignaturePropertiesCanonicalizationCopy() {
-		/*
-         * This is a workaround. The issue was reported on:
-         * https://issues.apache.org/jira/browse/SANTUARIO-139.
-         * Namespaces are not added to canonicalizer for new created elements.
-         * The binaries need to be parsed at a new instance of Document
-         */
-        final byte[] serializedDoc = DomUtils.serializeNode(signature.getOwnerDocument());
-        Document recreatedDocument = DomUtils.buildDOM(serializedDoc);
-        Element recreatedSignature = DomUtils.getElementById(recreatedDocument, DSSXMLUtils.getIDIdentifier(signature));
-        return DomUtils.getElement(recreatedSignature, xadesPaths.getUnsignedSignaturePropertiesPath());
+		String signatureId = DSSXMLUtils.getIDIdentifier(signature);
+		return DSSXMLUtils.ensureNamespacesDefined(signature.getOwnerDocument(), signatureId, xadesPaths.getUnsignedSignaturePropertiesPath());
 	}
 	
 	private void writeTimestampedUnsignedProperties(DSSMessageDigestCalculator digestCalculator,
