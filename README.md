@@ -1,6 +1,7 @@
 ## DSS : Digital Signature Service
 
-This is the official repository for project DSS : https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/Digital+Signature+Service+-++DSS. 
+This is a fork of the official repository for project DSS : https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/Digital+Signature+Service+-++DSS. 
+Changes are located and documented in 5.13.patched.x branch. 
 
 # Issue Tracker
 
