@@ -7,7 +7,8 @@ This branch produces XAdES signatures that are outside the specification, so do 
 # Changes
 This fork has the following changes: 
 1. Apply fixes for empty XML namespace prefixes from https://github.com/esig/dss/commit/f11cf6751287449b5dcc3067b7fabd89877ba5b7
-2. Change SignedProperties URI from  "http://uri.etsi.org/01903/#SignedProperties" to  "http://uri.etsi.org/01903/v1.3.2#SignedProperties". This produces **invalid** xades according to the specification, but is needed for interop with a faulty library. 
+2. Change SignedProperties URI from  "http://uri.etsi.org/01903/#SignedProperties" to  "http://uri.etsi.org/01903/v1.3.2#SignedProperties". This produces **invalid** xades according to the specification, but is needed for interop with a faulty library.
+3. Remove transforms element from SignedProperties. Seems to require XML NS prefixes to be empty. 
 
 # Requirements
 
