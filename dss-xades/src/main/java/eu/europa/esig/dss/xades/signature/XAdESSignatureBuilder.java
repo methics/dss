@@ -567,8 +567,8 @@ public abstract class XAdESSignatureBuilder extends XAdESBuilder implements Sign
 	 *
 	 */
 	protected void incorporateObjects() {
-		incorporateQualifyingProperties();
 		incorporateSignedObjects();
+		incorporateQualifyingProperties();
 		incorporateCustomObjects();
 	}
 
@@ -830,9 +830,9 @@ public abstract class XAdESSignatureBuilder extends XAdESBuilder implements Sign
 
 		signedSignaturePropertiesDom = DomUtils.addElement(documentDom, signedPropertiesDom, getXadesNamespace(), getCurrentXAdESElements().getElementSignedSignatureProperties());
 
-		incorporateSigningTime();
-
 		incorporateSigningCertificate();
+
+		incorporateSigningTime();
 
 		incorporatePolicy();
 
