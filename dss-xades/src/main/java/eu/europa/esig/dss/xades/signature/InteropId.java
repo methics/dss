@@ -36,4 +36,8 @@ public class InteropId {
     public static String getDataToBeSignedId() {
         return "idDataToBeSigned";
     }
+
+    public static String getUnsignedPropertiesId() {
+        return "idUnsignedProperties";
+    }
 }

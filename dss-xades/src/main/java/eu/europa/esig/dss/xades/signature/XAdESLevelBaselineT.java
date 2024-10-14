@@ -205,8 +205,10 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements SignatureEx
 			assertExtendSignatureToTPossible();
 			assertSignatureValid(xadesSignature);
 			signatureRequirementsChecker.assertSigningCertificateIsValid(signature);
-
+			System.out.println("Setting ID");
+			unsignedSignaturePropertiesDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), InteropId.getUnsignedPropertiesId());
 			Element levelBUnsignedProperties = (Element) unsignedSignaturePropertiesDom.cloneNode(true);
+
 
 			final XAdESTimestampParameters signatureTimestampParameters = params.getSignatureTimestampParameters();
 			final DigestAlgorithm digestAlgorithm = signatureTimestampParameters.getDigestAlgorithm();
@@ -579,7 +581,8 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements SignatureEx
 
 		final String timestampId = UUID.randomUUID().toString();
 		if (!XAdESNamespace.XADES_111.isSameUri(getXadesNamespace().getUri())) {
-			timeStampDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), "TS-" + timestampId);
+//			timeStampDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), "TS-" + timestampId);
+
 			// <ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
 			incorporateC14nMethod(timeStampDom, timestampC14nMethod);
 		} else {
@@ -588,7 +591,9 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements SignatureEx
 		
 		// <xades:EncapsulatedTimeStamp Id="time-stamp-token-6a150419-caab-4615-9a0b-6e239596643a">MIAGCSqGSIb3DQEH
 		final Element encapsulatedTimeStampDom = DomUtils.addElement(documentDom, timeStampDom, getXadesNamespace(), getCurrentXAdESElements().getElementEncapsulatedTimeStamp());
-		encapsulatedTimeStampDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), "ETS-" + timestampId);
+//		encapsulatedTimeStampDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), "ETS-" + timestampId);
+		encapsulatedTimeStampDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), InteropId.getTimestampId());
+
 		DomUtils.setTextNode(documentDom, encapsulatedTimeStampDom, base64EncodedTimeStampToken);
 	}
 
