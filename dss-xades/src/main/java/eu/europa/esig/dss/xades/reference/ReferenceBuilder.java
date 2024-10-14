@@ -192,6 +192,8 @@ public class ReferenceBuilder {
 		// <ds:Reference Id="signed-data-ref" Type="http://www.w3.org/2000/09/xmldsig#Object"
 		// URI="#signed-data-idfc5ff27ee49763d9ba88ba5bbc49f732">
 		final String refId = referenceIdProvider.getReferenceId();
+//		final String refId = "idDataToBeSigned";
+
 		final DSSReference reference = new DSSReference();
 		reference.setId(refId);
 		reference.setContents(document);

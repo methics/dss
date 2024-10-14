@@ -99,7 +99,8 @@ class EnvelopingSignatureBuilder extends XAdESSignatureBuilder {
 					content = new InMemoryDocument(base64EncodedOriginalDocument.getBytes());
 				}
 				object.setContent(content);
-				object.setId(reference.getUri().substring(1));
+//				object.setId(reference.getUri().substring(1));
+				object.setId(InteropId.getDataToBeSignedId());
 
 				incorporateObject(object);
 			}

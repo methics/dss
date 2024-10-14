@@ -26,6 +26,7 @@ import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.xades.DSSXMLUtils;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
+import eu.europa.esig.dss.xades.signature.InteropId;
 import eu.europa.esig.dss.xml.common.definition.DSSNamespace;
 import eu.europa.esig.dss.xml.utils.DomUtils;
 import eu.europa.esig.xmldsig.definition.XMLDSigAttribute;
@@ -174,13 +175,15 @@ public class ReferenceProcessor {
                 final Element referenceDom = DomUtils.createElementNS(documentDom, namespace, XMLDSigElement.REFERENCE);
                 referenceContainer.appendChild(referenceDom);
 
-                if (dssReference.getId() != null) {
-                    referenceDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), dssReference.getId());
-                }
-                final String uri = dssReference.getUri();
-                if (uri != null) {
-                    referenceDom.setAttribute(XMLDSigAttribute.URI.getAttributeName(), uri);
-                }
+//                if (dssReference.getId() != null) {
+//                    referenceDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), dssReference.getId());
+//                }
+//                final String uri = dssReference.getUri();
+//                if (uri != null) {
+//                    referenceDom.setAttribute(XMLDSigAttribute.URI.getAttributeName(), uri);
+//                }
+                referenceDom.setAttribute(XMLDSigAttribute.URI.getAttributeName(), DomUtils.toElementReference(InteropId.getDataToBeSignedId()));
+
                 final String referenceType = dssReference.getType();
                 if (referenceType != null) {
                     referenceDom.setAttribute(XMLDSigAttribute.TYPE.getAttributeName(), referenceType);
