@@ -185,9 +185,9 @@ public class ReferenceProcessor {
                 referenceDom.setAttribute(XMLDSigAttribute.URI.getAttributeName(), DomUtils.toElementReference(InteropId.getDataToBeSignedId()));
 
                 final String referenceType = dssReference.getType();
-                if (referenceType != null) {
-                    referenceDom.setAttribute(XMLDSigAttribute.TYPE.getAttributeName(), referenceType);
-                }
+//                if (referenceType != null) {
+//                    referenceDom.setAttribute(XMLDSigAttribute.TYPE.getAttributeName(), referenceType);
+//                }
 
                 DSSXMLUtils.incorporateTransforms(referenceDom, dssReference.getTransforms(), namespace);
                 DSSXMLUtils.incorporateDigestMethod(referenceDom, dssReference.getDigestMethodAlgorithm(), namespace);

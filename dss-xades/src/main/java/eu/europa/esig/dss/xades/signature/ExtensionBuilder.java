@@ -31,6 +31,7 @@ import eu.europa.esig.dss.xades.validation.XMLDocumentValidator;
 import eu.europa.esig.dss.xml.common.definition.DSSNamespace;
 import eu.europa.esig.dss.xml.utils.DomUtils;
 import eu.europa.esig.xades.definition.XAdESNamespace;
+import eu.europa.esig.xmldsig.definition.XMLDSigAttribute;
 import eu.europa.esig.xmldsig.definition.XMLDSigNamespace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,6 +130,7 @@ public abstract class ExtensionBuilder extends XAdESBuilder {
 			unsignedPropertiesDom = (Element) unsignedPropertiesNodeList.item(0);
 		} else if (length == 0) {
 			unsignedPropertiesDom = DomUtils.addElement(documentDom, qualifyingPropertiesDom, getXadesNamespace(), getCurrentXAdESElements().getElementUnsignedProperties());
+
 			if (params.isPrettyPrint()) {
 				qualifyingPropertiesDom = (Element) DSSXMLUtils.alignChildrenIndents(qualifyingPropertiesDom);
 				unsignedPropertiesDom = (Element) DomUtils.getNode(currentSignatureDom, xadesPath.getUnsignedPropertiesPath());
@@ -136,6 +138,7 @@ public abstract class ExtensionBuilder extends XAdESBuilder {
 		} else {
 			throw new IllegalInputException("The signature contains more then one UnsignedProperties element! Extension is not possible.");
 		}
+		unsignedPropertiesDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), InteropId.getUnsignedPropertiesId());
 	}
 
 	/**

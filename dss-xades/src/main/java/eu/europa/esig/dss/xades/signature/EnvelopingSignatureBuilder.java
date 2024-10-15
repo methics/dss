@@ -101,6 +101,7 @@ class EnvelopingSignatureBuilder extends XAdESSignatureBuilder {
 				object.setContent(content);
 //				object.setId(reference.getUri().substring(1));
 				object.setId(InteropId.getDataToBeSignedId());
+				object.setEncodingAlgorithm("http://www.w3.org/2000/09/xmldsig#base64");
 
 				incorporateObject(object);
 			}

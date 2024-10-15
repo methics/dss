@@ -205,10 +205,8 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements SignatureEx
 			assertExtendSignatureToTPossible();
 			assertSignatureValid(xadesSignature);
 			signatureRequirementsChecker.assertSigningCertificateIsValid(signature);
-			System.out.println("Setting ID");
-			unsignedSignaturePropertiesDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), InteropId.getUnsignedPropertiesId());
+//			unsignedSignaturePropertiesDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), InteropId.getUnsignedPropertiesId());
 			Element levelBUnsignedProperties = (Element) unsignedSignaturePropertiesDom.cloneNode(true);
-
 
 			final XAdESTimestampParameters signatureTimestampParameters = params.getSignatureTimestampParameters();
 			final DigestAlgorithm digestAlgorithm = signatureTimestampParameters.getDigestAlgorithm();
