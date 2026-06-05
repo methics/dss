@@ -599,8 +599,9 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements SignatureEx
 		if (!XAdESNamespace.XADES_111.isSameUri(getXadesNamespace().getUri())) {
 			// Add Id after the element is constructed
 			final String timestampId = toXmlIdentifier(XAdESAttributeIdentifier.build(timeStampDom));
-			timeStampDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), TIMESTAMP_PREFIX + timestampId);
-			encapsulatedTimeStampDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), ENCAPSULATED_TIMESTAMP_PREFIX + timestampId);
+			//timeStampDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), TIMESTAMP_PREFIX + timestampId);
+			//encapsulatedTimeStampDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), ENCAPSULATED_TIMESTAMP_PREFIX + timestampId);
+		    encapsulatedTimeStampDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), InteropId.getTimestampId());
 		}
 	}
 
