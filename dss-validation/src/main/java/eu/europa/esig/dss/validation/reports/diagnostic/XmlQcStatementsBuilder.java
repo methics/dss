@@ -1,30 +1,33 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.validation.reports.diagnostic;
 
+import eu.europa.esig.dss.diagnostic.jaxb.XmlCertForPID;
+import eu.europa.esig.dss.diagnostic.jaxb.XmlCertForWallet;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlLangAndValue;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlOID;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlPSD2QcInfo;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlQcCompliance;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlQcEuLimitValue;
+import eu.europa.esig.dss.diagnostic.jaxb.XmlQcPSB;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlQcSSCD;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlQcStatements;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlRoleOfPSP;
@@ -34,6 +37,7 @@ import eu.europa.esig.dss.enumerations.RoleOfPspOid;
 import eu.europa.esig.dss.model.x509.extension.PSD2QcType;
 import eu.europa.esig.dss.model.x509.extension.PdsLocation;
 import eu.europa.esig.dss.model.x509.extension.QCLimitValue;
+import eu.europa.esig.dss.model.x509.extension.QCPSB;
 import eu.europa.esig.dss.model.x509.extension.QcStatements;
 import eu.europa.esig.dss.model.x509.extension.RoleOfPSP;
 import eu.europa.esig.dss.utils.Utils;
@@ -86,6 +90,15 @@ public class XmlQcStatementsBuilder {
         }
         if (qcStatements.getPsd2QcType() != null) {
             result.setPSD2QcInfo(buildPSD2QcInfo(qcStatements.getPsd2QcType()));
+        }
+        if (Utils.isCollectionNotEmpty(qcStatements.getQcQSCDLegislationCountryCodes())) {
+            result.setQcQSCDlegislation(qcStatements.getQcQSCDLegislationCountryCodes());
+        }
+        if (qcStatements.getQcIdentMethod() != null) {
+            result.setQcIdentMethod(getXmlOid(qcStatements.getQcIdentMethod()));
+        }
+        if (qcStatements.getQcPSB() != null) {
+            result.setQcPSB(buildXmlQcPSB(qcStatements.getQcPSB()));
         }
         if (Utils.isCollectionNotEmpty(qcStatements.getOtherOids())) {
             result.setOtherOIDs(buildXmlOIDs(qcStatements.getOtherOids()));
@@ -229,6 +242,50 @@ public class XmlQcStatementsBuilder {
     }
 
     /**
+     * Builds {@code XmlCertForPID}
+     *
+     * @param present TRUE if qct-pid is present, FALSE otherwise
+     * @return {@link XmlCertForPID}
+     */
+    public XmlCertForPID buildXmlCertForPID(boolean present) {
+        if (present) {
+            XmlCertForPID xmlCertForPID = new XmlCertForPID();
+            xmlCertForPID.setPresent(true);
+            return xmlCertForPID;
+        }
+        return null;
+    }
+
+    /**
+     * Builds {@code XmlCertForWallet}
+     *
+     * @param present TRUE if qct-wal is present, FALSE otherwise
+     * @return {@link XmlCertForWallet}
+     */
+    public XmlCertForWallet buildXmlCertForWallet(boolean present) {
+        if (present) {
+            XmlCertForWallet xmlCertForWallet = new XmlCertForWallet();
+            xmlCertForWallet.setPresent(true);
+            return xmlCertForWallet;
+        }
+        return null;
+    }
+
+    /**
+     * Builds {@code XmlQcPSB}
+     *
+     * @param qcPSB {@link QCPSB}
+     * @return {@link XmlQcPSB}
+     */
+    public XmlQcPSB buildXmlQcPSB(QCPSB qcPSB) {
+        XmlQcPSB xmlQcPSB = new XmlQcPSB();
+        xmlQcPSB.setCountryOfLegislation(qcPSB.getCountryOfLegislation());
+        xmlQcPSB.setAuthSourceIdentification(qcPSB.getAuthSourceIdentification());
+        xmlQcPSB.setLegislationIdentification(qcPSB.getLegislationIdentification());
+        return xmlQcPSB;
+    }
+
+    /**
      * Builds a deep copy of {@code XmlQcStatements}
      * NOTE: does not copy MRA content
      *
@@ -289,6 +346,20 @@ public class XmlQcStatementsBuilder {
             copy.getQcTypes().add(xmlQcType);
         }
         copy.getQcCClegislation().addAll(xmlQcStatements.getQcCClegislation());
+        copy.getQcQSCDlegislation().addAll(xmlQcStatements.getQcQSCDlegislation());
+        if (xmlQcStatements.getQcIdentMethod() != null) {
+            XmlOID xmlQcIdentMethod = new XmlOID();
+            xmlQcIdentMethod.setDescription(xmlQcStatements.getQcIdentMethod().getDescription());
+            xmlQcIdentMethod.setValue(xmlQcStatements.getQcIdentMethod().getValue());
+            copy.setQcIdentMethod(xmlQcIdentMethod);
+        }
+        if (xmlQcStatements.getQcPSB() != null) {
+            XmlQcPSB xmlQcPSB = new XmlQcPSB();
+            xmlQcPSB.setCountryOfLegislation(xmlQcStatements.getQcPSB().getCountryOfLegislation());
+            xmlQcPSB.setAuthSourceIdentification(xmlQcStatements.getQcPSB().getAuthSourceIdentification());
+            xmlQcPSB.setLegislationIdentification(xmlQcStatements.getQcPSB().getLegislationIdentification());
+            copy.setQcPSB(xmlQcPSB);
+        }
         for (XmlOID xmlOID : xmlQcStatements.getOtherOIDs()) {
             XmlOID xmlOtherOID = new XmlOID();
             xmlOtherOID.setDescription(xmlOID.getDescription());

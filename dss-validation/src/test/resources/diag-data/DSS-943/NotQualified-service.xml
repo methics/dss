@@ -3,11 +3,11 @@
     <DocumentName>firmaok.zip.p7m</DocumentName>
     <ValidationDate>2016-07-19T11:30:00Z</ValidationDate>
     <Signatures>
-	    <Signature Id="id-5f10afd0f54237a13101adc397e64fd1">
-	    	<SignatureFilename>firmaok.zip.p7m</SignatureFilename>
-	        <ClaimedSigningTime>2016-06-10T16:50:58Z</ClaimedSigningTime>
-	        <SignatureFormat>CAdES-BASELINE-B</SignatureFormat>
-	        <DigestMatchers>
+        <Signature Id="id-5f10afd0f54237a13101adc397e64fd1">
+            <SignatureFilename>firmaok.zip.p7m</SignatureFilename>
+            <ClaimedSigningTime>2016-06-10T16:50:58Z</ClaimedSigningTime>
+            <SignatureFormat>CAdES-BASELINE-B</SignatureFormat>
+            <DigestMatchers>
                 <DigestMatcher type="MESSAGE_DIGEST">
                     <DigestMethod>SHA256</DigestMethod>
                     <DigestValue>cfwwLPkuUbNIkqCbkrUSfxL8DcfxtNE2fgUuZUTPuLg=</DigestValue>
@@ -15,25 +15,25 @@
                     <DataIntact>true</DataIntact>
                 </DigestMatcher>
             </DigestMatchers>
-	        <BasicSignature>
-	            <EncryptionAlgoUsedToSignThisToken>RSA</EncryptionAlgoUsedToSignThisToken>
-	            <KeyLengthUsedToSignThisToken>2048</KeyLengthUsedToSignThisToken>
-	            <DigestAlgoUsedToSignThisToken>SHA256</DigestAlgoUsedToSignThisToken>
-	            <SignatureIntact>true</SignatureIntact>
-	            <SignatureValid>true</SignatureValid>
-	        </BasicSignature>
-	        <SigningCertificate Certificate="C-79513A7C5EFA8B43C0042CAAA132226FFD959EA9AA9B9331A5BF3F6383381DBC"/>
-	        <CertificateChain>
-	            <ChainItem Certificate="C-79513A7C5EFA8B43C0042CAAA132226FFD959EA9AA9B9331A5BF3F6383381DBC"/>
-	            <ChainItem Certificate="C-B29224C320AD97D9D1E6DAA014B39F0A3577D4AE97AEFE02F4DBB059D08C3640"/>
-	        </CertificateChain>
-	        <ContentType>1.2.840.113549.1.7.1</ContentType>
+            <BasicSignature>
+                <EncryptionAlgoUsedToSignThisToken>RSA</EncryptionAlgoUsedToSignThisToken>
+                <KeyLengthUsedToSignThisToken>2048</KeyLengthUsedToSignThisToken>
+                <DigestAlgoUsedToSignThisToken>SHA256</DigestAlgoUsedToSignThisToken>
+                <SignatureIntact>true</SignatureIntact>
+                <SignatureValid>true</SignatureValid>
+            </BasicSignature>
+            <SigningCertificate Certificate="C-79513A7C5EFA8B43C0042CAAA132226FFD959EA9AA9B9331A5BF3F6383381DBC"/>
+            <CertificateChain>
+                <ChainItem Certificate="C-79513A7C5EFA8B43C0042CAAA132226FFD959EA9AA9B9331A5BF3F6383381DBC"/>
+                <ChainItem Certificate="C-B29224C320AD97D9D1E6DAA014B39F0A3577D4AE97AEFE02F4DBB059D08C3640"/>
+            </CertificateChain>
+            <ContentType>1.2.840.113549.1.7.1</ContentType>
             <FoundCertificates>
-            	<RelatedCertificate Certificate="C-79513A7C5EFA8B43C0042CAAA132226FFD959EA9AA9B9331A5BF3F6383381DBC">
-                	<CertificateRef>
+                <RelatedCertificate Certificate="C-79513A7C5EFA8B43C0042CAAA132226FFD959EA9AA9B9331A5BF3F6383381DBC">
+                    <CertificateRef>
                         <Origin>SIGNING_CERTIFICATE</Origin>
                         <DigestAlgoAndValue match="true">
-                        	<DigestMethod>SHA1</DigestMethod>
+                            <DigestMethod>SHA1</DigestMethod>
                             <DigestValue>LJpXPdNu6j8KlQvjObTGwTtmW2g=</DigestValue>
                         </DigestAlgoAndValue>
                     </CertificateRef>
@@ -41,18 +41,18 @@
             </FoundCertificates>
             <FoundRevocations/>
             <FoundTimestamps/>
-	        <SignatureScopes>
+            <SignatureScopes>
                 <SignatureScope SignerData="D-109597d62f3b24e3717226f2abacb419d9951d9d1686e356cca01d840055dd73">
                     <Scope>FULL</Scope>
                     <Name>Full document</Name>
                     <Description>Full document</Description>
                 </SignatureScope>
-	        </SignatureScopes>
-			<SignatureDigestReference>
-			    <DigestMethod>SHA256</DigestMethod>
-			    <DigestValue>A/lhc3m1e9pbHjorwbNeNTuldTHgEjAREqFbU1R6J7I=</DigestValue>
-			</SignatureDigestReference>
-	    </Signature>
+            </SignatureScopes>
+            <SignatureDigestReference>
+                <DigestMethod>SHA256</DigestMethod>
+                <DigestValue>A/lhc3m1e9pbHjorwbNeNTuldTHgEjAREqFbU1R6J7I=</DigestValue>
+            </SignatureDigestReference>
+        </Signature>
     </Signatures>
     <UsedCertificates>
         <Certificate Id="C-B29224C320AD97D9D1E6DAA014B39F0A3577D4AE97AEFE02F4DBB059D08C3640">
@@ -66,13 +66,14 @@
             <OrganizationName>Banca d'Italia</OrganizationName>
             <OrganizationalUnit>Servizi di certificazione</OrganizationalUnit>
             <Sources>
-            	<Source>TRUSTED_LIST</Source>
+                <Source>TRUSTED_LIST</Source>
             </Sources>
             <NotAfter>2034-11-24T10:13:33Z</NotAfter>
             <NotBefore>2014-11-24T09:43:33Z</NotBefore>
             <PublicKeySize>4096</PublicKeySize>
             <PublicKeyEncryptionAlgo>RSA</PublicKeyEncryptionAlgo>
             <EntityKey>PK-B29224C320AD97D9D1E6DAA014B39F0A3577D4AE97AEFE02F4DBB059D08C3640</EntityKey>
+            <IssuerEntityKey key="true" subjectName="true">EK-ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCD</IssuerEntityKey>
             <BasicSignature>
                 <EncryptionAlgoUsedToSignThisToken>RSA</EncryptionAlgoUsedToSignThisToken>
                 <KeyLengthUsedToSignThisToken>4096</KeyLengthUsedToSignThisToken>
@@ -83,7 +84,7 @@
             <Trusted>true</Trusted>
             <SelfSigned>true</SelfSigned>
             <CertificateExtensions>
-                <BasicConstraints OID="2.5.29.19" critical="true" CA="true" />
+                <BasicConstraints CA="true" OID="2.5.29.19" critical="true"/>
                 <KeyUsages OID="2.5.29.15" critical="true">
                     <keyUsageBit>crlSign</keyUsageBit>
                     <keyUsageBit>keyCertSign</keyUsageBit>
@@ -91,11 +92,14 @@
                 <CertificatePolicies OID="2.5.29.32" critical="true">
                     <certificatePolicy>1.3.76.38.1.1.1</certificatePolicy>
                 </CertificatePolicies>
+                <SubjectKeyIdentifier OID="2.5.29.14" critical="false">
+                    <ski>dIPLUVV4gbe9q2kyQ/DQrUCqODA=</ski>
+                </SubjectKeyIdentifier>
             </CertificateExtensions>
-                        <TrustServiceProviders />
+            <TrustServiceProviders/>
             <DigestAlgoAndValue>
-            	<DigestMethod>SHA1</DigestMethod>
-            	<DigestValue>000aa60802dd3997a5a4d0fc79f27d1b25b63e1a</DigestValue>
+                <DigestMethod>SHA1</DigestMethod>
+                <DigestValue>000aa60802dd3997a5a4d0fc79f27d1b25b63e1a</DigestValue>
             </DigestAlgoAndValue>
         </Certificate>
         <Certificate Id="C-90953EA55AFA03D97CCEEC3B2FF7C2BA007AFDFECA8E4E55EF76A05CDB0B796C">
@@ -109,13 +113,14 @@
             <OrganizationName>Banca d'Italia</OrganizationName>
             <OrganizationalUnit>Utenti Gestione</OrganizationalUnit>
             <Sources>
-            	<Source>OCSP_RESPONSE</Source>
+                <Source>OCSP_RESPONSE</Source>
             </Sources>
             <NotAfter>2019-11-27T08:50:32Z</NotAfter>
             <NotBefore>2014-11-27T08:20:32Z</NotBefore>
             <PublicKeySize>2048</PublicKeySize>
             <PublicKeyEncryptionAlgo>RSA</PublicKeyEncryptionAlgo>
             <EntityKey>PK-90953EA55AFA03D97CCEEC3B2FF7C2BA007AFDFECA8E4E55EF76A05CDB0B796C</EntityKey>
+            <IssuerEntityKey key="true" subjectName="true">EK-ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCD</IssuerEntityKey>
             <BasicSignature>
                 <EncryptionAlgoUsedToSignThisToken>RSA</EncryptionAlgoUsedToSignThisToken>
                 <KeyLengthUsedToSignThisToken>4096</KeyLengthUsedToSignThisToken>
@@ -136,11 +141,17 @@
                 <CertificatePolicies OID="2.5.29.32" critical="true">
                     <certificatePolicy>1.3.76.38.1.1.1</certificatePolicy>
                 </CertificatePolicies>
+                <SubjectKeyIdentifier OID="2.5.29.14" critical="false">
+                    <ski>2++6DTeg96aGk6TLwtu9zomkceI=</ski>
+                </SubjectKeyIdentifier>
+                <AuthorityKeyIdentifier OID="2.5.29.35">
+                    <keyIdentifier>dIPLUVV4gbe9q2kyQ/DQrUCqODA=</keyIdentifier>
+                </AuthorityKeyIdentifier>
             </CertificateExtensions>
-                        <TrustServiceProviders />
+            <TrustServiceProviders/>
             <DigestAlgoAndValue>
-            	<DigestMethod>SHA1</DigestMethod>
-            	<DigestValue>4efd78c478c7a6932d5a1d4c4cb5d06d42b5db00</DigestValue>
+                <DigestMethod>SHA1</DigestMethod>
+                <DigestValue>4efd78c478c7a6932d5a1d4c4cb5d06d42b5db00</DigestValue>
             </DigestAlgoAndValue>
         </Certificate>
         <Certificate Id="C-79513A7C5EFA8B43C0042CAAA132226FFD959EA9AA9B9331A5BF3F6383381DBC">
@@ -155,13 +166,14 @@
             <GivenName>2388</GivenName>
             <Surname>2388</Surname>
             <Sources>
-            	<Source>SIGNATURE</Source>
+                <Source>SIGNATURE</Source>
             </Sources>
             <NotAfter>2020-11-24T08:44:58Z</NotAfter>
             <NotBefore>2015-11-24T08:14:58Z</NotBefore>
             <PublicKeySize>2048</PublicKeySize>
             <PublicKeyEncryptionAlgo>RSA</PublicKeyEncryptionAlgo>
             <EntityKey>PK-79513A7C5EFA8B43C0042CAAA132226FFD959EA9AA9B9331A5BF3F6383381DBC</EntityKey>
+            <IssuerEntityKey key="true" subjectName="true">EK-ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCD</IssuerEntityKey>
             <BasicSignature>
                 <EncryptionAlgoUsedToSignThisToken>RSA</EncryptionAlgoUsedToSignThisToken>
                 <KeyLengthUsedToSignThisToken>4096</KeyLengthUsedToSignThisToken>
@@ -182,27 +194,33 @@
                 <CertificatePolicies OID="2.5.29.32" critical="true">
                     <certificatePolicy>1.3.76.38.1.1.1</certificatePolicy>
                 </CertificatePolicies>
+                <SubjectKeyIdentifier OID="2.5.29.14" critical="false">
+                    <ski>lpOzaiLoIcrEwp5kqeX9LlUcCr0=</ski>
+                </SubjectKeyIdentifier>
                 <QcStatements OID="1.3.6.1.5.5.7.1.3" critical="false">
                     <QcCompliance present="true"/>
                     <QcEuRetentionPeriod>10</QcEuRetentionPeriod>
                     <QcSSCD present="true"/>
                 </QcStatements>
+                <AuthorityKeyIdentifier OID="2.5.29.35">
+                    <keyIdentifier>dIPLUVV4gbe9q2kyQ/DQrUCqODA=</keyIdentifier>
+                </AuthorityKeyIdentifier>
             </CertificateExtensions>
-            <TrustServiceProviders />
-			<Revocations>
-	            <CertificateRevocation Revocation="R-AC40244C9404372BD81970D28266FB99021557A64101DA5D92232BCF1A9E7326">
-	                <Status>GOOD</Status>
-	            </CertificateRevocation>
-	            <CertificateRevocation Revocation="R-C088D84D6BD4740306551C0780A9323896071255EF5509334E70FE593FEF14AC">
-	                <Status>GOOD</Status>
-	            </CertificateRevocation>
-	            <CertificateRevocation Revocation="R-5AA34C169A86F12918C17B226D96475B97B6F1B1E99EA04773CB5330563A9717">
-	                <Status>GOOD</Status>
-	            </CertificateRevocation>
-	        </Revocations>
+            <TrustServiceProviders/>
+            <Revocations>
+                <CertificateRevocation Revocation="R-AC40244C9404372BD81970D28266FB99021557A64101DA5D92232BCF1A9E7326">
+                    <Status>GOOD</Status>
+                </CertificateRevocation>
+                <CertificateRevocation Revocation="R-C088D84D6BD4740306551C0780A9323896071255EF5509334E70FE593FEF14AC">
+                    <Status>GOOD</Status>
+                </CertificateRevocation>
+                <CertificateRevocation Revocation="R-5AA34C169A86F12918C17B226D96475B97B6F1B1E99EA04773CB5330563A9717">
+                    <Status>GOOD</Status>
+                </CertificateRevocation>
+            </Revocations>
             <DigestAlgoAndValue>
-            	<DigestMethod>SHA1</DigestMethod>
-            	<DigestValue>a1303a089304fe81cd5c8be3e642d6f59571980b</DigestValue>
+                <DigestMethod>SHA1</DigestMethod>
+                <DigestValue>a1303a089304fe81cd5c8be3e642d6f59571980b</DigestValue>
             </DigestAlgoAndValue>
         </Certificate>
     </UsedCertificates>
@@ -227,8 +245,8 @@
                 <ChainItem Certificate="C-B29224C320AD97D9D1E6DAA014B39F0A3577D4AE97AEFE02F4DBB059D08C3640"/>
             </CertificateChain>
             <DigestAlgoAndValue>
-            	<DigestMethod>SHA1</DigestMethod>
-            	<DigestValue>1e875475b279a7887a9ac7f109108aeeb83eb0d8</DigestValue>
+                <DigestMethod>SHA1</DigestMethod>
+                <DigestValue>1e875475b279a7887a9ac7f109108aeeb83eb0d8</DigestValue>
             </DigestAlgoAndValue>
         </Revocation>
         <Revocation Id="R-C088D84D6BD4740306551C0780A9323896071255EF5509334E70FE593FEF14AC">
@@ -251,8 +269,8 @@
                 <ChainItem Certificate="C-B29224C320AD97D9D1E6DAA014B39F0A3577D4AE97AEFE02F4DBB059D08C3640"/>
             </CertificateChain>
             <DigestAlgoAndValue>
-            	<DigestMethod>SHA1</DigestMethod>
-            	<DigestValue>42101f47411371559118ed8ae6a4157774e90f47</DigestValue>
+                <DigestMethod>SHA1</DigestMethod>
+                <DigestValue>42101f47411371559118ed8ae6a4157774e90f47</DigestValue>
             </DigestAlgoAndValue>
         </Revocation>
         <Revocation Id="R-5AA34C169A86F12918C17B226D96475B97B6F1B1E99EA04773CB5330563A9717">
@@ -275,8 +293,8 @@
                 <ChainItem Certificate="C-B29224C320AD97D9D1E6DAA014B39F0A3577D4AE97AEFE02F4DBB059D08C3640"/>
             </CertificateChain>
             <DigestAlgoAndValue>
-            	<DigestMethod>SHA1</DigestMethod>
-            	<DigestValue>cbee3d9b55ee833b61147e81d3ee5c59e8b2e7f3</DigestValue>
+                <DigestMethod>SHA1</DigestMethod>
+                <DigestValue>cbee3d9b55ee833b61147e81d3ee5c59e8b2e7f3</DigestValue>
             </DigestAlgoAndValue>
         </Revocation>
     </UsedRevocations>

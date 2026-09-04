@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,6 +21,8 @@
 package eu.europa.esig.dss.model;
 
 import eu.europa.esig.dss.enumerations.MimeType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 
@@ -31,6 +33,8 @@ public class ManifestEntry implements Serializable {
 
 	private static final long serialVersionUID = -7997341134695311883L;
 
+	private static final Logger LOG = LoggerFactory.getLogger(ManifestEntry.class);
+
 	/** The reference URI */
 	private String uri;
 
@@ -40,8 +44,8 @@ public class ManifestEntry implements Serializable {
 	/** The digest of the referenced entry */
 	private Digest digest;
 
-	/** Name of the matching document, when found */
-	private String documentName;
+	/** NThe matching document, when found */
+	private DSSDocument document;
 
 	/**
 	 * Defines if the referenced data is found
@@ -63,28 +67,6 @@ public class ManifestEntry implements Serializable {
 	 */
 	public ManifestEntry() {
 		// empty
-	}
-
-	/**
-	 * Gets the filename
-	 *
-	 * @return {@link String}
-	 * @deprecated since DSS 6.1. Please use {@code #getUri} method instead.
-	 */
-	@Deprecated
-	public String getFileName() {
-		return uri;
-	}
-
-	/**
-	 * Sets the filename
-	 *
-	 * @param fileName {@link String}
-	 * @deprecated since DSS 6.1. Please use {@code #setUri} method instead.
-	 */
-	@Deprecated
-	public void setFileName(String fileName) {
-		this.uri = fileName;
 	}
 
 	/**
@@ -142,21 +124,30 @@ public class ManifestEntry implements Serializable {
 	}
 
 	/**
-	 * Gets the name of the corresponding document
-	 *
-	 * @return {@link String}
-	 */
-	public String getDocumentName() {
-		return documentName;
-	}
-
-	/**
 	 * Sets the name of the corresponding document
 	 *
 	 * @param documentName {@link String}
 	 */
 	public void setDocumentName(String documentName) {
-		this.documentName = documentName;
+		LOG.warn("Use of deprecated method #setDocumentName. Please switch to #setDocument. Current method processing is skipped");
+	}
+
+	/**
+	 * Gets the corresponding document
+	 *
+	 * @return {@link DSSDocument}
+	 */
+	public DSSDocument getDocument() {
+		return document;
+	}
+
+	/**
+	 * Sets the corresponding document
+	 *
+	 * @param document {@link DSSDocument}
+	 */
+	public void setDocument(DSSDocument document) {
+		this.document = document;
 	}
 
 	/**

@@ -1,26 +1,26 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.validation.process.qualification.certificate;
 
-import eu.europa.esig.dss.detailedreport.jaxb.XmlCertificate;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlCertificateQualificationProcess;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlConclusion;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlTLAnalysis;
 import eu.europa.esig.dss.diagnostic.CertificateWrapper;
@@ -50,19 +50,19 @@ import java.util.stream.Collectors;
  * processing its validation at issuance and validation time
  *
  */
-public class CertificateQualificationBlock extends Chain<XmlCertificate> {
+public class CertificateQualificationBlock extends Chain<XmlCertificateQualificationProcess> {
 
 	/** Certificate's BasicBuildingBlock's conclusion */
-	private final XmlConclusion buildingBlocksConclusion;
+	protected final XmlConclusion buildingBlocksConclusion;
 
 	/** Validation time */
-	private final Date validationTime;
+	protected final Date validationTime;
 
 	/** The certificate to determine qualification for */
-	private final CertificateWrapper signingCertificate;
+	protected final CertificateWrapper signingCertificate;
 
 	/** List of validation results for all Trusted Lists */
-	private final List<XmlTLAnalysis> tlAnalysis;
+	protected final List<XmlTLAnalysis> tlAnalysis;
 
 	/**
 	 * Default constructor
@@ -76,7 +76,7 @@ public class CertificateQualificationBlock extends Chain<XmlCertificate> {
 	public CertificateQualificationBlock(I18nProvider i18nProvider, XmlConclusion buildingBlocksConclusion,
 										 Date validationTime, CertificateWrapper signingCertificate,
 										 List<XmlTLAnalysis> tlAnalysis) {
-		super(i18nProvider, new XmlCertificate());
+		super(i18nProvider, new XmlCertificateQualificationProcess());
 		Objects.requireNonNull(validationTime, "The validationTime shall be provided!");
 		Objects.requireNonNull(signingCertificate, "The signingCertificate shall be provided!");
 		
@@ -96,11 +96,12 @@ public class CertificateQualificationBlock extends Chain<XmlCertificate> {
 	@Override
 	protected void initChain() {
 		// cover incomplete cert chain / expired/ revoked certs
-		ChainItem<XmlCertificate> item = firstItem = isAcceptableBuildingBlockConclusion(buildingBlocksConclusion);
+		ChainItem<XmlCertificateQualificationProcess> item = firstItem = isAcceptableBuildingBlockConclusion(buildingBlocksConclusion);
+
+		Set<String> acceptableTLUrls = new HashSet<>();
+		List<TrustServiceWrapper> originalTSPs = signingCertificate.getTrustServices();
 
 		if (signingCertificate.isTrustedListReached()) {
-
-			List<TrustServiceWrapper> originalTSPs = signingCertificate.getTrustServices();
 			
 			Set<String> listOfTrustedListUrls = originalTSPs.stream().filter(t -> t.getListOfTrustedLists() != null)
 					.map(t -> t.getListOfTrustedLists().getUrl()).collect(Collectors.toSet());
@@ -109,7 +110,7 @@ public class CertificateQualificationBlock extends Chain<XmlCertificate> {
 			for (String lotlURL : listOfTrustedListUrls) {
 				XmlTLAnalysis lotlAnalysis = getTlAnalysis(lotlURL);
 				if (lotlAnalysis != null) {
-					AcceptableListOfTrustedListsCheck<XmlCertificate> acceptableLOTL = isAcceptableLOTL(lotlAnalysis);
+					AcceptableListOfTrustedListsCheck<XmlCertificateQualificationProcess> acceptableLOTL = isAcceptableLOTL(lotlAnalysis);
 					item = item.setNextItem(acceptableLOTL);
 					if (acceptableLOTL.process()) {
 						acceptableLOTLUrls.add(lotlURL);
@@ -122,12 +123,11 @@ public class CertificateQualificationBlock extends Chain<XmlCertificate> {
 					(t.getListOfTrustedLists() == null || acceptableLOTLUrls.contains(t.getListOfTrustedLists().getUrl())) )
 					.map(t -> t.getTrustedList().getUrl()).collect(Collectors.toSet());
 
-			Set<String> acceptableTLUrls = new HashSet<>();
 			if (Utils.isCollectionNotEmpty(trustedListUrls)) {
 				for (String tlURL : trustedListUrls) {
 					XmlTLAnalysis currentTL = getTlAnalysis(tlURL);
 					if (currentTL != null) {
-						AcceptableTrustedListCheck<XmlCertificate> acceptableTL = isAcceptableTL(currentTL);
+						AcceptableTrustedListCheck<XmlCertificateQualificationProcess> acceptableTL = isAcceptableTL(currentTL);
 						item = item.setNextItem(acceptableTL);
 						if (acceptableTL.process()) {
 							acceptableTLUrls.add(tlURL);
@@ -135,25 +135,44 @@ public class CertificateQualificationBlock extends Chain<XmlCertificate> {
 					}
 				}
 			}
-			
-			item = item.setNextItem(isAcceptableTLPresent(acceptableTLUrls));
-			
-			if (Utils.isCollectionNotEmpty(acceptableTLUrls)) {
-
-				// 1. filter by service for CAQC
-				TrustServiceFilter filter = TrustServicesFilterFactory.createFilterByUrls(acceptableTLUrls);
-				List<TrustServiceWrapper> acceptableServices = filter.filter(originalTSPs);
-
-				CertQualificationAtTimeBlock certQualAtIssuanceBlock = new CertQualificationAtTimeBlock(i18nProvider, ValidationTime.CERTIFICATE_ISSUANCE_TIME,
-						signingCertificate, acceptableServices);
-				result.getValidationCertificateQualification().add(certQualAtIssuanceBlock.execute());
-
-				CertQualificationAtTimeBlock certQualAtSigningTimeBlock = new CertQualificationAtTimeBlock(i18nProvider, ValidationTime.VALIDATION_TIME,
-						validationTime, signingCertificate, acceptableServices);
-				result.getValidationCertificateQualification().add(certQualAtSigningTimeBlock.execute());
-			
-			}
 		}
+
+		item = item.setNextItem(isAcceptableTLPresent(acceptableTLUrls));
+
+		if (Utils.isCollectionNotEmpty(acceptableTLUrls)) {
+
+			// 1. filter by service for CAQC
+			TrustServiceFilter filter = TrustServicesFilterFactory.createFilterByUrls(acceptableTLUrls);
+			List<TrustServiceWrapper> acceptableServices = filter.filter(originalTSPs);
+
+			CertQualificationAtTimeBlock certQualAtIssuanceBlock = getCertQualificationAtIssuanceTimeBlock(acceptableServices);
+			result.getValidationCertificateQualification().add(certQualAtIssuanceBlock.execute());
+
+			CertQualificationAtTimeBlock certQualAtValidationTimeBlock = getCertQualificationAtValidationTimeBlock(acceptableServices);
+			result.getValidationCertificateQualification().add(certQualAtValidationTimeBlock.execute());
+
+		}
+
+	}
+
+	/**
+	 * Gets a certificate qualification determination process for validation at the certificate issuance time
+	 *
+	 * @param acceptableServices a list of {@link TrustServiceWrapper}s acceptable for the given certificate
+	 * @return {@link CertQualificationAtTimeBlock}
+	 */
+	protected CertQualificationAtTimeBlock getCertQualificationAtIssuanceTimeBlock(List<TrustServiceWrapper> acceptableServices) {
+		return new CertQualificationAtTimeBlock(i18nProvider, ValidationTime.CERTIFICATE_ISSUANCE_TIME, signingCertificate, acceptableServices);
+	}
+
+	/**
+	 * Gets a certificate qualification determination process for validation at the validation time
+	 *
+	 * @param acceptableServices a list of {@link TrustServiceWrapper}s acceptable for the given certificate
+	 * @return {@link CertQualificationAtTimeBlock}
+	 */
+	protected CertQualificationAtTimeBlock getCertQualificationAtValidationTimeBlock(List<TrustServiceWrapper> acceptableServices) {
+		return new CertQualificationAtTimeBlock(i18nProvider, ValidationTime.VALIDATION_TIME, validationTime, signingCertificate, acceptableServices);
 	}
 
 	private XmlTLAnalysis getTlAnalysis(String url) {
@@ -185,20 +204,20 @@ public class CertificateQualificationBlock extends Chain<XmlCertificate> {
 		}
 	}
 
-	private AcceptableListOfTrustedListsCheck<XmlCertificate> isAcceptableLOTL(XmlTLAnalysis xmlLOTLAnalysis) {
-		return new AcceptableListOfTrustedListsCheck<>(i18nProvider, result, xmlLOTLAnalysis, getWarnLevelConstraint());
+	private AcceptableListOfTrustedListsCheck<XmlCertificateQualificationProcess> isAcceptableLOTL(XmlTLAnalysis xmlLOTLAnalysis) {
+		return new AcceptableListOfTrustedListsCheck<>(i18nProvider, result, xmlLOTLAnalysis, getWarnLevelRule());
 	}
 
-	private AcceptableTrustedListCheck<XmlCertificate> isAcceptableTL(XmlTLAnalysis xmlTLAnalysis) {
-		return new AcceptableTrustedListCheck<>(i18nProvider, result, xmlTLAnalysis, getWarnLevelConstraint());
+	private AcceptableTrustedListCheck<XmlCertificateQualificationProcess> isAcceptableTL(XmlTLAnalysis xmlTLAnalysis) {
+		return new AcceptableTrustedListCheck<>(i18nProvider, result, xmlTLAnalysis, getWarnLevelRule());
 	}
 
-	private ChainItem<XmlCertificate> isAcceptableTLPresent(Set<String> acceptableUrls) {
-		return new AcceptableTrustedListPresenceCheck<>(i18nProvider, result, acceptableUrls, getFailLevelConstraint());
+	private ChainItem<XmlCertificateQualificationProcess> isAcceptableTLPresent(Set<String> acceptableUrls) {
+		return new AcceptableTrustedListPresenceCheck<>(i18nProvider, result, acceptableUrls, getFailLevelRule());
 	}
 
-	private ChainItem<XmlCertificate> isAcceptableBuildingBlockConclusion(XmlConclusion buildingBlocksConclusion) {
-		return new AcceptableBuildingBlockConclusionCheck(i18nProvider, result, buildingBlocksConclusion, getWarnLevelConstraint());
+	private ChainItem<XmlCertificateQualificationProcess> isAcceptableBuildingBlockConclusion(XmlConclusion buildingBlocksConclusion) {
+		return new AcceptableBuildingBlockConclusionCheck<>(i18nProvider, result, buildingBlocksConclusion, getWarnLevelRule());
 	}
 
 }

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -117,11 +117,27 @@ public enum CertificatePolicy implements OidDescription {
 	QCP_LEGAL_QSCD("qcp-legal-qscd", "0.4.0.194112.1.3"),
 
 	/**
-	 * QCP-w: certificate policy for EU qualified website authentication certificates;
+	 * QEVCP-w: certificate policy for EU qualified website authentication certificates based on EVCP;
 	 * itu-t(0) identified-organization(4) etsi(0) qualified-certificate-policies(194112)
 	 * policy-identifiers(1) qcp-web (4)
 	 */
-	QCP_WEB("qcp-web", "0.4.0.194112.1.4");
+	QCP_WEB("qcp-web", "0.4.0.194112.1.4"),
+
+	/**
+	 * QNCP-w: certificate policy for EU qualified website authentication certificates
+	 *         based on NCP, and OVCP or IVCP;
+	 * itu-t(0) identified-organization(4) etsi(0) qualified-certificate-policies(194112)
+	 * policy-identifiers(1) qncp-web (5)
+	 */
+	QNCP_WEB("qncp-web", "0.4.0.194112.1.5"),
+
+	/**
+	 * QNCP-w-gen: certificate policy for EU qualified website authentication based on NCP and requirements
+	 *             tagged as [WEB] in ETSI EN 319 411-1 [2].
+	 * itu-t(0) identified-organization(4) etsi(0) qualified-certificate-policies(194112)
+	 * policy-identifiers(1) qncp-web-gen (6)
+	 */
+	QNCP_WEB_GEN("qncp-web-gen", "0.4.0.194112.1.6");
 
 	private final String description;
 	private final String oid;

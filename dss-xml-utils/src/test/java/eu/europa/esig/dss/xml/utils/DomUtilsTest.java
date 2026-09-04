@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -22,7 +22,6 @@ package eu.europa.esig.dss.xml.utils;
 
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.InMemoryDocument;
-import eu.europa.esig.dss.xml.common.definition.DSSNamespace;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -49,34 +48,6 @@ class DomUtilsTest {
 	private static final String INCORRECT_XML_TEXT = "<hello><world></warld></hello>";
 	private static final String XML_WITH_NAMESPACE = "<m:manifest xmlns:m=\"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0\"><m:file-entry m:media-type=\"text/plain\" m:full-path=\"hello.txt\" /></m:manifest>";
 	private static final String XML_WITH_COMMENTS = "<!-- Comment 1 --><!-- Comment 2 --><hello><!-- Comment 3 --><world></world></hello><!-- Comment 4 -->";
-
-	@Test
-	void registerNamespaceTest() {
-		Document document = DomUtils.buildDOM(XML_WITH_NAMESPACE);
-
-		final String xPathExpression = "./m:file-entry";
-		Exception exception = assertThrows(DSSException.class, () -> DomUtils.getElement(document.getDocumentElement(), xPathExpression));
-		assertTrue(exception.getMessage().contains("Unable to create an XPath expression"));
-
-		DomUtils.registerNamespace(new DSSNamespace("urn:oasis:names:tc:opendocument:xmlns:manifest:1.0", "m"));
-
-		Element fileEntry = DomUtils.getElement(document.getDocumentElement(), "./m:file-entry");
-		assertNotNull(fileEntry);
-
-		exception = assertThrows(UnsupportedOperationException.class,
-				() -> DomUtils.registerNamespace(new DSSNamespace("http://some-uri.net", null)));
-		assertEquals("The empty namespace cannot be registered!", exception.getMessage());
-
-		exception = assertThrows(UnsupportedOperationException.class,
-				() -> DomUtils.registerNamespace(new DSSNamespace("http://some-uri.net", "")));
-		assertEquals("The empty namespace cannot be registered!", exception.getMessage());
-
-		exception = assertThrows(UnsupportedOperationException.class,
-				() -> DomUtils.registerNamespace(new DSSNamespace("http://some-uri.net", "xmlns")));
-		assertEquals("The default namespace 'xmlns' cannot be registered!", exception.getMessage());
-
-		assertTrue(DomUtils.registerNamespace(new DSSNamespace("http://some-uri.net", "otherPrefix")));
-	}
 
 	@Test
 	void testNoHeader() {
@@ -185,19 +156,69 @@ class DomUtilsTest {
 	}
 
 	@Test
-	void getElementByIdTest() {
-		assertNotNull(DomUtils.getElementById(
-				DomUtils.buildDOM("<el id=\"signedData\">Text</el>"), "signedData"));
-		assertNotNull(DomUtils.getElementById(
-				DomUtils.buildDOM("<el Id=\"signedData\">Text</el>"), "signedData"));
-		assertNotNull(DomUtils.getElementById(
-				DomUtils.buildDOM("<el ID=\"signedData\">Text</el>"), "signedData"));
-		assertNotNull(DomUtils.getElementById(
-				DomUtils.buildDOM("<el xmlns:prefix=\"urn:prefix\" prefix:id=\"signedData\">Text</el>"), "signedData"));
-		assertNull(DomUtils.getElementById(
-				DomUtils.buildDOM("<el id=\"signedData\">Text</el>"), "notSignedData"));
-		assertNull(DomUtils.getElementById(
-				DomUtils.buildDOM("<el ids=\"signedData\">Text</el>"), "signedData"));
+	void createDeepCopyTest() {
+		Document document = DomUtils.buildDOM("<hello><el Id=\"signedData\"><content>Text</content></el></hello>");
+		Element documentElement = document.getDocumentElement();
+		assertEquals("hello", documentElement.getLocalName());
+
+		Node elNode = documentElement.getFirstChild();
+		assertEquals(Node.ELEMENT_NODE, elNode.getNodeType());
+
+		Element elElement = (Element) elNode;
+		assertEquals("el", elElement.getLocalName());
+		assertEquals("signedData", elElement.getAttribute("Id"));
+
+		Element copyElement = DomUtils.createDeepCopy(elElement);
+		assertNotNull(copyElement);
+		assertNotEquals(elElement, copyElement);
+		assertEquals("el", elElement.getLocalName());
+		assertEquals("signedData", elElement.getAttribute("Id"));
+
+		Node contentNode = copyElement.getFirstChild();
+		assertEquals(Node.ELEMENT_NODE, contentNode.getNodeType());
+
+		Element contentElement = (Element) contentNode;
+		assertEquals("content", contentElement.getLocalName());
+		assertEquals("Text", contentElement.getTextContent());
+
+		Node parentNodeCopy = copyElement.getParentNode();
+		assertEquals(Node.ELEMENT_NODE, parentNodeCopy.getNodeType());
+
+		Element parentElementCopy = (Element) parentNodeCopy;
+		assertEquals("hello", parentElementCopy.getLocalName());
+
+		document = DomUtils.buildDOM("<hello><el id=\"signedData\"><content>Text</content></el></hello>");
+		documentElement = document.getDocumentElement();
+		assertEquals("hello", documentElement.getLocalName());
+
+		elNode = documentElement.getFirstChild();
+		assertEquals(Node.ELEMENT_NODE, elNode.getNodeType());
+
+		elElement = (Element) elNode;
+		assertEquals("el", elElement.getLocalName());
+		assertEquals("", elElement.getAttribute("Id"));
+		assertEquals("signedData", elElement.getAttribute("id"));
+
+		copyElement = DomUtils.createDeepCopy(elElement);
+		assertNotNull(copyElement);
+		assertNotEquals(elElement, copyElement);
+		assertEquals("", elElement.getAttribute("Id"));
+		assertEquals("signedData", elElement.getAttribute("id"));
+
+		contentNode = copyElement.getFirstChild();
+		assertEquals(Node.ELEMENT_NODE, contentNode.getNodeType());
+
+		contentElement = (Element) contentNode;
+		assertEquals("content", contentElement.getLocalName());
+		assertEquals("Text", contentElement.getTextContent());
+
+		parentNodeCopy = copyElement.getParentNode();
+		assertEquals(Node.ELEMENT_NODE, parentNodeCopy.getNodeType());
+
+		parentElementCopy = (Element) parentNodeCopy;
+		assertEquals("hello", parentElementCopy.getLocalName());
+
+		assertNull(DomUtils.createDeepCopy(null));
 	}
 	
 }

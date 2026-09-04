@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class PDFSignatureServiceTest {
+class PDFSignatureServiceTest {
 	
 	private AbstractPDFSignatureService service;
 	
@@ -100,41 +100,45 @@ public class PDFSignatureServiceTest {
 		DSSDocument doc90Degrees = service.addNewSignatureField(documentToSign, fieldParameters);
 		assertNotNull(doc90Degrees);
 
+		fieldParameters.setFieldId("Signature2");
+
 		Exception exception = assertThrows(AlertException.class,
 				() -> service.addNewSignatureField(doc90Degrees, fieldParameters));
 		assertEquals("The new signature field position overlaps with an existing annotation!", exception.getMessage());
 
-		fieldParameters.setFieldId("Signature2");
 		fieldParameters.setRotation(VisualSignatureRotation.ROTATE_180);
 
 		DSSDocument doc180Degrees = service.addNewSignatureField(doc90Degrees, fieldParameters);
 		assertNotNull(doc180Degrees);
 
+		fieldParameters.setFieldId("Signature3");
+
 		exception = assertThrows(AlertException.class,
 				() -> service.addNewSignatureField(doc180Degrees, fieldParameters));
 		assertEquals("The new signature field position overlaps with an existing annotation!", exception.getMessage());
 
-		fieldParameters.setFieldId("Signature3");
 		fieldParameters.setRotation(VisualSignatureRotation.ROTATE_270);
 
 		DSSDocument doc270Degrees = service.addNewSignatureField(doc180Degrees, fieldParameters);
 		assertNotNull(doc270Degrees);
 
+		fieldParameters.setFieldId("Signature4");
+
 		exception = assertThrows(AlertException.class,
 				() -> service.addNewSignatureField(doc270Degrees, fieldParameters));
 		assertEquals("The new signature field position overlaps with an existing annotation!", exception.getMessage());
 
-		fieldParameters.setFieldId("Signature4");
 		fieldParameters.setRotation(VisualSignatureRotation.NONE);
 
 		DSSDocument docZeroDegrees = service.addNewSignatureField(doc270Degrees, fieldParameters);
 		assertNotNull(docZeroDegrees);
 
+		fieldParameters.setFieldId("Signature5");
+
 		exception = assertThrows(AlertException.class,
 				() -> service.addNewSignatureField(docZeroDegrees, fieldParameters));
 		assertEquals("The new signature field position overlaps with an existing annotation!", exception.getMessage());
 
-		fieldParameters.setFieldId("Signature5");
 		fieldParameters.setRotation(VisualSignatureRotation.AUTOMATIC);
 
 		exception = assertThrows(AlertException.class,

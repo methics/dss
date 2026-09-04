@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -25,7 +25,9 @@ import eu.europa.esig.dss.enumerations.VisualSignatureAlignmentHorizontal;
 import eu.europa.esig.dss.enumerations.VisualSignatureAlignmentVertical;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DigestDocument;
-import eu.europa.esig.dss.pdf.visible.DPIUtils;
+import eu.europa.esig.dss.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.Color;
 import java.io.Serializable;
@@ -39,7 +41,11 @@ public class SignatureImageParameters implements Serializable {
 
 	private static final long serialVersionUID = -327971057134928889L;
 
-	/** The default zoom constraint */
+	private static final Logger LOG = LoggerFactory.getLogger(SignatureImageParameters.class);
+
+	/**
+	 * The default zoom constraint
+	 */
 	private static final int NO_SCALING = 100;
 
 	/**
@@ -69,6 +75,20 @@ public class SignatureImageParameters implements Serializable {
 	private Integer dpi;
 
 	/**
+	 * Allows setting of the behavior on image scaling based on the DPI value.
+	 * This parameter is used to provide a smooth migration to the DSS version 6.5 and later.
+	 * When enabled (default in 6.5, to be changed later), the old behavior, hard-coded in DSS 6.4 and before is applied,
+	 * with the image is zoomed reversely, in the ratio of PDF_DPI/Image_DPI.
+	 * When disabled (recommended), the new behavior is used, with the image being scaled in the ratio
+	 * of Image_DPI/Target_DPI, effectively keeping the original image size, unless a custom DPI value is defined.
+	 * <p>
+	 * It is advisable to update the used implementation to the new behavior (with parameter value set to true),
+	 * as it will be enforced in future DSS versions.
+	 */
+	// TODO : set to FALSE by default in DSS 6.6 (can change to boolean instead)
+	private Boolean legacyDPIHandling;
+
+	/**
 	 * Horizontal alignment of the visual signature on the pdf page
 	 */
 	private VisualSignatureAlignmentHorizontal alignmentHorizontal = VisualSignatureAlignmentHorizontal.NONE;
@@ -80,7 +100,7 @@ public class SignatureImageParameters implements Serializable {
 
 	/**
 	 * Defines the image scaling behavior within a signature field with a fixed size
-	 *
+	 * <p>
 	 * DEFAULT : ImageScaling.STRETCH (stretches the image in both directions to fill the signature field)
 	 */
 	private ImageScaling imageScaling = ImageScaling.STRETCH;
@@ -99,6 +119,7 @@ public class SignatureImageParameters implements Serializable {
 
 	/**
 	 * Returns a {@code DSSDocument} image defined for displaying on the signature field
+	 *
 	 * @return {@link DSSDocument} image
 	 */
 	public DSSDocument getImage() {
@@ -107,6 +128,7 @@ public class SignatureImageParameters implements Serializable {
 
 	/**
 	 * Allows to set a custom image to display on a signature field
+	 *
 	 * @param image {@link DSSDocument}
 	 */
 	public void setImage(DSSDocument image) {
@@ -139,6 +161,7 @@ public class SignatureImageParameters implements Serializable {
 
 	/**
 	 * Returns the defined Zoom value in percentage
+	 *
 	 * @return {@code int} zoom
 	 */
 	public int getZoom() {
@@ -147,6 +170,7 @@ public class SignatureImageParameters implements Serializable {
 
 	/**
 	 * Defines the signature field zoom in percentage (default value = 100)
+	 *
 	 * @param zoom {@code int} zoom value
 	 */
 	public void setZoom(int zoom) {
@@ -155,6 +179,7 @@ public class SignatureImageParameters implements Serializable {
 
     /**
      * Returns a specified background color for the signature field
+	 *
      * @return {@link Color} background color
      */
 	public Color getBackgroundColor() {
@@ -163,6 +188,7 @@ public class SignatureImageParameters implements Serializable {
 
 	/**
 	 * Sets the background color for the signature field
+	 *
 	 * @param backgroundColor {@link Color} to set
 	 */
 	public void setBackgroundColor(Color backgroundColor) {
@@ -171,16 +197,20 @@ public class SignatureImageParameters implements Serializable {
 
 	/**
 	 * Returns a defined DPI value
-	 * Note: can be null
+	 * NOTE: can be null
+	 *
 	 * @return {@link Integer} dpi value
 	 */
 	public Integer getDpi() {
-		return DPIUtils.getDpi(dpi);
+		return dpi;
 	}
 
 	/**
-	 * Sets an expected DPI value. If NULL the default dpi of the provided image is applied.
-	 * Note: images with a lower DPI will take more space on a PDF page
+	 * Sets an expected DPI value. If NULL the default DPI of the provided image is applied and
+	 * the image will take the exact space according to its dimensions.
+	 * Otherwise, a ratio between the image DPI and the set value is to be applied.
+	 * NOTE: images with a lower DPI will take more space on a PDF page
+	 *
 	 * @param dpi {@link Integer} dpi value
 	 */
 	public void setDpi(Integer dpi) {
@@ -188,7 +218,40 @@ public class SignatureImageParameters implements Serializable {
 	}
 
 	/**
+	 * Gets whether the legacy DPI handling is to be applied
+	 *
+	 * @return whether the legacy DPI handling is to be applied
+	 */
+	public boolean isLegacyDPIHandling() {
+		if (legacyDPIHandling == null) {
+			LOG.debug("legacyDPIHandling parameter is not defined, the legacy behavior is applied! The parameter provides a smooth migration to DSS 6.5. " +
+					"Please use SignatureImageParameters#setLegacyDPIHandling(true) to use the legacy behavior (DSS 6.4 or before) " +
+					"or SignatureImageParameters#setLegacyDPIHandling(false) to update to the new DPI handling (recommended).");
+			return true; // TODO : Update in DSS 6.6
+		}
+		return Utils.isTrue(legacyDPIHandling);
+	}
+
+	/**
+	 * Sets the image scaling behavior based on the document DPI value.
+	 * This parameter is used to provide a smooth migration to the DSS version 6.5 and later.
+	 * When enabled (default in 6.5, to be changed later), the old behavior, hard-coded in DSS 6.4 and before is applied,
+	 * with the image is zoomed reversely, in the ratio of PDF_DPI/Image_DPI.
+	 * When disabled (recommended), the new behavior is used, with the image being scaled in the ratio
+	 * of Image_DPI/Target_DPI, effectively keeping the original image size, unless a custom DPI value is defined.
+	 * <p>
+	 * It is advisable to update the used implementation to the new behavior (with parameter value set to true),
+	 * as it will be enforced in future DSS versions.
+	 *
+	 * @param legacyDPIHandling {@link Boolean} whether the image scaling based on PDF DPI to be applied
+	 */
+	public void setLegacyDPIHandling(Boolean legacyDPIHandling) {
+		this.legacyDPIHandling = legacyDPIHandling;
+	}
+
+	/**
 	 * Returns text parameters
+	 *
 	 * @return {@link SignatureImageTextParameters}
 	 */
 	public SignatureImageTextParameters getTextParameters() {
@@ -200,6 +263,7 @@ public class SignatureImageParameters implements Serializable {
 
 	/**
 	 * Sets text parameters
+	 *
 	 * @param textParameters {@link SignatureImageTextParameters}
 	 */
 	public void setTextParameters(SignatureImageTextParameters textParameters) {
@@ -208,6 +272,7 @@ public class SignatureImageParameters implements Serializable {
 
 	/**
 	 * Returns a horizontal alignment value of the signature field
+	 *
 	 * @return {@link VisualSignatureAlignmentHorizontal}
 	 */
 	public VisualSignatureAlignmentHorizontal getVisualSignatureAlignmentHorizontal() {
@@ -216,6 +281,7 @@ public class SignatureImageParameters implements Serializable {
 
     /**
      * Sets a horizontal alignment respectively to a page of the signature field
+	 *
      * @param alignmentHorizontal {@link VisualSignatureAlignmentHorizontal}
      */
 	public void setAlignmentHorizontal(VisualSignatureAlignmentHorizontal alignmentHorizontal) {
@@ -224,6 +290,7 @@ public class SignatureImageParameters implements Serializable {
 
 	/**
 	 * Returns a vertical alignment value of the signature field
+	 *
 	 * @return {@link VisualSignatureAlignmentVertical}
 	 */
 	public VisualSignatureAlignmentVertical getVisualSignatureAlignmentVertical() {
@@ -232,6 +299,7 @@ public class SignatureImageParameters implements Serializable {
 
     /**
      * Sets a vertical alignment respectively to a page of the signature field
+	 *
      * @param alignmentVertical {@link VisualSignatureAlignmentVertical}
      */
 	public void setAlignmentVertical(VisualSignatureAlignmentVertical alignmentVertical) {
@@ -249,7 +317,7 @@ public class SignatureImageParameters implements Serializable {
 
 	/**
 	 * Sets the parameter used to define an image scaling behavior within a signature field
-	 *
+	 * <p>
 	 * DEFAULT : ImageScaling.STRETCH (stretches the image in both directions in order to fill the signature field)
 	 *
 	 * @param imageScaling {@link ImageScaling}
@@ -270,43 +338,47 @@ public class SignatureImageParameters implements Serializable {
 
 	@Override
 	public String toString() {
-		return "SignatureImageParameters [image=" + image + ", zoom=" + zoom
-				+ ", backgroundColor=" + backgroundColor + ", dpi=" + dpi
-				+ ", alignmentHorizontal=" + alignmentHorizontal + ", alignmentVertical=" + alignmentVertical
-				+ ", fieldParameters=" + getFieldParameters() + ", textParameters=" + getTextParameters() + "]";
+		return "SignatureImageParameters [" +
+				"image=" + image +
+				", fieldParameters=" + fieldParameters +
+				", zoom=" + zoom +
+				", backgroundColor=" + backgroundColor +
+				", dpi=" + dpi +
+				", alignmentHorizontal=" + alignmentHorizontal +
+				", alignmentVertical=" + alignmentVertical +
+				", imageScaling=" + imageScaling +
+				", textParameters=" + textParameters +
+				']';
 	}
-	
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) return true;
-		if (!(o instanceof SignatureImageParameters)) return false;
+		if (o == null || getClass() != o.getClass()) return false;
 
 		SignatureImageParameters that = (SignatureImageParameters) o;
-
-		if (zoom != that.zoom) return false;
-		if (!Objects.equals(image, that.image)) return false;
-		if (!Objects.equals(fieldParameters, that.fieldParameters))
-			return false;
-		if (!Objects.equals(backgroundColor, that.backgroundColor))
-			return false;
-		if (!Objects.equals(dpi, that.dpi)) return false;
-		if (alignmentHorizontal != that.alignmentHorizontal) return false;
-		if (alignmentVertical != that.alignmentVertical) return false;
-		if (imageScaling != that.imageScaling) return false;
-		return Objects.equals(textParameters, that.textParameters);
+		return zoom == that.zoom
+				&& Objects.equals(image, that.image)
+				&& Objects.equals(fieldParameters, that.fieldParameters)
+				&& Objects.equals(backgroundColor, that.backgroundColor)
+				&& Objects.equals(dpi, that.dpi)
+				&& alignmentHorizontal == that.alignmentHorizontal
+				&& alignmentVertical == that.alignmentVertical
+				&& imageScaling == that.imageScaling
+				&& Objects.equals(textParameters, that.textParameters);
 	}
 
 	@Override
 	public int hashCode() {
-		int result = image != null ? image.hashCode() : 0;
-		result = 31 * result + (fieldParameters != null ? fieldParameters.hashCode() : 0);
+		int result = Objects.hashCode(image);
+		result = 31 * result + Objects.hashCode(fieldParameters);
 		result = 31 * result + zoom;
-		result = 31 * result + (backgroundColor != null ? backgroundColor.hashCode() : 0);
-		result = 31 * result + (dpi != null ? dpi.hashCode() : 0);
-		result = 31 * result + (alignmentHorizontal != null ? alignmentHorizontal.hashCode() : 0);
-		result = 31 * result + (alignmentVertical != null ? alignmentVertical.hashCode() : 0);
-		result = 31 * result + (imageScaling != null ? imageScaling.hashCode() : 0);
-		result = 31 * result + (textParameters != null ? textParameters.hashCode() : 0);
+		result = 31 * result + Objects.hashCode(backgroundColor);
+		result = 31 * result + Objects.hashCode(dpi);
+		result = 31 * result + Objects.hashCode(alignmentHorizontal);
+		result = 31 * result + Objects.hashCode(alignmentVertical);
+		result = 31 * result + Objects.hashCode(imageScaling);
+		result = 31 * result + Objects.hashCode(textParameters);
 		return result;
 	}
 

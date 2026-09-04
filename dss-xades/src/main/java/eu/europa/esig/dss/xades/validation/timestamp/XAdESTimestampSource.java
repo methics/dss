@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -24,16 +24,26 @@ import eu.europa.esig.dss.crl.CRLBinary;
 import eu.europa.esig.dss.crl.CRLUtils;
 import eu.europa.esig.dss.enumerations.ArchiveTimestampType;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.EvidenceRecordOrigin;
 import eu.europa.esig.dss.enumerations.TimestampType;
+import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.DSSMessageDigest;
+import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.ReferenceValidation;
 import eu.europa.esig.dss.model.identifier.Identifier;
 import eu.europa.esig.dss.model.scope.SignatureScope;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.spi.DSSRevocationUtils;
 import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.spi.signature.AdvancedSignature;
+import eu.europa.esig.dss.spi.validation.SignatureProperties;
+import eu.europa.esig.dss.spi.validation.analyzer.evidencerecord.EvidenceRecordAnalyzer;
+import eu.europa.esig.dss.spi.validation.analyzer.evidencerecord.EvidenceRecordAnalyzerFactory;
+import eu.europa.esig.dss.spi.validation.timestamp.SignatureTimestampIdentifierBuilder;
+import eu.europa.esig.dss.spi.validation.timestamp.SignatureTimestampSource;
 import eu.europa.esig.dss.spi.x509.CertificateRef;
+import eu.europa.esig.dss.spi.x509.evidencerecord.EvidenceRecord;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLRef;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPRef;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPResponseBinary;
@@ -41,13 +51,13 @@ import eu.europa.esig.dss.spi.x509.tsp.TimestampInclude;
 import eu.europa.esig.dss.spi.x509.tsp.TimestampToken;
 import eu.europa.esig.dss.spi.x509.tsp.TimestampedReference;
 import eu.europa.esig.dss.utils.Utils;
-import eu.europa.esig.dss.spi.signature.AdvancedSignature;
-import eu.europa.esig.dss.spi.validation.SignatureProperties;
-import eu.europa.esig.dss.spi.x509.evidencerecord.EvidenceRecord;
-import eu.europa.esig.dss.spi.validation.timestamp.SignatureTimestampSource;
-import eu.europa.esig.dss.spi.validation.timestamp.SignatureTimestampIdentifierBuilder;
-import eu.europa.esig.dss.xades.DSSXMLUtils;
 import eu.europa.esig.dss.xades.XAdESSignatureUtils;
+import eu.europa.esig.dss.xades.definition.XAdESNamespace;
+import eu.europa.esig.dss.xades.definition.XAdESPath;
+import eu.europa.esig.dss.xades.definition.xades132.XAdES132Element;
+import eu.europa.esig.dss.xades.definition.xades141.XAdES141Element;
+import eu.europa.esig.dss.xades.definition.xadesen.XAdESEvidencerecordNamespaceElement;
+import eu.europa.esig.dss.xades.evidencerecord.XAdESEmbeddedEvidenceRecordHelper;
 import eu.europa.esig.dss.xades.reference.XAdESReferenceValidation;
 import eu.europa.esig.dss.xades.validation.XAdESAttribute;
 import eu.europa.esig.dss.xades.validation.XAdESCertificateRefExtractionUtils;
@@ -56,11 +66,10 @@ import eu.europa.esig.dss.xades.validation.XAdESSignature;
 import eu.europa.esig.dss.xades.validation.XAdESSignedDataObjectProperties;
 import eu.europa.esig.dss.xades.validation.XAdESUnsignedSigProperties;
 import eu.europa.esig.dss.xades.validation.scope.XAdESTimestampScopeFinder;
-import eu.europa.esig.dss.xades.definition.XAdESNamespace;
-import eu.europa.esig.dss.xades.definition.XAdESPath;
-import eu.europa.esig.dss.xades.definition.xades132.XAdES132Element;
-import eu.europa.esig.dss.xades.definition.xades141.XAdES141Element;
-import eu.europa.esig.dss.xades.definition.xadesen.XAdESEvidencerecordNamespaceElement;
+import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigPath;
+import eu.europa.esig.dss.xml.common.xpath.XPathQuery;
+import eu.europa.esig.dss.xml.utils.DOMDocument;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.bouncycastle.cert.ocsp.BasicOCSPResp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -275,6 +284,17 @@ public class XAdESTimestampSource extends SignatureTimestampSource<XAdESSignatur
 	}
 
 	@Override
+	protected boolean isAnyValidationData(XAdESAttribute unsignedAttribute) {
+		return XAdES141Element.ANY_VALIDATION_DATA.isSameTagName(unsignedAttribute.getName());
+	}
+
+	@Override
+	protected boolean isValidationDataReferences(XAdESAttribute unsignedAttribute) {
+		// not supported
+		return false;
+	}
+
+	@Override
 	protected boolean isCounterSignature(XAdESAttribute unsignedAttribute) {
 		return XAdES132Element.COUNTER_SIGNATURE.isSameTagName(unsignedAttribute.getName());
 	}
@@ -350,10 +370,55 @@ public class XAdESTimestampSource extends SignatureTimestampSource<XAdESSignatur
 
 	@Override
 	protected List<EvidenceRecord> makeEvidenceRecords(XAdESAttribute signatureAttribute, List<TimestampedReference> references) {
-		if (signatureAttribute != null) {
-			LOG.warn("Embedded evidence records are not supported! The unsigned attribute is skipped.");
+		Element element = signatureAttribute.getElement();
+		if (element == null || element.getChildNodes().getLength() == 0) {
+			LOG.warn("The element containing evidence record(s) is empty!");
+			return Collections.emptyList();
 		}
-		return Collections.emptyList();
+
+		final List<EvidenceRecord> result = new ArrayList<>();
+		for (int ii = 0; ii < element.getChildNodes().getLength(); ii++) {
+			final Element encapsulatedEvidenceRecord = (Element) element.getChildNodes().item(ii);
+			EvidenceRecord evidenceRecord = createEvidenceRecord(signatureAttribute, encapsulatedEvidenceRecord, ii);
+			if (evidenceRecord != null) {
+				result.add(evidenceRecord);
+			}
+		}
+		return result;
+	}
+
+	private EvidenceRecord createEvidenceRecord(XAdESAttribute signatureAttribute, Element encapsulatedEvidenceRecord, int orderWithinAttribute) {
+		try {
+			DSSDocument erDocument = getEvidenceRecordDocument(encapsulatedEvidenceRecord);
+			EvidenceRecordAnalyzer evidenceRecordAnalyzer = EvidenceRecordAnalyzerFactory.fromDocument(erDocument);
+			evidenceRecordAnalyzer.setEvidenceRecordOrigin(EvidenceRecordOrigin.SIGNATURE);
+
+			final XAdESEmbeddedEvidenceRecordHelper embeddedEvidenceRecordHelper = new XAdESEmbeddedEvidenceRecordHelper(signature, signatureAttribute);
+			embeddedEvidenceRecordHelper.setDetachedContents(signature.getDetachedContents());
+			embeddedEvidenceRecordHelper.setOrderOfAttribute(getAttributeOrder(signatureAttribute));
+			embeddedEvidenceRecordHelper.setOrderWithinAttribute(orderWithinAttribute);
+			evidenceRecordAnalyzer.setEmbeddedEvidenceRecordHelper(embeddedEvidenceRecordHelper);
+
+			return evidenceRecordAnalyzer.getEvidenceRecord();
+
+		} catch (Exception e) {
+			LOG.warn("Unable to build an embedded evidence record. Reason : {}", e.getMessage(), e);
+			return null;
+		}
+	}
+
+	private DSSDocument getEvidenceRecordDocument(Element encapsulatedEvidenceRecord) {
+		if (XAdESEvidencerecordNamespaceElement.EVIDENCE_RECORD.isSameTagName(encapsulatedEvidenceRecord.getLocalName())) {
+			return new DOMDocument(encapsulatedEvidenceRecord);
+
+		} else if (XAdESEvidencerecordNamespaceElement.ASN1_EVIDENCE_RECORD.isSameTagName(encapsulatedEvidenceRecord.getLocalName())) {
+			String base64EncodedEvidenceRecord = encapsulatedEvidenceRecord.getTextContent();
+			if (Utils.isBase64Encoded(base64EncodedEvidenceRecord)) {
+				return new InMemoryDocument(Utils.fromBase64(base64EncodedEvidenceRecord));
+			}
+		}
+		throw new UnsupportedOperationException(String.format("The provided format of an evidence record within " +
+				"the '%s' element is not supported.", encapsulatedEvidenceRecord.getLocalName()));
 	}
 
 	@Override
@@ -421,13 +486,13 @@ public class XAdESTimestampSource extends SignatureTimestampSource<XAdESSignatur
 
 		NodeList certRefsNodeList = null;
 		if (certificateRefV1) {
-			String currentCertRefsCertChildrenPath = xadesPaths.getCurrentCertRefsCertChildren();
-			if (Utils.isStringNotEmpty(currentCertRefsCertChildrenPath)) {
+			XPathQuery currentCertRefsCertChildrenPath = xadesPaths.getCurrentCertRefsCertChildren();
+			if (currentCertRefsCertChildrenPath != null) {
 				certRefsNodeList = unsignedAttribute.getNodeList(currentCertRefsCertChildrenPath);
 			}
 		} else {
-			String currentCertRefs141CertChildrenPath = xadesPaths.getCurrentCertRefs141CertChildren();
-			if (Utils.isStringNotEmpty(currentCertRefs141CertChildrenPath)) {
+			XPathQuery currentCertRefs141CertChildrenPath = xadesPaths.getCurrentCertRefs141CertChildren();
+			if (currentCertRefs141CertChildrenPath != null) {
 				certRefsNodeList = unsignedAttribute.getNodeList(currentCertRefs141CertChildrenPath);
 			}
 		}
@@ -485,9 +550,9 @@ public class XAdESTimestampSource extends SignatureTimestampSource<XAdESSignatur
 	@Override
 	protected List<Identifier> getEncapsulatedCertificateIdentifiers(XAdESAttribute unsignedAttribute) {
 		List<Identifier> certificateIdentifiers = new ArrayList<>();
-		String xPathString = isTimeStampValidationData(unsignedAttribute) ? xadesPaths.getCurrentCertificateValuesEncapsulatedCertificate()
-				: xadesPaths.getCurrentEncapsulatedCertificate();
-		NodeList encapsulatedNodes = unsignedAttribute.getNodeList(xPathString);
+		XPathQuery xPathQuery = isTimeStampValidationData(unsignedAttribute) || isAnyValidationData(unsignedAttribute) ?
+				xadesPaths.getCurrentCertificateValuesEncapsulatedCertificate() : xadesPaths.getCurrentEncapsulatedCertificate();
+		NodeList encapsulatedNodes = unsignedAttribute.getNodeList(xPathQuery);
 		for (int ii = 0; ii < encapsulatedNodes.getLength(); ii++) {
 			try {
 				Element element = (Element) encapsulatedNodes.item(ii);
@@ -509,9 +574,9 @@ public class XAdESTimestampSource extends SignatureTimestampSource<XAdESSignatur
 	@Override
 	protected List<CRLBinary> getEncapsulatedCRLIdentifiers(XAdESAttribute unsignedAttribute) {
 		List<CRLBinary> crlIdentifiers = new ArrayList<>();
-		String xPathString = isTimeStampValidationData(unsignedAttribute) ? 
+		XPathQuery xPathQuery = isTimeStampValidationData(unsignedAttribute) || isAnyValidationData(unsignedAttribute) ?
 				xadesPaths.getCurrentRevocationValuesEncapsulatedCRLValue() : xadesPaths.getCurrentEncapsulatedCRLValue();
-		NodeList encapsulatedNodes = unsignedAttribute.getNodeList(xPathString);
+		NodeList encapsulatedNodes = unsignedAttribute.getNodeList(xPathQuery);
 		for (int ii = 0; ii < encapsulatedNodes.getLength(); ii++) {
 			try {
 				Element element = (Element) encapsulatedNodes.item(ii);
@@ -532,9 +597,9 @@ public class XAdESTimestampSource extends SignatureTimestampSource<XAdESSignatur
 	@Override
 	protected List<OCSPResponseBinary> getEncapsulatedOCSPIdentifiers(XAdESAttribute unsignedAttribute) {
 		List<OCSPResponseBinary> ocspIdentifiers = new ArrayList<>();
-		String xPathString = isTimeStampValidationData(unsignedAttribute) ? 
+		XPathQuery xPxPathQuerythString = isTimeStampValidationData(unsignedAttribute) || isAnyValidationData(unsignedAttribute) ?
 				xadesPaths.getCurrentRevocationValuesEncapsulatedOCSPValue() : xadesPaths.getCurrentEncapsulatedOCSPValue();
-		NodeList encapsulatedNodes = unsignedAttribute.getNodeList(xPathString);
+		NodeList encapsulatedNodes = unsignedAttribute.getNodeList(xPxPathQuerythString);
 		for (int ii = 0; ii < encapsulatedNodes.getLength(); ii++) {
 			try {
 				Element element = (Element) encapsulatedNodes.item(ii);
@@ -584,9 +649,15 @@ public class XAdESTimestampSource extends SignatureTimestampSource<XAdESSignatur
 
 	@Override
 	protected List<AdvancedSignature> getCounterSignatures(XAdESAttribute unsignedAttribute) {
-		XAdESSignature counterSignature = DSSXMLUtils.createCounterSignature(unsignedAttribute.getElement(), signature);
-		if (counterSignature != null) {
-			return Collections.singletonList(counterSignature);
+		final Node counterSignatureNode = XPathUtils.getNode(unsignedAttribute.getElement(), XMLDSigPath.SIGNATURE_PATH);
+		if (counterSignatureNode != null) {
+			List<AdvancedSignature> counterSignatures = signature.getCounterSignatures();
+			for (AdvancedSignature counterSignature : counterSignatures) {
+				if (counterSignatureNode == ((XAdESSignature) counterSignature).getSignatureElement()) {
+					// NOTE: only one counter signature is allowed within the CounterSignature qualifying property
+					return Collections.singletonList(counterSignature);
+				}
+			}
 		}
 		return Collections.emptyList();
 	}

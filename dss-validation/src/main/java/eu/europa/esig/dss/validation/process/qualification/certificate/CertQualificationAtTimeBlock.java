@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -273,13 +273,18 @@ public class CertQualificationAtTimeBlock extends Chain<XmlValidationCertificate
 		TrustServiceFilter filterConsistentByQSCD = TrustServicesFilterFactory.createConsistentServiceByQSCDFilter();
 		List<TrustServiceWrapper> trustServicesByQSCD = filterConsistentByQSCD.filter(filteredServices);
 
-		item = item.setNextItem(hasConsistentByQSCDTrustService(trustServicesByQSCD));
-
 		selectedTrustService = !trustServicesByQSCD.isEmpty() ? trustServicesByQSCD.get(0) : null;
 
 		QSCDStrategy qscdStrategy = QSCDStrategyFactory.createQSCDFromCertAndTL(signingCertificate, selectedTrustService, qualifiedStatus);
 		QSCDStatus qscdStatus = qscdStrategy.getQSCDStatus();
-		item = item.setNextItem(isQscd(qscdStatus));
+
+		if (executeQSCDCheck()) {
+
+			item = item.setNextItem(hasConsistentByQSCDTrustService(trustServicesByQSCD));
+
+			item = item.setNextItem(isQscd(qscdStatus));
+
+		}
 
 		certificateQualification = CertQualificationMatrix.getCertQualification(qualifiedStatus, type, qscdStatus);
 
@@ -305,74 +310,84 @@ public class CertQualificationAtTimeBlock extends Chain<XmlValidationCertificate
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> hasMraEnactedTrustService(List<TrustServiceWrapper> trustServices) {
-		return new RelatedToMraEnactedTrustServiceCheck<>(i18nProvider, result, trustServices, getFailLevelConstraint());
+		return new RelatedToMraEnactedTrustServiceCheck<>(i18nProvider, result, trustServices, getFailLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> mraCertificateEquivalenceApplied() {
-		return new MRACertificateEquivalenceApplied<>(i18nProvider, result, signingCertificate, getWarnLevelConstraint());
+		return new MRACertificateEquivalenceApplied<>(i18nProvider, result, signingCertificate, getWarnLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> hasCaQc(List<TrustServiceWrapper> trustServices) {
-		return new CaQcCheck(i18nProvider, result, trustServices, getWarnLevelConstraint());
+		return new CaQcCheck(i18nProvider, result, trustServices, getWarnLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> hasTrustServiceAtTime(List<TrustServiceWrapper> trustServices) {
-		return new TrustServiceAtTimeCheck(i18nProvider, result, trustServices, validationTime, getFailLevelConstraint());
+		return new TrustServiceAtTimeCheck(i18nProvider, result, trustServices, validationTime, getFailLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> hasTrustServiceWithType(List<TrustServiceWrapper> trustServices) {
-		return new TrustServicesByCertificateTypeCheck(i18nProvider, result, trustServices, getFailLevelConstraint());
+		return new TrustServicesByCertificateTypeCheck(i18nProvider, result, trustServices, getFailLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> isNoConflictDetected(Set<CertificateQualification> certificateQualificationsAtTime) {
-		return new IsNoQualificationConflictDetectedCheck(i18nProvider, result, certificateQualificationsAtTime, getFailLevelConstraint());
+		return new IsNoQualificationConflictDetectedCheck(i18nProvider, result, certificateQualificationsAtTime, getFailLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> hasGrantedStatus(List<TrustServiceWrapper> trustServices) {
-		return new GrantedStatusCheck<>(i18nProvider, result, trustServices, getWarnLevelConstraint());
+		return new GrantedStatusCheck<>(i18nProvider, result, trustServices, getWarnLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> hasCertificateTypeCoverage(
 			List<TrustServiceWrapper> trustServices) {
-		return new CertificateTypeCoverageCheck(i18nProvider, result, trustServices, getFailLevelConstraint());
+		return new CertificateTypeCoverageCheck(i18nProvider, result, trustServices, getFailLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> hasConsistentByQCTrustService(
 			List<TrustServiceWrapper> trustServices) {
-		return new CertificateIssuedByConsistentByQCTrustServiceCheck(i18nProvider, result, trustServices, getFailLevelConstraint());
+		return new CertificateIssuedByConsistentByQCTrustServiceCheck(i18nProvider, result, trustServices, getFailLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> hasConsistentByQSCDTrustService(
 			List<TrustServiceWrapper> trustServices) {
-		return new CertificateIssuedByConsistentByQSCDTrustServiceCheck(i18nProvider, result, trustServices, getFailLevelConstraint());
+		return new CertificateIssuedByConsistentByQSCDTrustServiceCheck(i18nProvider, result, trustServices, getFailLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> isAbleToSelectOneTrustService(List<TrustServiceWrapper> trustServices) {
-		return new IsAbleToSelectOneTrustService(i18nProvider, result, trustServices, getFailLevelConstraint());
+		return new IsAbleToSelectOneTrustService(i18nProvider, result, trustServices, getFailLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> serviceConsistency(TrustServiceWrapper selectedTrustService) {
-		return new ServiceConsistencyCheck(i18nProvider, result, selectedTrustService, getWarnLevelConstraint());
+		return new ServiceConsistencyCheck(i18nProvider, result, selectedTrustService, getWarnLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> isTrustedCertificateMatchTrustService(TrustServiceWrapper selectedTrustService) {
-		return new TrustedCertificateMatchTrustServiceCheck(i18nProvider, result, selectedTrustService, getWarnLevelConstraint());
+		return new TrustedCertificateMatchTrustServiceCheck(i18nProvider, result, selectedTrustService, getWarnLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> isValidCAQC(TrustServiceWrapper selectedTrustService) {
-		return new ValidCAQCCheck(i18nProvider, result, selectedTrustService, getFailLevelConstraint());
+		return new ValidCAQCCheck(i18nProvider, result, selectedTrustService, getFailLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> isQualified(CertificateQualifiedStatus qualifiedStatus) {
-		return new QualifiedCheck(i18nProvider, result, qualifiedStatus, validationTime, getWarnLevelConstraint());
+		return new QualifiedCheck(i18nProvider, result, qualifiedStatus, validationTime, getWarnLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> certificateType(CertificateType type) {
-		return new CertificateTypeCheck(i18nProvider, result, type, validationTime, getWarnLevelConstraint());
+		return new CertificateTypeCheck(i18nProvider, result, type, validationTime, getWarnLevelRule());
 	}
 
 	private ChainItem<XmlValidationCertificateQualification> isQscd(QSCDStatus qscdStatus) {
-		return new QSCDCheck(i18nProvider, result, qscdStatus, validationTime, getWarnLevelConstraint());
+		return new QSCDCheck(i18nProvider, result, qscdStatus, validationTime, getWarnLevelRule());
+	}
+
+	/**
+	 * This method defines whether a QSCD check should be processed for certificate qualification determination.
+	 * NOTE: Can be disabled in some cases, e.g. for QWAC validation
+	 *
+	 * @return whether QSCD check should be executed
+	 */
+	protected boolean executeQSCDCheck() {
+		return true;
 	}
 
 	private boolean isMRAEnactedForTrustedList(List<TrustServiceWrapper> trustServices) {

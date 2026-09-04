@@ -1,30 +1,30 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.asic.cades.validation;
 
+import eu.europa.esig.dss.asic.cades.ASiCWithCAdESFormatDetector;
 import eu.europa.esig.dss.asic.cades.extract.ASiCWithCAdESContainerExtractor;
 import eu.europa.esig.dss.asic.cades.validation.timestamp.ASiCWithCAdESTimestampAnalyzer;
 import eu.europa.esig.dss.asic.common.ASiCContent;
 import eu.europa.esig.dss.asic.common.ASiCUtils;
-import eu.europa.esig.dss.asic.common.ZipUtils;
 import eu.europa.esig.dss.asic.common.extract.DefaultASiCContainerExtractor;
 import eu.europa.esig.dss.asic.common.validation.ASiCManifestParser;
 import eu.europa.esig.dss.asic.common.validation.ASiCManifestValidator;
@@ -38,7 +38,6 @@ import eu.europa.esig.dss.enumerations.TimestampType;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.ManifestEntry;
 import eu.europa.esig.dss.model.ManifestFile;
-import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.spi.signature.AdvancedSignature;
 import eu.europa.esig.dss.spi.validation.analyzer.DocumentAnalyzer;
 import eu.europa.esig.dss.spi.validation.analyzer.timestamp.TimestampAnalyzer;
@@ -88,23 +87,12 @@ public class ASiCContainerWithCAdESAnalyzer extends AbstractASiCContainerAnalyze
 
 	@Override
 	public boolean isSupported(DSSDocument dssDocument) {
-		if (ASiCUtils.isZip(dssDocument)) {
-			List<String> filenames = ZipUtils.getInstance().extractEntryNames(dssDocument);
-			if (ASiCUtils.isASiCWithCAdES(filenames)) {
-				return true;
-			}
-			// NOTE : areFilesContainMimetype check is executed in order to avoid documents reading
-			return !ASiCUtils.isASiCWithXAdES(filenames) &&
-					(!ASiCUtils.areFilesContainMimetype(filenames) || !ASiCUtils.isContainerOpenDocument(dssDocument));
-		}
-		return false;
+		return new ASiCWithCAdESFormatDetector().isSupportedASiC(dssDocument);
 	}
 
 	@Override
 	public boolean isSupported(ASiCContent asicContent) {
-		List<String> entryNames = DSSUtils.getDocumentNames(asicContent.getAllDocuments());
-		return !ASiCUtils.isASiCWithXAdES(entryNames) &&
-				(!ASiCUtils.areFilesContainMimetype(entryNames) || !ASiCUtils.isOpenDocument(asicContent.getMimeTypeDocument()));
+		return new ASiCWithCAdESFormatDetector().isSupportedASiC(asicContent);
 	}
 
 	@Override
@@ -259,7 +247,7 @@ public class ASiCContainerWithCAdESAnalyzer extends AbstractASiCContainerAnalyze
 
 	private CAdESSignature getCAdESSignatureFromFileName(List<AdvancedSignature> signatures, String fileName) {
 		for (AdvancedSignature advancedSignature : signatures) {
-			if (Utils.areStringsEqual(fileName, advancedSignature.getSignatureFilename()) &&
+			if (Utils.areStringsEqual(fileName, advancedSignature.getFilename()) &&
 					!advancedSignature.isCounterSignature()) {
 				return (CAdESSignature) advancedSignature;
 			}
@@ -320,7 +308,7 @@ public class ASiCContainerWithCAdESAnalyzer extends AbstractASiCContainerAnalyze
 		if (ASiCContainerType.ASiC_S.equals(getContainerType())) {
 			return getSignedDocumentsASiCS(retrievedDocs);
 		} else {
-			DSSDocument linkedManifest = ASiCManifestParser.getLinkedManifest(getManifestDocuments(), advancedSignature.getSignatureFilename());
+			DSSDocument linkedManifest = ASiCManifestParser.getLinkedManifest(getManifestDocuments(), advancedSignature.getFilename());
 			if (linkedManifest == null) {
 				return Collections.emptyList();
 			}

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -30,14 +30,15 @@ import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.XAdESTimestampParameters;
+import eu.europa.esig.dss.xades.definition.xades132.XAdES132Element;
 import eu.europa.esig.dss.xml.common.definition.AbstractPath;
+import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigAttribute;
+import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigElement;
+import eu.europa.esig.dss.xml.common.xpath.XPathQueryBuilder;
 import eu.europa.esig.dss.xml.utils.DomUtils;
 import eu.europa.esig.dss.xml.utils.XMLCanonicalizer;
-import eu.europa.esig.dss.xades.definition.xades132.XAdES132Element;
-import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigElement;
-import org.apache.xml.security.c14n.CanonicalizationException;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.apache.xml.security.c14n.Canonicalizer;
-import org.apache.xml.security.c14n.InvalidCanonicalizerException;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -121,6 +122,7 @@ class XAdESCanonicalizationTest extends AbstractXAdESTestSignature {
 
 	@Override
 	public void signAndVerify() {
+		// skip global test
 	}
 
 	@Override
@@ -138,7 +140,7 @@ class XAdESCanonicalizationTest extends AbstractXAdESTestSignature {
 			// ------------------------------------ SIGNED INFO
 			// -----------------------------------------------------
 			// Signed info extraction
-			NodeList signedInfoNodeList = DomUtils.getNodeList(doc, AbstractPath.all(XMLDSigElement.SIGNED_INFO));
+			NodeList signedInfoNodeList = XPathUtils.getNodeList(doc, AbstractPath.all(XMLDSigElement.SIGNED_INFO));
 			assertNotNull(signedInfoNodeList);
 			assertEquals(1, signedInfoNodeList.getLength());
 
@@ -146,7 +148,7 @@ class XAdESCanonicalizationTest extends AbstractXAdESTestSignature {
 
 			// ------------------------------------ SIGNATURE VERIFICATION
 			// -----------------------------------------------------
-			String signatureValueBase64 = DomUtils.getValue(doc, "//ds:Signature/ds:SignatureValue");
+			String signatureValueBase64 = XPathUtils.getValue(doc, AbstractPath.all(XMLDSigElement.SIGNATURE, XMLDSigElement.SIGNATURE_VALUE));
 			assertNotNull(signatureValueBase64);
 
 			byte[] canonicalized = XMLCanonicalizer.createInstance(canonicalizationSignedInfo).canonicalize(signedInfo);
@@ -181,7 +183,7 @@ class XAdESCanonicalizationTest extends AbstractXAdESTestSignature {
 			originalFileByteArray = XMLCanonicalizer.createInstance(algo).canonicalize(fileContent);
 		} else {
 			// Original File base64 extraction + Verification
-			NodeList originalFileNodeList = DomUtils.getNodeList(doc, AbstractPath.all(XMLDSigElement.OBJECT));
+			NodeList originalFileNodeList = XPathUtils.getNodeList(doc, AbstractPath.all(XMLDSigElement.OBJECT));
 			assertNotNull(originalFileNodeList);
 			assertEquals(2, originalFileNodeList.getLength());
 
@@ -208,11 +210,11 @@ class XAdESCanonicalizationTest extends AbstractXAdESTestSignature {
 		assertEquals(originalFileDigest, originalDigestBase64);
 	}
 
-	private void checkKeyInfo(Document doc) throws InvalidCanonicalizerException, CanonicalizationException {
+	private void checkKeyInfo(Document doc) {
 		// ------------------------------------ KEY INFO
 		// -----------------------------------------------------
 		// Key info extraction + Verification
-		NodeList keyInfoNodeList = DomUtils.getNodeList(doc, AbstractPath.all(XMLDSigElement.KEY_INFO));
+		NodeList keyInfoNodeList = XPathUtils.getNodeList(doc, AbstractPath.all(XMLDSigElement.KEY_INFO));
 		assertNotNull(keyInfoNodeList);
 		assertEquals(1, keyInfoNodeList.getLength());
 
@@ -240,7 +242,7 @@ class XAdESCanonicalizationTest extends AbstractXAdESTestSignature {
 		// -----------------------------------------------------
 		try {
 			// Signed properties extraction + verification
-			NodeList signedPropertiesNodeList = DomUtils.getNodeList(doc, AbstractPath.all(XAdES132Element.SIGNED_PROPERTIES));
+			NodeList signedPropertiesNodeList = XPathUtils.getNodeList(doc, AbstractPath.all(XAdES132Element.SIGNED_PROPERTIES));
 			assertNotNull(signedPropertiesNodeList);
 			assertEquals(1, signedPropertiesNodeList.getLength());
 
@@ -280,8 +282,11 @@ class XAdESCanonicalizationTest extends AbstractXAdESTestSignature {
 		assertFalse(file.exists());
 	}
 
-	private NodeList getReferenceTransforms(Document doc, String URI) {
-		NodeList referenceTransform = DomUtils.getNodeList(doc, "//ds:Reference[@URI = '" + URI + "']/ds:Transforms/ds:Transform");
+	private NodeList getReferenceTransforms(Document doc, String uri) {
+		Node referenceNode = XPathUtils.getNode(doc, XPathQueryBuilder.all().element(XMLDSigElement.REFERENCE).attribute(XMLDSigAttribute.URI, uri).build());
+		assertNotNull(referenceNode);
+
+		NodeList referenceTransform = XPathUtils.getNodeList(referenceNode, XPathQueryBuilder.allFromCurrentPosition().elements(XMLDSigElement.TRANSFORMS, XMLDSigElement.TRANSFORM).build());
 		assertNotNull(referenceTransform);
 		return referenceTransform;
 	}
@@ -293,8 +298,11 @@ class XAdESCanonicalizationTest extends AbstractXAdESTestSignature {
 		return transform.getNodeValue();
 	}
 
-	private String getReferenceDigest(Document doc, String URI) {
-		Node referenceDigest = DomUtils.getNode(doc, "//ds:Reference[@URI = '" + URI + "']/ds:DigestValue");
+	private String getReferenceDigest(Document doc, String uri) {
+		Node referenceNode = XPathUtils.getNode(doc, XPathQueryBuilder.all().element(XMLDSigElement.REFERENCE).attribute(XMLDSigAttribute.URI, uri).build());
+		assertNotNull(referenceNode);
+
+		Node referenceDigest = XPathUtils.getNode(referenceNode, XPathQueryBuilder.allFromCurrentPosition().elements(XMLDSigElement.DIGEST_VALUE).build());
 		assertNotNull(referenceDigest);
 		return referenceDigest.getTextContent();
 	}

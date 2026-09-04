@@ -19,7 +19,7 @@ This section explains the usage and build requirements for https://github.com/es
 
 The latest version of DSS framework has the following minimal requirements:
 
-* Java 8 or higher (tested up to Java 22) is required for usage;
+* Java 8 or higher (tested up to Java 26) is required for usage;
 * Java 11 or higher is required for the build. Java 15 is the minimal requirement for a build with unit tests;
 * Maven 3.6.3 and higher (if build required);
 * Memory and Disk: see minimal requirements for the used JVM. In general the higher available is better;
@@ -44,12 +44,12 @@ The simplest way to include DSS to your project is to use https://central.sonaty
     <dependency>
         <groupId>eu.europa.ec.joinup.sd-dss</groupId>
         <artifactId>dss-xades</artifactId>
-        <version>6.1</version>
+        <version>6.5</version>
     </dependency>
     <dependency>
         <groupId>eu.europa.ec.joinup.sd-dss</groupId>
         <artifactId>dss-validation</artifactId>
-        <version>6.1</version>
+        <version>6.5</version>
     </dependency>
     ...
 </dependencies>
@@ -94,7 +94,7 @@ The root `pom.xml` of `dss-bom` defines versions of all modules within DSS-libra
         <dependency>
             <groupId>eu.europa.ec.joinup.sd-dss</groupId>
             <artifactId>dss-bom</artifactId>
-            <version>6.1</version>
+            <version>6.5</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -143,6 +143,7 @@ In addition to the general build, the framework provides a list of various profi
 * *quick* - disables unit tests and java-doc validation, in order to process the build as quick as possible (takes 1-2 minutes). *This profile cannot be used for a primary DSS build* (see below).
 * *quick-init* - is similar to the `quick` profile. Disables java-doc validation for all modules and unit tests excluding some modules which have dependencies on their test classes. *Can be used for the primary build of DSS*.
 * *slow-tests* - executes all tests, including time-consuming unit tests.
+* *large-files-tests* - executes all tests, including unit tests on large files of 8GB size, where applicable.
 * *owasp* - runs validation of the project and using dependencies according to the https://nvd.nist.gov[National Vulnerability Database (NVD)].
 * *spotless* - used to add a licence header into project files.
 
@@ -175,7 +176,7 @@ This section explains the build and use requirements for the https://github.com/
 
 The minimal requirements to build/run DSS Demonstrations:
 
-* Java 17 or higher (tested up to Java 22) is required;
+* Java 17 or higher (tested up to Java 26) is required;
 * Maven 3.6 or higher (if build required);
 * Tomcat 10 or higher (for Web-application);
 * Memory and Disk: see minimal requirements for the used JVM. In general the highest available is the best;
@@ -205,10 +206,21 @@ The DSS demo is also available as a ready to use downloadable webapp. To use it,
 
 DSS provides a standalone application which uses JavaFX. The application does not require a server to publish the product. The application can be run locally on a client's machine.
 
-Download links for the Standalone Application (Windows x64):
+By default, DSS packages DSS Standalone for Windows x64 OS only. Should you need to create a version for Linux OS, please use the profile below:
 
-* https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/downloads/dss-app-minimal-windows-x64.zip[Minimal ZIP (application + bat file)];
-* https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/downloads/dss-app-complete-windows-x64.zip[Complete ZIP (application + bat file + OpenJDK + JavaFX SDK)].
+.Maven command to build DSS Standalone package for Linux
+----
+mvn clean install -P linux
+----
+
+Download links for the DSS Standalone Application:
+
+* Windows x64:
+** https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/downloads/dss-app-minimal-windows-x64.zip[Minimal ZIP (application + .bat file)];
+** https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/downloads/dss-app-complete-windows-x64.zip[Complete ZIP (application + .bat file + OpenJDK + JavaFX SDK)].
+* Linux:
+** https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/downloads/dss-app-minimal-linux.tar.gz[Minimal TAR.GZ (application + .sh file)];
+** https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/downloads/dss-app-complete-linux.tar.gz[Complete TAR.GZ (application + .sh file + OpenJDK + JavaFX SDK)].
 
 ===== Maven build instructions
 
@@ -232,9 +244,9 @@ To build a `jar` package, the following command shall be used:
 mvn clean install -P jar
 ----
 
-If you continue with a default `war` packaging option, you may benefit from `dss-demo-bundle` module, encapsulating the created package within a Tomcat 10 bundle. After a successful build, in the directory `/dss-demo-bundle/target/` you will be able to find two containers: `dss-demo-bundle.zip` and `dss-demo-bundle.tar.gz`. Despite the different container type, the content of both containers is the same. After extracting the content, you will need to run the file `Webapp-Startup.bat` in order to launch the server and the file `Webapp-Shutdown.bat` to stop the server. After running the server, the web-application will be available at the address `http://localhost:8080/`.
+If you continue with a default `war` packaging option, you may benefit from `dss-demo-bundle` module, encapsulating the created package within a Tomcat 11 bundle. After a successful build, in the directory `/dss-demo-bundle/target/` you will be able to find two containers: `dss-demo-bundle.zip` and `dss-demo-bundle.tar.gz`. Despite the different container type, the content of both containers is the same. After extracting the content, you will need to run the file `Webapp-Startup.bat` in order to launch the server and the file `Webapp-Shutdown.bat` to stop the server. After running the server, the web-application will be available at the address `http://localhost:8080/`.
 
-NOTE: By default, the `dss-demo-bundle` module will create a bundle with embedded JDK 21. For other possibilities, please see options below in this section.
+NOTE: By default, the `dss-demo-bundle` module will create a bundle with embedded JDK 26. For other possibilities, please see options below in this section.
 
 If during TL/LOTL loading you experience problems with some particular Trusted Lists, please refer the <<KeyStore>> chapter for a resolution.
 
@@ -251,11 +263,18 @@ In order to build a bundle for JDK 17 (minimum requirement), the following profi
 mvn clean install -P java17
 ----
 
-DSS webapp version with Java 22 can be created with a command below:
+DSS webapp version with JDK 21 can be created with a command below:
 
-.Maven command to create a JDK 22 bundle
+.Maven command to create a JDK 21 bundle
 ----
-mvn clean install -P java22
+mvn clean install -P java21
+----
+
+DSS webapp version with JDK 25 can be created with a command below:
+
+.Maven command to create a JDK 25 bundle
+----
+mvn clean install -P java25
 ----
 
 ====== Integration tests
@@ -303,13 +322,14 @@ dss-jaxb-parsers:: Contains a list of all classes used to transform JAXB objects
 '''
 specs-xmldsig:: W3C XSD schema for signatures http://www.w3.org/2000/09/xmldsig
 specs-xades:: ETSI EN 319 132-1 XSD schema for XAdES.
-specs-trusted-list:: ETSI TS 119 612 XSD schema for parsing Trusted Lists.
+specs-trusted-list:: ETSI TS 119 612 XSD schema for parsing Trusted Lists compatible with the newest version of the standard.
+specs-trusted-list-v211:: ETSI TS 119 612 XSD schema for parsing Trusted Lists compatible with v2.1.1 of the standard.
 specs-validation-report:: ETSI TS 119 102-2 XSD schema for the Validation report.
 specs-asic-manifest:: ETSI EN 319 162 schema for ASiCManifest.
 specs-saml-assertion:: OASIS schema for SAML Assertions.
+specs-lote-xml:: ETSI TS 119 602 XML schema for List of Trusted Entities (<<R33>>).
 
 '''
-dss-policy-jaxb:: JAXB model of the validation policy.
 dss-diagnostic-jaxb:: JAXB model of the diagnostic data.
 dss-detailed-report-jaxb:: JAXB model of the detailed report.
 dss-simple-report-jaxb:: JAXB model of the simple report.
@@ -317,8 +337,10 @@ dss-simple-certificate-report-jaxb:: JAXB model of the simple report for certifi
 
 ===== JSON validation modules
 
-specs-jws:: JSON Schemas based on the RFC 7515 specifications (<<R21>>).
+dss-json-common:: Utils for working with JSON-based content.
+specs-jws:: JSON Schemas based on the RFC 7515 specifications (<<R22>>).
 specs-jades:: ETSI TS 119 182-1 JSON Schemas for JAdES (<<R05>>).
+specs-lote-json:: ETSI TS 119 602 JSON schema for List of Trusted Entities (<<R33>>).
 
 ===== Utils modules
 
@@ -337,19 +359,35 @@ dss-i18n:: Module allowing internationalization of generated reports.
 
 dss-model:: Data model used in almost every module.
 dss-crl-parser:: API to validate CRLs and retrieve revocation data
-dss-crl-parser-stream:: Implementation of dss-crl-parser which streams the CRL.
-dss-crl-parser-x509crl:: Implementation of dss-crl-parser which uses the java object X509CRL.
+dss-crl-parser-stream:: Implementation of `dss-crl-parser` which streams the CRL.
+dss-crl-parser-x509crl:: Implementation of `dss-crl-parser` which uses the java object X509CRL.
 dss-spi:: Interfaces and util classes to process ASN.1 structure, compute digests, etc.
 dss-service:: Implementations to communicate with online resources (TSP, CRL, OCSP).
 dss-token:: Token definitions and implementations for MS CAPI, MacOS Keychain, PKCS#11, PKCS#12.
 dss-document:: Common module to sign or extend a document.
 dss-validation:: Business logic for the signature and certificate validation (ETSI EN 319 102 / TS 119 615).
-dss-tsl-validation:: Module which allows loading / parsing / validating of LOTL and TSLs.
+
+'''
+dss-validation-job:: Generic module for performing a document validation, implements cache management and business logic of validation job.
+dss-tsl-validation:: Module which allows downloading / parsing / validating of LOTL and TLs (ETSI TS 119 612).
+dss-lote-validation:: Module containing generic interfaces for validating of LoTE (ETSI TS 119 602).
+dss-lote-validation-json:: Processes LoTE in the JSON format.
+dss-lote-validation-xml:: Processes LoTE in the XML format.
+
+===== Validation policy modules
+
+dss-policy-jaxb:: JAXB model for the XML validation policy (default policy).
+dss-policy-crypto-xml:: JAXB model for the XML Cryptographic Suite as per ETSI TS 119 322 (cf. <<R21>>).
+dss-policy-crypto-json:: Model for the JSON Cryptographic Suite as per ETSI TS 119 322 (cf. <<R21>>).
 
 ===== Signature format specific modules
 
 dss-xades:: Implementation of the XAdES signature, augmentation and validation.
 dss-cades:: Implementation of the CAdES signature, augmentation and validation.
+dss-cb-ades:: Implementation of the CB-AdES signature, augmentation and validation.
+dss-cms:: Provides interfaces and utility methods for working with CMS objects (see RFC 5652, cf. <<R31>>).
+dss-cms-object:: Implementation of 'dss-cms' module, processing the data objects and files in memory.
+dss-cms-stream:: Implementation of 'dss-cms' module, processing the data objects and files using streaming.
 dss-jades:: Implementation of the JAdES signature, augmentation and validation.
 dss-pades:: Common code which is shared between dss-pades-pdfbox and dss-pades-openpdf.
 dss-pades-pdfbox:: Implementation of the PAdES signature, augmentation and validation with https://pdfbox.apache.org/[PDFBox].
@@ -362,8 +400,17 @@ dss-asic-xades:: Implementation of the ASiC-S and ASiC-E signature, augmentation
 ===== Evidence Record validation modules
 
 dss-evidence-record-common:: Common code and interfaces for validation of evidence records.
-dss-evidence-record-xml:: Code for validation of RFC 6283 XML Evidence Records (cf. <<R22>>).
-dss-evidence-record-asn1:: Code for validation of RFC 4998 Evidence Records (ASN.1 format) (cf. <<R23>>).
+dss-evidence-record-xml:: Code for validation of RFC 6283 XML Evidence Records (cf. <<R23>>).
+dss-evidence-record-asn1:: Code for validation of RFC 4998 Evidence Records (ASN.1 format) (cf. <<R24>>).
+
+===== Attestation modules
+
+dss-attestation:: Common code and interfaces for attestation.
+dss-sd-jwt:: Code for creation and validation of attestations based on JWTs (i.e. SD-JWT VC, etc.).
+dss-mdoc:: Code for creation and validation of attestations based on mdoc specification as per ISO 18013-5.
+dss-attestation-revocation:: Common code and interfaces for attestation revocation.
+dss-attestation-revocation-jwt:: Code for the validation of attestation based on JWT tokens.
+dss-attestation-revocation-cwt:: Code for the validation of attestation based on CWT tokens.
 
 ===== WebServices
 
@@ -410,6 +457,22 @@ dss-timestamp-remote-soap-client:: Client for the SOAP timestamp webservice.
 dss-timestamp-remote-rest:: REST webservice to create a timestamp.
 dss-timestamp-remote-soap:: SOAP webservice to create a timestamp.
 
+'''
+dss-attestation-creation-dto:: Data Transfer Objects used for attestation (e.g. EAA, PID, etc.) and/or presentation (e.g. EAAP) creation.
+dss-attestation-creation-remote:: Common classes between dss-attestation-creation-rest and dss-attestation-creation-soap.
+dss-attestation-creation-rest-client:: Client for the REST attestation and/or presentation creation webservice.
+dss-attestation-creation-soap-client:: Client for the SOAP attestation and/or presentation creation webservice.
+dss-attestation-creation-rest:: REST webservice to create attestation and/or presentation.
+dss-attestation-creation-soap:: SOAP webservice to create attestation and/or presentation.
+
+'''
+dss-attestation-validation-dto:: Data Transfer Objects used for attestation validation (REST and SOAP).
+dss-attestation-validation-common:: Common classes between dss-attestation-validation-rest and dss-attestation-validation-soap.
+dss-attestation-validation-rest-client:: Client for the REST attestation validation webservices.
+dss-attestation-validation-soap-client:: Client for the SOAP attestation validation webservices.
+dss-attestation-validation-rest:: REST webservices to validate an attestation.
+dss-attestation-validation-soap:: SOAP webservices to validate an attestation.
+
 ===== Other modules
 
 dss-test:: Mock and util classes for unit tests.
@@ -427,10 +490,12 @@ DSS contains a bundle of JAXB-based modules, generating Java classes at runtime 
 * specs-xmldsig;
 * specs-xades;
 * specs-trusted-list;
+* specs-trusted-list-v211;
 * specs-validation-report;
 * specs-asic-manifest;
 * specs-saml-assertion;
 * dss-policy-jaxb;
+* dss-policy-crypto-xml;
 * dss-diagnostic-jaxb;
 * dss-detailed-report-jaxb;
 * dss-simple-report-jaxb;
@@ -446,6 +511,7 @@ Also, as it was explained in the previous section, some modules are required to 
 * <<dssUtils,dss-utils>>;
 * <<dssCrlParser,dss-crl-parser>>;
 * dss-test;
+* <<dssCms,dss-cms>>;
 * <<dssPades,dss-pades>>;
 * dss-asic-common.
 

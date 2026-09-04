@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,19 +21,22 @@
 package eu.europa.esig.dss.validation;
 
 import eu.europa.esig.dss.enumerations.Context;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
+import eu.europa.esig.dss.enumerations.Level;
+import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.model.x509.revocation.crl.CRL;
 import eu.europa.esig.dss.model.x509.revocation.ocsp.OCSP;
-import eu.europa.esig.dss.policy.ValidationPolicy;
-import eu.europa.esig.dss.policy.ValidationPolicyFacade;
+import eu.europa.esig.dss.policy.EtsiValidationPolicy;
+import eu.europa.esig.dss.policy.EtsiValidationPolicyFactory;
 import eu.europa.esig.dss.policy.jaxb.Algo;
 import eu.europa.esig.dss.policy.jaxb.AlgoExpirationDate;
 import eu.europa.esig.dss.policy.jaxb.CertificateConstraints;
 import eu.europa.esig.dss.policy.jaxb.CertificateValuesConstraint;
 import eu.europa.esig.dss.policy.jaxb.CryptographicConstraint;
-import eu.europa.esig.dss.policy.jaxb.Level;
 import eu.europa.esig.dss.policy.jaxb.LevelConstraint;
 import eu.europa.esig.dss.policy.jaxb.ListAlgo;
 import eu.europa.esig.dss.policy.jaxb.MultiValuesConstraint;
@@ -46,6 +49,7 @@ import eu.europa.esig.dss.spi.x509.revocation.RevocationToken;
 import eu.europa.esig.dss.spi.x509.revocation.crl.ExternalResourcesCRLSource;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.ExternalResourcesOCSPSource;
 import eu.europa.esig.dss.utils.Utils;
+import eu.europa.esig.dss.validation.policy.ValidationPolicyLoader;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.junit.jupiter.api.Test;
 
@@ -73,14 +77,14 @@ class RevocationDataVerifierFactoryTest {
 
         RevocationToken<OCSP> ocspToken = revocationTokens.iterator().next();
 
-        ValidationPolicy validationPolicy = ValidationPolicyFacade.newFacade().getDefaultValidationPolicy();
+        EtsiValidationPolicy validationPolicy = (EtsiValidationPolicy) new EtsiValidationPolicyFactory().loadDefaultValidationPolicy();
         CryptographicConstraint cryptographic = validationPolicy.getCryptographic();
         cryptographic.setLevel(Level.IGNORE);
 
         RevocationDataVerifier revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).create();
         assertTrue(revocationDataVerifier.isAcceptable(ocspToken));
 
-        validationPolicy = ValidationPolicyFacade.newFacade().getDefaultValidationPolicy();
+        validationPolicy = (EtsiValidationPolicy) new EtsiValidationPolicyFactory().loadDefaultValidationPolicy();
         cryptographic = validationPolicy.getCryptographic();
         cryptographic.setLevel(Level.FAIL);
 
@@ -138,14 +142,14 @@ class RevocationDataVerifierFactoryTest {
 
         RevocationToken<OCSP> ocspToken = revocationTokens.iterator().next();
 
-        ValidationPolicy validationPolicy = ValidationPolicyFacade.newFacade().getDefaultValidationPolicy();
+        EtsiValidationPolicy validationPolicy = (EtsiValidationPolicy) new EtsiValidationPolicyFactory().loadDefaultValidationPolicy();
         CryptographicConstraint cryptographic = validationPolicy.getCryptographic();
         cryptographic.setLevel(Level.IGNORE);
 
         RevocationDataVerifier revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).create();
         assertTrue(revocationDataVerifier.isAcceptable(ocspToken));
 
-        validationPolicy = ValidationPolicyFacade.newFacade().getDefaultValidationPolicy();
+        validationPolicy = (EtsiValidationPolicy) new EtsiValidationPolicyFactory().loadDefaultValidationPolicy();
         cryptographic = validationPolicy.getCryptographic();
         cryptographic.setLevel(Level.FAIL);
 
@@ -166,7 +170,7 @@ class RevocationDataVerifierFactoryTest {
         miniPublicKeySize.getAlgos().clear();
 
         revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).create();
-        assertFalse(revocationDataVerifier.isAcceptable(ocspToken));
+        assertTrue(revocationDataVerifier.isAcceptable(ocspToken));
 
         algo.setSize(3000);
         miniPublicKeySize.getAlgos().add(algo);
@@ -180,24 +184,40 @@ class RevocationDataVerifierFactoryTest {
         assertTrue(revocationDataVerifier.isAcceptable(ocspToken));
 
         AlgoExpirationDate algoExpirationDate = cryptographic.getAlgoExpirationDate();
+        algoExpirationDate.getAlgos().clear();
         algoExpirationDate.setFormat("yyyy");
 
         algo.setDate("2025");
         algoExpirationDate.getAlgos().add(algo);
 
-        revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).create();
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(2024, Calendar.JANUARY, 1);
+
+        revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).setValidationTime(calendar.getTime()).create();
         assertTrue(revocationDataVerifier.isAcceptable(ocspToken));
 
         algo.setDate("2015");
 
-        revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).create();
+        revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).setValidationTime(calendar.getTime()).create();
         assertFalse(revocationDataVerifier.isAcceptable(ocspToken));
 
-        Calendar calendar = Calendar.getInstance();
+        calendar = Calendar.getInstance();
         calendar.setTime(new Date());
         calendar.set(Calendar.YEAR, 2000);
 
+        revocationDataVerifier.setAcceptableSignatureAlgorithmKeyLength(Collections.singletonMap(SignatureAlgorithm.RSA_SHA256, 2048));
+        assertTrue(revocationDataVerifier.isAcceptable(ocspToken));
+
+        revocationDataVerifier.setAcceptableSignatureAlgorithmKeyLength(Collections.emptyMap());
+        assertFalse(revocationDataVerifier.isAcceptable(ocspToken));
+
         revocationDataVerifier.setAcceptableEncryptionAlgorithmKeyLength(Collections.singletonMap(EncryptionAlgorithm.RSA, 2048));
+        assertTrue(revocationDataVerifier.isAcceptable(ocspToken));
+
+        revocationDataVerifier.setAcceptableDigestAlgorithms(Collections.emptyList());
+        assertFalse(revocationDataVerifier.isAcceptable(ocspToken));
+
+        revocationDataVerifier.setAcceptableDigestAlgorithms(Collections.singleton(DigestAlgorithm.SHA256));
         assertTrue(revocationDataVerifier.isAcceptable(ocspToken));
 
         CryptographicConstraint cryptographicRevocationConstraint = validationPolicy.getRevocationConstraints()
@@ -214,7 +234,7 @@ class RevocationDataVerifierFactoryTest {
         CertificateToken shortTermCertificate = DSSUtils.loadCertificateFromBase64EncodedString(
                 "MIIDJjCCAg6gAwIBAgIIMMSTGSdLPxQwDQYJKoZIhvcNAQENBQAwKDEZMBcGA1UECgwQTm93aW5hIFNvbHV0aW9uczELMAkGA1UEBhMCTFUwHhcNMjEwNzAxMTAwMTI5WhcNMjEwNzAxMTAwNjI5WjA2MQwwCgYDVQQDDANBIGExGTAXBgNVBAoMEE5vd2luYSBTb2x1dGlvbnMxCzAJBgNVBAYTAkxVMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsW0yfJBqh9CtbfOtsZcEAEvzzfPusdhZNv0JSq8frKGMqJwTgjnkMJd9D3sEHUBJP0ryAmK9L5S+lWOGDhdYcE8K00k3hZSHyrOdRblB0SZhtXIgeGD7ESdTU9xPCf4Ze7xSI08zlk9NmTaj5Xqfyako8sxHAQapdXw8kfG0Ol6UhfMg7MjN8/wZrIVUYZzBQP3RFKHFQIms+pxfWxvETsynn/n2rOjuAsV0aTWGUAeWJRFJxKLSTrHQiQULVS1MHIIkdbQZxMA+Jn3dXwVdJLX/JRSvEOBqGRrvGQtYN2vNdrJlNHP0WGcSAddweWs7Ar+Pp7Qm/HEQF5+EOPUQDQIDAQABo0YwRDAOBgNVHQ8BAf8EBAMCBsAwIwYIKwYBBQUHAQMEFzAVMBMGBgQAjkYBBjAJBgcEAI5GAQYBMA0GBwQAi+xJAgEEAgUAMA0GCSqGSIb3DQEBDQUAA4IBAQBAYj8mdKsj/mMoM4HXL/w+xeK0iM55eGyBNprwxECoCH8ZCgVrVTb3eKttTXYrXjk3Yqpg3amkm7aV94iXJ0qLER/2C9lHLv6h1CoxYCdevAUSVOIzF0SJj54dxrwDQ7uTFXRe2etOg+hmEhj3OBpd/5vMfdIViYHtpPoCyZoQyGLztUt1k8/JvBe91UGAEnWx0nvokehkTgueq7dsTjBit4dlCmfmIzQUUWCgNpe1S1nEb0B/BCXaqPRhYx1//2T/5gR1lKe36HHp5rUURKT8NsS76lfxdor9Ag3mVmsw1NcVtDiFo0molO84+B53yqRP2wCU7MtfKfCX9CocgVNF");
 
-        ValidationPolicy validationPolicy = ValidationPolicyFacade.newFacade().getDefaultValidationPolicy();
+        EtsiValidationPolicy validationPolicy = (EtsiValidationPolicy) new EtsiValidationPolicyFactory().loadDefaultValidationPolicy();
         CertificateConstraints signingCertificate = validationPolicy.getSignatureConstraints()
                 .getBasicSignatureConstraints().getSigningCertificate();
 
@@ -260,7 +280,7 @@ class RevocationDataVerifierFactoryTest {
         RevocationDataVerifier revocationDataVerifier = RevocationDataVerifier.createDefaultRevocationDataVerifier();
         assertTrue(revocationDataVerifier.isRevocationDataSkip(ocspNoCheckCertificate));
 
-        ValidationPolicy validationPolicy = ValidationPolicyFacade.newFacade().getDefaultValidationPolicy();
+        EtsiValidationPolicy validationPolicy = (EtsiValidationPolicy) new EtsiValidationPolicyFactory().loadDefaultValidationPolicy();
         CertificateConstraints signingCertificate = validationPolicy.getRevocationConstraints()
                 .getBasicSignatureConstraints().getSigningCertificate();
 
@@ -299,7 +319,7 @@ class RevocationDataVerifierFactoryTest {
         RevocationDataVerifier revocationDataVerifier = RevocationDataVerifier.createDefaultRevocationDataVerifier();
         assertFalse(revocationDataVerifier.isRevocationDataSkip(certificateToken));
 
-        ValidationPolicy validationPolicy = ValidationPolicyFacade.newFacade().getDefaultValidationPolicy();
+        EtsiValidationPolicy validationPolicy = (EtsiValidationPolicy) new EtsiValidationPolicyFactory().loadDefaultValidationPolicy();
         CertificateConstraints signingCertificate = validationPolicy.getSignatureConstraints()
                 .getBasicSignatureConstraints().getSigningCertificate();
 
@@ -350,7 +370,7 @@ class RevocationDataVerifierFactoryTest {
         assertFalse(revocationDataVerifier.isRevocationDataFresh(crlToken, new Date(), Context.TIMESTAMP));
         assertFalse(revocationDataVerifier.isRevocationDataFresh(crlToken, new Date(), Context.REVOCATION));
 
-        ValidationPolicy validationPolicy = ValidationPolicyFacade.newFacade().getDefaultValidationPolicy();
+        EtsiValidationPolicy validationPolicy = (EtsiValidationPolicy) new EtsiValidationPolicyFactory().loadDefaultValidationPolicy();
         revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).create();
         assertFalse(revocationDataVerifier.isRevocationDataFresh(crlToken, new Date(), Context.SIGNATURE));
         assertFalse(revocationDataVerifier.isRevocationDataFresh(crlToken, new Date(), Context.TIMESTAMP));
@@ -418,6 +438,115 @@ class RevocationDataVerifierFactoryTest {
         assertTrue(revocationDataVerifier.isRevocationDataFresh(crlToken, calendar.getTime(), Context.SIGNATURE));
         assertTrue(revocationDataVerifier.isRevocationDataFresh(crlToken, calendar.getTime(), Context.TIMESTAMP));
         assertTrue(revocationDataVerifier.isRevocationDataFresh(crlToken, calendar.getTime(), Context.REVOCATION));
+    }
+
+    @Test
+    void revocationAcceptCertificatesWithoutRevocationTest() throws Exception {
+        String certB64 = "MIIE1zCCAr+gAwIBAgIDTB3fMA0GCSqGSIb3DQEBCwUAME4xCzAJBgNVBAYTAkxVMRYwFAYDVQQKDA1MdXhUcnVzdCBTLkEuMScwJQYDVQQDDB5MdXhUcnVzdCBHbG9iYWwgUXVhbGlmaWVkIENBIDMwHhcNMjIwMjAyMTMzMTU0WhcNMjMwMjAyMTMzMTU0WjBeMQswCQYDVQQGEwJMVTEWMBQGA1UEChMNTHV4VHJ1c3QgUy5BLjETMBEGA1UECxMKUGtpIGVudGl0eTEiMCAGA1UEAxMZTHV4VHJ1c3QgUy5BLiBPQ1NQIFNlcnZlcjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALXRJgqc3YegdIDHbBKRUSU3HJ9BneUEOgro2UuEiL5LzGMmShHPxSwwGNgAPCIsQdFrEipDfXzEf82ZMbh58xB4wJy/aKo+RniImvqZMy7TctHfi5PrloMvV1rR3AUuMyod5jAr0DTrVwfVBKHWn2f+dvI5Utelye8vVtc40o3UFvcLmrm8/+kS14tsoUyC8ybv1u33CrZOeFdjmdkYZsvtQcdH5kU8KEWiQlkRze54pwbYpkU3YolCqVvng37QUIkkaLtKimt39akJE8v4eSmJdd7d+7XXiC4NGnKPj8KtaXtVVggqji5FHaOdTE22Sv6nQofcX2CNts7k3ge6QysCAwEAAaOBrTCBqjATBgNVHSUEDDAKBggrBgEFBQcDCTAfBgNVHSMEGDAWgBRjj8KLA7GrjthTR5Ydmah99qyodTA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmx1eHRydXN0Lmx1L0xUR1FDQTMtT0NTUC5jcmwwHQYDVR0OBBYEFAgSTQgLkHHOjcK2da1yHo5lnnaWMA4GA1UdDwEB/wQEAwIHgDAJBgNVHRMEAjAAMA0GCSqGSIb3DQEBCwUAA4ICAQCdN3AmbWYNy0ZfU038pnOYXVsQ8KnVWZUht73/VFu/kaBix9IWSFfQ5y+duae9MkByi/TQbXk6mFYfCFfr2I3GaYAhyxtuWoCQg84BeqIASX3cNVrCABn8GIEsPsFDuUXXLFZ5uIY/uPjACB3AclbM4O9COD7CFVZAXCl/+CcC9M68AnfSf6zBIYnBM3QZde35IVj0Y5ZRg5DnC2zsICkIqCbQDoDSBVTWkdH20tA9zMEgLgZSk9W1ablOmRdo5+3HmHQ4+CN7Xxd3aoprAqsdlLpL8/PupDQ6dTL1VxfycQQEUodztmW7hRqg5mp87P0X9sbNXNVJCEzaa6LZlQ04FnA7uVIEntmqlOubyGpcbziX9mLrrPHcfUqEShA4h7hJmQK5paLkK/YDFDs6uZpnyRLv+7dT5l3fu5KvEEe75ZKzPfF+fNg8Iu9ADpcFLyHuUPlEqRW4KTEfmJK/RVAnUVbqFG1nlLSbSj658lCoJtJ597GuNEJ5nipAxH4PM6dE9+P0xBWvOFs1+xnplRYVnx+ElITfzHLRJVchTCw1SOcPll+Ro4qA/4IslarWpE8V388B7KMmsfMS6sSmWpEAQxjvruabSAc/baIzTbqXQFAVXzJWuBeYto2URIl6+3XA+Bca8hOkNBNUvIcAevg6oL24x1oLvB0av+RG8Ly3wA==";
+        String caCertB64 = "MIIGcjCCBFqgAwIBAgIUQT3qGijCJThFVY4Efz4qi1ubrq4wDQYJKoZIhvcNAQELBQAwRjELMAkGA1UEBhMCTFUxFjAUBgNVBAoMDUx1eFRydXN0IFMuQS4xHzAdBgNVBAMMFkx1eFRydXN0IEdsb2JhbCBSb290IDIwHhcNMTUwMzA2MTQxMjE1WhcNMzUwMzA1MTMyMTU3WjBOMQswCQYDVQQGEwJMVTEWMBQGA1UECgwNTHV4VHJ1c3QgUy5BLjEnMCUGA1UEAwweTHV4VHJ1c3QgR2xvYmFsIFF1YWxpZmllZCBDQSAzMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAuZ5iXSmFbP80gWb0kieYsImcyIo3QYg+XA3NlwH6QtI0PgZEG9dSo8pM7VMIzE5zq8tgJ50HnPdYflvfhkEKvAW2NuNX6hi/6HK4Nye+kB+INjpfAHmLft3GT95e+frk/t7hJNorK44xzqfWZKLNGysEHIriddcePWOk3J/VMc9CsSemeZbmeZW1/xXeqolMS7JIDZ3+0DgVCYsKIK+b3sAQ8iqXbQlQyvymG6QyoQoJbuEP23iawRMWKNWk+sjzOkPAAQDtgEEVdggzzudLSM04C5CjeLlLYuXgljler9bKRk9wW8nkareLZsn9uCDihGXGyC5m9jseGY1KAnlV8usLjBFAiW5OCnzcOg+CPsVucoRhS6uvXcu7VtHRGo5yLysJVv7sj6cx5lMvQKAMLviVi3kphZKYfqVLAVFJpXTpunY2GayVGf/uOpzNoiSRpcxxYjmAlPKNeTgXVl5Mc0zojgT/MZTGFN7ov7n01yodN6OhfTADacvaKfj2C2CwdCJvMqvlUuCKrvuXbdZrtRm3BZXrghGhuQmG0Tir7VVCI0WZjVjyHs2rpUcCQ6+D1WymKhzp0mrXdaFzYRce7FrEk69JWzWVp/9/GKnnb0//camavEaI4V64MVxYAir5AL/j7d4JIOqhPPU14ajxmC6dEH84guVs0Lo/dwVTUzsCAwEAAaOCAU4wggFKMBIGA1UdEwEB/wQIMAYBAf8CAQAwQwYDVR0gBDwwOjA4BggrgSsBAQEKAzAsMCoGCCsGAQUFBwIBFh5odHRwczovL3JlcG9zaXRvcnkubHV4dHJ1c3QubHUwagYIKwYBBQUHAQEEXjBcMCsGCCsGAQUFBzABhh9odHRwOi8vbHRncm9vdC5vY3NwLmx1eHRydXN0Lmx1MC0GCCsGAQUFBzAChiFodHRwOi8vY2EubHV4dHJ1c3QubHUvTFRHUkNBMi5jcnQwDgYDVR0PAQH/BAQDAgEGMB8GA1UdIwQYMBaAFP8YKHb5SAUsoa7xKxsrslP4S3yzMDMGA1UdHwQsMCowKKAmoCSGImh0dHA6Ly9jcmwubHV4dHJ1c3QubHUvTFRHUkNBMi5jcmwwHQYDVR0OBBYEFGOPwosDsauO2FNHlh2ZqH32rKh1MA0GCSqGSIb3DQEBCwUAA4ICAQADB6M/edbOO9iJCOnVxayJ1NBk08/BVKlHwe7HBYAzT6Kmo3TbMUwOpcGI2e/NBCR3F4wTzXOVvFmvdBl7sdS6uMSLBTrav+5LChcFDBQj26X5VQDcXkA8b/u6J4Ve7CwoSesYg9H0fsJ3v12QrmGUUao9gbamKP1TFriO+XiIaDLYectruusRktIke9qy8MCpNSarZqr3oD3c/+N5D3lDlGpaz1IL8TpbubFEQHPCr6JiwR+qSqGRfxv8vIvOOAVxe7np5QhtwmCkXdMOPQ/XOOuEA06bez+zHkASX64at7dXru+4JUEbpijjMA+1jbFZr20OeBIQZL7oEst+FF8lFuvmucC9TS9QnlF28WJExvpIknjS7LhFMGXB9w380q38ZOuKjPZpoztYeyUpf8gxzV7fE5Q1okhnsDZ+12vBzBruzJcwtNuXyLyIh3fVN0LunVd+NP2kGjB2t9WD2Y0CaKxWx8snDdrSbAi46TpNoe04eroWgZOvdN0hEmf2d8tYBSJ/XZekU9sCAww5vxHnXJi6CZHhjt8f1mMhyE2gBvmpk4CFetViO2sG0n/nsxCQNpnclsax/eJuXmGiZ3OPCIRijI5gy3pLRgnbgLyktWoOkmT/gxtWDLfVZwEt52JL8d550KIgttyRqX81LJWGSDdpnzeRVQEnzAt6+RebAQ==";
+
+        CertificateToken certificateToken = DSSUtils.loadCertificateFromBase64EncodedString(certB64);
+        CertificateToken caCertificate = DSSUtils.loadCertificateFromBase64EncodedString(caCertB64);
+
+        List<CertificateToken> certificateChain = Arrays.asList(certificateToken, caCertificate);
+
+        RevocationDataVerifier revocationDataVerifier = RevocationDataVerifier.createDefaultRevocationDataVerifier();
+        assertFalse(revocationDataVerifier.isCertificateChainValid(certificateChain, new Date(), Context.REVOCATION));
+        assertFalse(revocationDataVerifier.isCertificateChainValid(certificateChain, new Date(), Context.TIMESTAMP));
+
+        EtsiValidationPolicy validationPolicy = (EtsiValidationPolicy) new EtsiValidationPolicyFactory().loadDefaultValidationPolicy();
+        revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).create();
+        assertFalse(revocationDataVerifier.isCertificateChainValid(certificateChain, new Date(), Context.REVOCATION));
+        assertFalse(revocationDataVerifier.isCertificateChainValid(certificateChain, new Date(), Context.TIMESTAMP));
+
+        validationPolicy.getRevocationConstraints().getBasicSignatureConstraints().getSigningCertificate().setRevocationDataAvailable(null);
+        validationPolicy.getRevocationConstraints().getBasicSignatureConstraints().getCACertificate().setRevocationDataAvailable(null);
+
+        revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).create();
+        assertTrue(revocationDataVerifier.isCertificateChainValid(certificateChain, new Date(), Context.REVOCATION));
+        assertFalse(revocationDataVerifier.isCertificateChainValid(certificateChain, new Date(), Context.TIMESTAMP));
+
+        LevelConstraint levelConstraint = new LevelConstraint();
+        levelConstraint.setLevel(Level.FAIL);
+
+        validationPolicy.getRevocationConstraints().getBasicSignatureConstraints().getSigningCertificate().setRevocationDataAvailable(levelConstraint);
+        validationPolicy.getRevocationConstraints().getBasicSignatureConstraints().getCACertificate().setRevocationDataAvailable(levelConstraint);
+        validationPolicy.getTimestampConstraints().getBasicSignatureConstraints().getSigningCertificate().setRevocationDataAvailable(null);
+        validationPolicy.getTimestampConstraints().getBasicSignatureConstraints().getCACertificate().setRevocationDataAvailable(null);
+
+        revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).create();
+        assertFalse(revocationDataVerifier.isCertificateChainValid(certificateChain, new Date(), Context.REVOCATION));
+        assertTrue(revocationDataVerifier.isCertificateChainValid(certificateChain, new Date(), Context.TIMESTAMP));
+    }
+
+    @Test
+    void sha1WithXmlCryptoSuiteTest() {
+        String certB64 = "MIIFQDCCBCigAwIBAgIOGCB2t4Cg4gEAAQAOEN4wDQYJKoZIhvcNAQELBQAwbTELMAkGA1UEBhMCTFQxEjAQBgNVBGETCTE4ODc3ODMxNTE2MDQGA1UEChMtQXNtZW5zIGRva3VtZW50dSBpc3Jhc3ltbyBjZW50cmFzIHByaWUgTFIgVlJNMRIwEAYDVQQDEwlBRElDIENBLUEwHhcNMTkwMTE1MDc1MDUwWhcNMjIwMTE0MDc1MDUwWjBlMQswCQYDVQQGEwJMVDEaMBgGA1UEAwwRQURPTUFTIEJJUsWgVFVOQVMxEzARBgNVBAQMCkJJUsWgVFVOQVMxDzANBgNVBCoTBkFET01BUzEUMBIGA1UEBRMLMzgwMDMxMzA2OTMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCpBBVaIBn1jxl44uuvkJWkW5F3rtoUsmAkMJPlPyzQOg87h07uYOIJk4YDIpvujDaL3y3RAy7ARFWpY31zn0b0TnMkDyuf5JYtro6ZpR3v/wijVUNYyGZYpbc42WVNVp/AYuE6IJ7ecE1dMMJDHVkJAmoH2wnT+Lnqp71n51luYc5v0VP+OFmPqPzuSbiwXewOg8PHARkv9l8d0FnoUmKg5xpm+jbjCFsOC77hkwjUDQxu9Yv7p+T1X7+se46GDOm287i2iW66bZYu4qy6ycrznNuwWLtU1i5Z7ypoNGJ++IRn4wP80CvwzUo5TNcLD8Ql3PaDs8GPKXfpBz2zd4MBAgMBAAGjggHkMIIB4DBLBgNVHQkERDBCMA8GCCsGAQUFBwkDMQMTAU0wHQYIKwYBBQUHCQExERgPMTk4MDAzMTMxMjAwMDBaMBAGCCsGAQUFBwkEMQQTAkxUMB0GA1UdDgQWBBSkKwML7BV258Cpil5bewoD6itogjAOBgNVHQ8BAf8EBAMCBsAwHwYDVR0jBBgwFoAUYpbcZMVf8JBEU79q1WAACu/0N7IweAYIKwYBBQUHAQEEbDBqMDQGCCsGAQUFBzABhihodHRwOi8vbnNjLnZybS5sdC9PQ1NQL29jc3ByZXNwb25kZXIubnNjMDIGCCsGAQUFBzAChiZodHRwOi8vbnNjLnZybS5sdC9haWEvQURJQ19DQS1BKDEpLmNydDAVBgNVHSUEDjAMBgorBgEEAYI3CgMMMEQGA1UdIAQ9MDswOQYLKwYBBAGChlUCAgIwKjAoBggrBgEFBQcCARYcaHR0cDovL25zYy52cm0ubHQvcmVwb3NpdG9yeTAdBgkrBgEEAYI3FQoEEDAOMAwGCisGAQQBgjcKAwwwSwYIKwYBBQUHAQMEPzA9MAgGBgQAjkYBATAIBgYEAI5GAQQwJwYGBACORgEFMB0wGxYVaHR0cDovL25zYy52cm0ubHQvcGRzEwJlbjANBgkqhkiG9w0BAQsFAAOCAQEAIHcOUDrDtW1cJVkCsKpdniYpBBoZfmwX0VIM+mTevRb/dCTMyHHp+DkfauWXEGUEkl+PoZb8r9hoYcBWYvbIXbSEPnoRX26BLXeNGKz4LxqoqoHRqDFSOr7+7uFkhIwalM5mjc9c/oOJZu5xTALH/TCSRD4TVp48/+UiII/JpC+700N8oNbPkJUoKBpfRFcD89WGlvywrGYyD1nPoSn+KF7lmxenl+KEJKE6q0UdzV9kbzkk7BlksiUL9U9D0c7emx6pRk1Mw7fqTVD/ETGqmKVR6lzIQcY/GLQ55W968FrovU6F7TP/7qW8ahYzdM09sEnoIeG5jet3mYVHPEyGMA==";
+        String caCertB64 = "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";
+        String ocspTokenB64 = "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";
+
+        ExternalResourcesOCSPSource ocspSource = new ExternalResourcesOCSPSource(new InMemoryDocument(Utils.fromBase64(ocspTokenB64)));
+        List<RevocationToken<OCSP>> revocationTokens = ocspSource.getRevocationTokens(DSSUtils.loadCertificateFromBase64EncodedString(certB64), DSSUtils.loadCertificateFromBase64EncodedString(caCertB64));
+        assertEquals(1, revocationTokens.size());
+
+        RevocationToken<OCSP> ocspToken = revocationTokens.iterator().next();
+
+        ValidationPolicy validationPolicy = ValidationPolicyLoader.fromDefaultValidationPolicy()
+                .withCryptographicSuite("/diag-data/crypto-suite/19312MachineReadable.xml").create();
+
+        RevocationDataVerifier revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).create();
+        assertFalse(revocationDataVerifier.isAcceptable(ocspToken));
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date());
+        calendar.set(Calendar.YEAR, 2000);
+
+        revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).setValidationTime(calendar.getTime()).create();
+        assertFalse(revocationDataVerifier.isAcceptable(ocspToken));
+
+        validationPolicy = ValidationPolicyLoader.fromDefaultValidationPolicy()
+                .withCryptographicSuite("/diag-data/crypto-suite/dss-crypto-suite.xml").create();
+
+        revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).create();
+        assertFalse(revocationDataVerifier.isAcceptable(ocspToken));
+
+        revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).setValidationTime(calendar.getTime()).create();
+        assertTrue(revocationDataVerifier.isAcceptable(ocspToken));
+    }
+
+    @Test
+    void sha1WithJsonCryptoSuiteTest() {
+        String certB64 = "MIIFQDCCBCigAwIBAgIOGCB2t4Cg4gEAAQAOEN4wDQYJKoZIhvcNAQELBQAwbTELMAkGA1UEBhMCTFQxEjAQBgNVBGETCTE4ODc3ODMxNTE2MDQGA1UEChMtQXNtZW5zIGRva3VtZW50dSBpc3Jhc3ltbyBjZW50cmFzIHByaWUgTFIgVlJNMRIwEAYDVQQDEwlBRElDIENBLUEwHhcNMTkwMTE1MDc1MDUwWhcNMjIwMTE0MDc1MDUwWjBlMQswCQYDVQQGEwJMVDEaMBgGA1UEAwwRQURPTUFTIEJJUsWgVFVOQVMxEzARBgNVBAQMCkJJUsWgVFVOQVMxDzANBgNVBCoTBkFET01BUzEUMBIGA1UEBRMLMzgwMDMxMzA2OTMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCpBBVaIBn1jxl44uuvkJWkW5F3rtoUsmAkMJPlPyzQOg87h07uYOIJk4YDIpvujDaL3y3RAy7ARFWpY31zn0b0TnMkDyuf5JYtro6ZpR3v/wijVUNYyGZYpbc42WVNVp/AYuE6IJ7ecE1dMMJDHVkJAmoH2wnT+Lnqp71n51luYc5v0VP+OFmPqPzuSbiwXewOg8PHARkv9l8d0FnoUmKg5xpm+jbjCFsOC77hkwjUDQxu9Yv7p+T1X7+se46GDOm287i2iW66bZYu4qy6ycrznNuwWLtU1i5Z7ypoNGJ++IRn4wP80CvwzUo5TNcLD8Ql3PaDs8GPKXfpBz2zd4MBAgMBAAGjggHkMIIB4DBLBgNVHQkERDBCMA8GCCsGAQUFBwkDMQMTAU0wHQYIKwYBBQUHCQExERgPMTk4MDAzMTMxMjAwMDBaMBAGCCsGAQUFBwkEMQQTAkxUMB0GA1UdDgQWBBSkKwML7BV258Cpil5bewoD6itogjAOBgNVHQ8BAf8EBAMCBsAwHwYDVR0jBBgwFoAUYpbcZMVf8JBEU79q1WAACu/0N7IweAYIKwYBBQUHAQEEbDBqMDQGCCsGAQUFBzABhihodHRwOi8vbnNjLnZybS5sdC9PQ1NQL29jc3ByZXNwb25kZXIubnNjMDIGCCsGAQUFBzAChiZodHRwOi8vbnNjLnZybS5sdC9haWEvQURJQ19DQS1BKDEpLmNydDAVBgNVHSUEDjAMBgorBgEEAYI3CgMMMEQGA1UdIAQ9MDswOQYLKwYBBAGChlUCAgIwKjAoBggrBgEFBQcCARYcaHR0cDovL25zYy52cm0ubHQvcmVwb3NpdG9yeTAdBgkrBgEEAYI3FQoEEDAOMAwGCisGAQQBgjcKAwwwSwYIKwYBBQUHAQMEPzA9MAgGBgQAjkYBATAIBgYEAI5GAQQwJwYGBACORgEFMB0wGxYVaHR0cDovL25zYy52cm0ubHQvcGRzEwJlbjANBgkqhkiG9w0BAQsFAAOCAQEAIHcOUDrDtW1cJVkCsKpdniYpBBoZfmwX0VIM+mTevRb/dCTMyHHp+DkfauWXEGUEkl+PoZb8r9hoYcBWYvbIXbSEPnoRX26BLXeNGKz4LxqoqoHRqDFSOr7+7uFkhIwalM5mjc9c/oOJZu5xTALH/TCSRD4TVp48/+UiII/JpC+700N8oNbPkJUoKBpfRFcD89WGlvywrGYyD1nPoSn+KF7lmxenl+KEJKE6q0UdzV9kbzkk7BlksiUL9U9D0c7emx6pRk1Mw7fqTVD/ETGqmKVR6lzIQcY/GLQ55W968FrovU6F7TP/7qW8ahYzdM09sEnoIeG5jet3mYVHPEyGMA==";
+        String caCertB64 = "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";
+        String ocspTokenB64 = "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";
+
+        ExternalResourcesOCSPSource ocspSource = new ExternalResourcesOCSPSource(new InMemoryDocument(Utils.fromBase64(ocspTokenB64)));
+        List<RevocationToken<OCSP>> revocationTokens = ocspSource.getRevocationTokens(DSSUtils.loadCertificateFromBase64EncodedString(certB64), DSSUtils.loadCertificateFromBase64EncodedString(caCertB64));
+        assertEquals(1, revocationTokens.size());
+
+        RevocationToken<OCSP> ocspToken = revocationTokens.iterator().next();
+
+        ValidationPolicy validationPolicy = ValidationPolicyLoader.fromDefaultValidationPolicy()
+                .withCryptographicSuite("/diag-data/crypto-suite/19312MachineReadable.json").create();
+
+        RevocationDataVerifier revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).create();
+        assertFalse(revocationDataVerifier.isAcceptable(ocspToken));
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date());
+        calendar.set(Calendar.YEAR, 2000);
+
+        revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).setValidationTime(calendar.getTime()).create();
+        assertFalse(revocationDataVerifier.isAcceptable(ocspToken));
+
+        validationPolicy = ValidationPolicyLoader.fromDefaultValidationPolicy()
+                .withCryptographicSuite("/diag-data/crypto-suite/dss-crypto-suite.json").create();
+
+        revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).create();
+        assertFalse(revocationDataVerifier.isAcceptable(ocspToken));
+
+        revocationDataVerifier = new RevocationDataVerifierFactory(validationPolicy).setValidationTime(calendar.getTime()).create();
+        assertTrue(revocationDataVerifier.isAcceptable(ocspToken));
     }
 
 }

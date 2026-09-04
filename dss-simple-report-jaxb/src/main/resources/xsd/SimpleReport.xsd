@@ -21,6 +21,7 @@
 				<xs:element name="Signature" type="Signature" />
 				<xs:element name="Timestamp" type="Timestamp" />
 				<xs:element name="EvidenceRecord" type="EvidenceRecord" />
+				<xs:element name="Attestation" type="Attestation" />
 			</xs:choice>
 			
 			<xs:element name="Semantic" type="Semantic" minOccurs="0" maxOccurs="unbounded" />
@@ -64,6 +65,9 @@
 			<xs:element name="SubIndication" type="SubIndication" minOccurs="0" />
 			<xs:element name="AdESValidationDetails" type="Details" minOccurs="0" />
 			<xs:element name="QualificationDetails" type="Details" minOccurs="0" />
+
+			<xs:element name="ExtensionPeriodMin" type="xs:dateTime" minOccurs="0" />
+			<xs:element name="ExtensionPeriodMax" type="xs:dateTime" minOccurs="0" />
 		</xs:sequence>
 		<xs:attribute name="Id" type="xs:string" use="required" /> <!-- Must be a String type in order to avoid conflict with DetailedReport in REST/SOAP webServices -->
 	</xs:complexType>
@@ -99,9 +103,6 @@
 				<xs:attribute name="CounterSignature" type="xs:boolean" use="optional" />
 				<xs:attribute name="ParentId" type="xs:string" use="optional" />
 				<xs:attribute name="SignatureFormat" type="SignatureFormat" use="required" />
-				
-				<xs:attribute name="ExtensionPeriodMin" type="xs:dateTime" use="optional" />
-				<xs:attribute name="ExtensionPeriodMax" type="xs:dateTime" use="optional" />
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -123,6 +124,8 @@
 			<xs:enumeration value="DIGEST" />
 			<xs:enumeration value="ARCHIVED" />
 			<xs:enumeration value="COUNTER_SIGNATURE" />
+			<xs:enumeration value="ATTESTATION_SIGNATURE" />
+			<xs:enumeration value="KEY_BINDING_SIGNATURE" />
 			<xs:enumeration value="SIGNATURE" />
 		</xs:restriction>
 	</xs:simpleType>
@@ -161,6 +164,21 @@
 					<xs:element name="EvidenceRecordScope" type="SignatureScope" minOccurs="0" maxOccurs="unbounded" />
 					<xs:element name="Timestamps" type="Timestamps" minOccurs="0" />
 				</xs:sequence>
+				<xs:attribute name="Embedded" type="xs:boolean" use="optional" />
+				<xs:attribute name="ParentId" type="xs:string" use="optional" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="Attestation">
+		<xs:complexContent>
+			<xs:extension base="Token">
+				<xs:sequence>
+					<xs:element name="AttestationLevel" type="AttestationLevel" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="AttestationSignature" type="Signature" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="KeyBindingSignature" type="Signature" minOccurs="0" />
+					<xs:element name="AttestationPayload" type="AttestationPayload" minOccurs="0" />
+				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -185,6 +203,7 @@
 			<xs:enumeration value="OUT_OF_BOUNDS_NOT_REVOKED" />
 			<xs:enumeration value="REVOCATION_OUT_OF_BOUNDS_NO_POE" />
 			<xs:enumeration value="NO_CERTIFICATE_CHAIN_FOUND" />
+			<xs:enumeration value="NO_CERTIFICATE_CHAIN_FOUND_NO_POE" />
 			<xs:enumeration value="TRY_LATER" />
 			<xs:enumeration value="REVOKED_NO_POE" />
 			<xs:enumeration value="REVOKED_CA_NO_POE" />
@@ -202,6 +221,7 @@
 			<xs:enumeration value="NO_POE" />
 			<xs:enumeration value="CERTIFICATE_CHAIN_GENERAL_FAILURE" />
 			<xs:enumeration value="UNEXPECTED_ERROR" />
+			<xs:enumeration value="ATTESTATION_CONSTRAINTS_FAILURE" />
 		</xs:restriction>
 	</xs:simpleType>
 	
@@ -218,6 +238,7 @@
 		</xs:sequence>
 		<xs:attribute name="Id" type="xs:string" use="required" />
 		<xs:attribute name="trusted" type="xs:boolean" default="false" />
+		<xs:attribute name="sunsetDate" type="xs:dateTime" />
 	</xs:complexType>
 
 	<xs:complexType name="TrustAnchors">
@@ -286,6 +307,7 @@
 			<xs:enumeration value="XAdES-X" />
 			<xs:enumeration value="XAdES-XL" />
 			<xs:enumeration value="XAdES-A" />
+			<xs:enumeration value="XAdES-ERS" />
 			<xs:enumeration value="XAdES-BASELINE-LTA" />
 			<xs:enumeration value="XAdES-BASELINE-LT" />
 			<xs:enumeration value="XAdES-BASELINE-T" />
@@ -299,11 +321,15 @@
 			<xs:enumeration value="CAdES-X" />
 			<xs:enumeration value="CAdES-XL" />
 			<xs:enumeration value="CAdES-A" />
+			<xs:enumeration value="CAdES-ERS" />
 			<xs:enumeration value="CAdES-BASELINE-LTA" />
 			<xs:enumeration value="CAdES-BASELINE-LT" />
 			<xs:enumeration value="CAdES-BASELINE-T" />
 			<xs:enumeration value="CAdES-BASELINE-B" />
 			<xs:enumeration value="PDF-NOT-ETSI" />
+			<xs:enumeration value="PAdES-BES" />
+			<xs:enumeration value="PAdES-EPES" />
+			<xs:enumeration value="PAdES-LTV" />
 			<xs:enumeration value="PAdES-BASELINE-LTA" />
 			<xs:enumeration value="PAdES-BASELINE-LT" />
 			<xs:enumeration value="PAdES-BASELINE-T" />
@@ -313,10 +339,17 @@
 			<xs:enumeration value="PKCS7-LT" />
 			<xs:enumeration value="PKCS7-LTA" />
 			<xs:enumeration value="JSON-NOT-ETSI" />
+			<xs:enumeration value="JAdES" />
 			<xs:enumeration value="JAdES-BASELINE-B" />
 			<xs:enumeration value="JAdES-BASELINE-T" />
 			<xs:enumeration value="JAdES-BASELINE-LT" />
 			<xs:enumeration value="JAdES-BASELINE-LTA" />
+			<xs:enumeration value="CBOR-NOT-ETSI" />
+			<xs:enumeration value="CB-AdES" />
+			<xs:enumeration value="CB-AdES-BASELINE-B" />
+			<xs:enumeration value="CB-AdES-BASELINE-T" />
+			<xs:enumeration value="CB-AdES-BASELINE-LT" />
+			<xs:enumeration value="CB-AdES-BASELINE-LTA" />
 			<xs:enumeration value="UNKNOWN" />
 		</xs:restriction>
 	</xs:simpleType>
@@ -336,6 +369,187 @@
 			<xs:enumeration value="N/A" />
 		</xs:restriction>
 	</xs:simpleType>
+
+	<xs:complexType name="AttestationLevel">
+		<xs:simpleContent>
+			<xs:extension base="AttestationQualification">
+				<xs:attribute name="description" type="xs:string" />
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:simpleType name="AttestationQualification" final="restriction">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="QEAA" />
+			<xs:enumeration value="EAA" />
+			<xs:enumeration value="Pub-EAA" />
+			<xs:enumeration value="PID" />
+			<xs:enumeration value="Unknown" />
+
+			<xs:enumeration value="Indeterminate QEAA" />
+			<xs:enumeration value="Indeterminate EAA" />
+			<xs:enumeration value="Indeterminate Pub-EAA" />
+			<xs:enumeration value="Indeterminate PID" />
+			<xs:enumeration value="Indeterminate Unknown" />
+
+			<xs:enumeration value="Not EAA" />
+			<xs:enumeration value="N/A" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="AttestationPayload">
+		<xs:sequence>
+			<!-- technical claims -->
+			<xs:element name="Identifier" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Issuer" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Subject" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Audience" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="IssuedAt" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="NotBefore" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Expiration" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="UpdatedAt" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="NextUpdate" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Category" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="VerifiableCredentialsType" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="StatusIndex" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="StatusUri" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="StatusType" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="StatusPurpose" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Nonce" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="DeviceKey" type="DisclosableClaim" minOccurs="0" />
+
+			<!-- mdoc technical claims -->
+			<xs:element name="Version" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="DocType" type="DisclosableClaim" minOccurs="0" />
+
+			<!-- ETSI TS 119 472-1 technical claims -->
+			<xs:element name="AdministrativeIssuanceDate" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AdministrativeExpirationDate" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="OneTimeUse" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="ShortLived" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Evidence" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AttestedAttributesSubjectId" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AttestedAttributesSubjectFamilyName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AttestedAttributesSubjectGivenName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AttestedAttributesSubjectDocumentNumber" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AttestedAttributesSubjectPseudonym" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AttestedAttributes" type="DisclosableClaim" minOccurs="0" />
+
+			<!-- user info -->
+			<xs:element name="FullName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="GivenName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="FamilyName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="MiddleName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Nickname" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="ShortName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="ProfileUrl" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="PictureUrl" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="WebsiteUrl" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Email" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="EmailVerified" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Gender" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Birthdate" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="BirthdateApproximateMask" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Timezone" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Locale" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AddressPostalAddress" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AddressCity" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AddressStateOrProvince" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AddressPostalCode" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AddressCountryName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AddressStreetAddress" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="PhoneNumber" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="PhoneNumberVerified" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="PlaceOfBirth" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="PlaceOfBirthCountry" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="PlaceOfBirthRegion" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="PlaceOfBirthCity" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Nationalities" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="BirthFamilyName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="BirthGivenName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="BirthMiddleName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Salutation" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Title" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="MobilePhoneNumber" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Pseudonym" type="DisclosableClaim" minOccurs="0" />
+
+			<xs:element name="IssuingCountry" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="IssuingAuthority" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="DocumentNumber" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Portrait" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="DrivingPrivileges" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="UNDistinguishingSign" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="PersonalAdministrativeNumber" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Height" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Weight" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="EyeColour" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="HairColour" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="ResidentPostalAddress" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="PortraitCaptureDate" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AgeInYears" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AgeBirthYear" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="AgeOverNN" type="ParametrizedDisclosableClaim" minOccurs="0" maxOccurs="unbounded" />
+			<xs:element name="IssuingJurisdiction" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="ResidentAddressCity" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="ResidentAddressState" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="ResidentAddressPostalCode" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="ResidentAddressCountry" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="BiometricTemplate" type="ParametrizedDisclosableClaim" minOccurs="0" maxOccurs="unbounded" />
+			<xs:element name="SignatureUsualMark" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Fingerprint" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="BusinessName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="OrganizationName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="BirthFullName" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="Profession" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipFather" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipMother" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipParent" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipSon" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipDaughter" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipBrother" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipSister" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipSibling" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipSpouse" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipFatherInLaw" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipMotherInLaw" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipParentInLaw" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipSonInLaw" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipDaughterInLaw" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipChildInLaw" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipParentalAuthority" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipLegalRepresentative" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="RelationshipAgent" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="DocumentType" type="DisclosableClaim" minOccurs="0" />
+
+			<!-- ETSI TS 119 472-1 other claims -->
+			<xs:element name="IssuingAuthorityRegistrationIdentifier" type="DisclosableClaim" minOccurs="0" />
+
+			<!-- PID Rulebook headers -->
+			<xs:element name="TrustAnchorClaim" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="ResidentAddressStreet" type="DisclosableClaim" minOccurs="0" />
+			<xs:element name="ResidentAddressHouseNumber" type="DisclosableClaim" minOccurs="0" />
+
+			<!-- other claims -->
+			<xs:element name="OtherClaim" type="DisclosableClaim" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="ParametrizedDisclosableClaim">
+		<xs:complexContent>
+			<xs:extension base="DisclosableClaim">
+				<xs:attribute name="parameter" type="xs:string" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="DisclosableClaim">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="name" type="xs:string" />
+				<xs:attribute name="disclosure" type="xs:boolean" />
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
 	
 	<xs:complexType name="Semantic">
 		<xs:simpleContent>

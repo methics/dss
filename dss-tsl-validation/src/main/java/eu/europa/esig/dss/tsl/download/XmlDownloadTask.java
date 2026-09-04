@@ -1,43 +1,47 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.tsl.download;
 
-import eu.europa.esig.dss.xml.utils.XMLCanonicalizer;
-import eu.europa.esig.dss.xml.utils.DomUtils;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.Digest;
-import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.spi.client.http.DSSFileLoader;
-import org.w3c.dom.Document;
+import eu.europa.esig.dss.validation.job.download.DownloadTask;
+import eu.europa.esig.dss.xades.DSSXMLUtils;
+import eu.europa.esig.dss.xml.utils.DomUtils;
+import eu.europa.esig.dss.xml.utils.XMLCanonicalizer;
 
-import javax.xml.crypto.dsig.CanonicalizationMethod;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 /**
  * Downloads the document and returns a {@code XmlDownloadResult}
  */
-public class XmlDownloadTask implements Supplier<XmlDownloadResult> {
+public class XmlDownloadTask implements DownloadTask {
+
+	/** Default digest algorithm used for document integrity identification */
+	private static final DigestAlgorithm DEFAULT_DIGEST_ALGORITHM = DigestAlgorithm.SHA256;
+
+	/** Default canonicalization method to be used on a document's digest computation */
+	private static final String DEFAULT_CANONICALIZATION_METHOD = XMLCanonicalizer.DEFAULT_DSS_C14N_METHOD;
 
 	/** The file loader */
 	private final DSSFileLoader dssFileLoader;
@@ -64,9 +68,9 @@ public class XmlDownloadTask implements Supplier<XmlDownloadResult> {
 			final DSSDocument dssDocument = dssFileLoader.getDocument(url);
 			assertDocumentIsValidXML(dssDocument);
 
-			final Document dom = DomUtils.buildDOM(dssDocument);
-			final byte[] canonicalizedContent = XMLCanonicalizer.createInstance(CanonicalizationMethod.EXCLUSIVE).canonicalize(dom);
-			return new XmlDownloadResult(dssDocument, new Digest(DigestAlgorithm.SHA256, DSSUtils.digest(DigestAlgorithm.SHA256, canonicalizedContent)));
+			final Digest digest = DSSXMLUtils.getDigestOnCanonicalizedInputStream(dssDocument.openStream(),
+					DEFAULT_DIGEST_ALGORITHM, DEFAULT_CANONICALIZATION_METHOD);
+			return new XmlDownloadResult(dssDocument, digest);
 		} catch (DSSException e) {
 			throw e;
 		} catch (Exception e) {

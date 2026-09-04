@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -29,10 +29,9 @@ import eu.europa.esig.dss.diagnostic.TimestampWrapper;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.enumerations.TimestampType;
 import eu.europa.esig.dss.model.DSSDocument;
-import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
-import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.spi.validation.CertificateVerifier;
+import eu.europa.esig.dss.utils.Utils;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.Calendar;
@@ -44,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class PAdESExtensionBToLTAWithExpiredUserTest extends AbstractPAdESTestExtension {
+class PAdESExtensionBToLTAWithExpiredUserTest extends AbstractPAdESTestExtension {
 
     private PAdESService service;
 
@@ -63,13 +62,6 @@ public class PAdESExtensionBToLTAWithExpiredUserTest extends AbstractPAdESTestEx
     }
 
     @Override
-    protected PAdESSignatureParameters getExtensionParameters() {
-        PAdESSignatureParameters signatureParameters = super.getExtensionParameters();
-        signatureParameters.setCheckCertificateRevocation(true); // TODO : to be removed in 6.2
-        return signatureParameters;
-    }
-
-    @Override
     protected DSSDocument extendSignature(DSSDocument signedDocument) {
         CertificateVerifier certificateVerifier = getCompleteCertificateVerifier();
         certificateVerifier.setAlertOnExpiredCertificate(new ExceptionOnStatusAlert());
@@ -79,7 +71,7 @@ public class PAdESExtensionBToLTAWithExpiredUserTest extends AbstractPAdESTestEx
 
         Exception exception = assertThrows(AlertException.class, () -> service.extendDocument(signedDocument, getExtensionParameters()));
         assertTrue(exception.getMessage().contains("Error on signature augmentation"));
-        assertTrue(exception.getMessage().contains("is expired at signing time"));
+        assertTrue(exception.getMessage().contains("The signing certificate has expired"));
 
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(getSigningCert().getNotAfter());
@@ -90,7 +82,7 @@ public class PAdESExtensionBToLTAWithExpiredUserTest extends AbstractPAdESTestEx
 
         exception = assertThrows(AlertException.class, () -> service.extendDocument(signedDocument, getExtensionParameters()));
         assertTrue(exception.getMessage().contains("Error on signature augmentation"));
-        assertTrue(exception.getMessage().contains("is expired at signing time"));
+        assertTrue(exception.getMessage().contains("The signing certificate has expired"));
 
         certificateVerifier.setAlertOnExpiredCertificate(new SilentOnStatusAlert());
 

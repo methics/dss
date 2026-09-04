@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,32 +21,38 @@
 package eu.europa.esig.dss.cades.signature;
 
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
-import eu.europa.esig.dss.cades.CMSUtils;
+import eu.europa.esig.dss.cades.CAdESUtils;
 import eu.europa.esig.dss.cades.validation.CAdESSignature;
 import eu.europa.esig.dss.cades.validation.CMSDocumentAnalyzer;
+import eu.europa.esig.dss.cms.CMS;
+import eu.europa.esig.dss.cms.CMSBuilder;
+import eu.europa.esig.dss.cms.CMSUtils;
+import eu.europa.esig.dss.cms.operator.CustomContentSigner;
 import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
-import eu.europa.esig.dss.spi.exception.IllegalInputException;
 import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.ManifestFile;
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.x509.CertificateToken;
-import eu.europa.esig.dss.spi.x509.BaselineBCertificateSelector;
-import eu.europa.esig.dss.spi.x509.CMSSignedDataBuilder;
-import eu.europa.esig.dss.utils.Utils;
+import eu.europa.esig.dss.spi.exception.IllegalInputException;
 import eu.europa.esig.dss.spi.signature.AdvancedSignature;
+import eu.europa.esig.dss.spi.signature.resources.DSSResourcesHandlerBuilder;
 import eu.europa.esig.dss.spi.validation.CertificateVerifier;
+import eu.europa.esig.dss.spi.x509.BaselineBCertificateSelector;
+import eu.europa.esig.dss.utils.Utils;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
-import org.bouncycastle.cms.CMSSignedData;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.cms.SignerInfoGenerator;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
+import org.bouncycastle.operator.ContentSigner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +74,9 @@ public class CAdESCounterSignatureBuilder {
 	/** A signature signed manifest. Used for ASiC */
 	private ManifestFile manifestFile;
 
+	/** This object is used to create data container objects such as an OutputStream or a DSSDocument */
+	protected DSSResourcesHandlerBuilder resourcesHandlerBuilder;
+
 	/**
 	 * The default constructor
 	 *
@@ -88,31 +97,41 @@ public class CAdESCounterSignatureBuilder {
 	}
 
 	/**
-	 * Adds a counter signature the provided CMSSignedData
-	 * 
-	 * @param originalCMSSignedData {@link CMSSignedData} to add a counter signature into
-	 * @param parameters {@link CAdESCounterSignatureParameters}
-	 * @param signatureValue {@link SignatureValue}
-	 * @return {@link CMSSignedDocument} with an added counter signature
+	 * This method sets a {@code DSSResourcesHandlerBuilder} to be used for operating with internal objects
+	 * during the signature creation procedure.
+	 *
+	 * @param resourcesHandlerBuilder {@link DSSResourcesHandlerBuilder}
 	 */
-	public CMSSignedDocument addCounterSignature(CMSSignedData originalCMSSignedData, CAdESCounterSignatureParameters parameters,
-			SignatureValue signatureValue) {
-
-		final List<SignerInformation> updatedSignerInfo = getUpdatedSignerInformations(originalCMSSignedData, originalCMSSignedData.getSignerInfos(),
-				parameters, signatureValue, null);
-
-		CMSSignedData updatedCMSSignedData = CMSSignedData.replaceSigners(originalCMSSignedData, new SignerInformationStore(updatedSignerInfo));
-		updatedCMSSignedData = CMSUtils.populateDigestAlgorithmSet(updatedCMSSignedData, originalCMSSignedData);
-		updatedCMSSignedData = addNewCertificates(updatedCMSSignedData, parameters);
-		return new CMSSignedDocument(updatedCMSSignedData);
+	public void setResourcesHandlerBuilder(DSSResourcesHandlerBuilder resourcesHandlerBuilder) {
+		this.resourcesHandlerBuilder = resourcesHandlerBuilder;
 	}
 
-	private List<SignerInformation> getUpdatedSignerInformations(CMSSignedData originalCMSSignedData, SignerInformationStore signerInformationStore,
+	/**
+	 * Adds a counter signature the provided CMS
+	 * 
+	 * @param originalCMS {@link CMS} to add a counter signature into
+	 * @param parameters {@link CAdESCounterSignatureParameters}
+	 * @param signatureValue {@link SignatureValue}
+	 * @return {@link DSSDocument} with an added counter signature
+	 */
+	public DSSDocument addCounterSignature(CMS originalCMS, CAdESCounterSignatureParameters parameters,
+			SignatureValue signatureValue) {
+
+		final List<SignerInformation> updatedSignerInfo = getUpdatedSignerInformations(originalCMS, originalCMS.getSignerInfos(),
+				parameters, signatureValue, null);
+
+		CMS updatedCMS = CMSUtils.replaceSigners(originalCMS, new SignerInformationStore(updatedSignerInfo));
+		updatedCMS = CMSUtils.populateDigestAlgorithmSet(updatedCMS, originalCMS.getDigestAlgorithmIDs());
+		updatedCMS = addNewCertificates(updatedCMS, parameters);
+		return CMSUtils.writeToDSSDocument(updatedCMS, resourcesHandlerBuilder);
+	}
+
+	private List<SignerInformation> getUpdatedSignerInformations(CMS originalCMS, SignerInformationStore signerInformationStore,
 			CAdESCounterSignatureParameters parameters, SignatureValue signatureValue, CAdESSignature masterSignature) {
 
 		List<SignerInformation> result = new LinkedList<>();
 		for (SignerInformation signerInformation : signerInformationStore) {
-			CAdESSignature cades = new CAdESSignature(originalCMSSignedData, signerInformation);
+			CAdESSignature cades = new CAdESSignature(originalCMS, signerInformation);
 			cades.setMasterSignature(masterSignature);
 			cades.setDetachedContents(parameters.getDetachedContents());
 			cades.setManifestFile(manifestFile);
@@ -129,7 +148,7 @@ public class CAdESCounterSignatureBuilder {
 				result.add(SignerInformation.addCounterSigners(signerInformation, counterSignatureSignerInfoStore));
 
 			} else if (signerInformation.getCounterSignatures().size() > 0) {
-				List<SignerInformation> updatedCounterSigners = getUpdatedSignerInformations(originalCMSSignedData,
+				List<SignerInformation> updatedCounterSigners = getUpdatedSignerInformations(originalCMS,
 						signerInformation.getCounterSignatures(), parameters, signatureValue, cades);
 				result.add(replaceCounterSigners(signerInformation, updatedCounterSigners));
 
@@ -156,7 +175,7 @@ public class CAdESCounterSignatureBuilder {
 			}
 		}
 
-		return SignerInformation.replaceUnsignedAttributes(signerInformation, new AttributeTable(attrs));
+		return CMSUtils.replaceUnsignedAttributes(signerInformation, new AttributeTable(attrs));
 	}
 
 	private boolean isCounterSignatureAttribute(ASN1Encodable asn1Encodable) {
@@ -183,15 +202,15 @@ public class CAdESCounterSignatureBuilder {
 		return new Attribute(CMSAttributes.counterSignature, new DERSet(signers));
 	}
 
-	private CMSSignedData addNewCertificates(CMSSignedData updatedCMSSignedData, CAdESCounterSignatureParameters parameters) {
+	private CMS addNewCertificates(CMS updatedCMS, CAdESCounterSignatureParameters parameters) {
 		final List<CertificateToken> newCertificates =
 				new BaselineBCertificateSelector(parameters.getSigningCertificate(), parameters.getCertificateChain())
 						.setTrustedCertificateSource(certificateVerifier.getTrustedCertSources())
 						.setTrustAnchorBPPolicy(parameters.bLevel().isTrustAnchorBPPolicy())
 						.getCertificates();
 
-		CMSSignedDataBuilder cmsSignedDataBuilder = new CMSSignedDataBuilder().setOriginalCMSSignedData(updatedCMSSignedData);
-		return cmsSignedDataBuilder.extendCMSSignedData(newCertificates, Collections.emptyList(), Collections.emptyList());
+		CMSBuilder cmsBuilder = new CMSBuilder().setOriginalCMS(updatedCMS);
+		return cmsBuilder.extendCMSSignedData(newCertificates, Collections.emptyList(), Collections.emptyList());
 	}
 
 	private SignerInformationStore generateCounterSignature(SignerInformation signerInformation,
@@ -212,21 +231,19 @@ public class CAdESCounterSignatureBuilder {
 	public SignerInformationStore generateCounterSignature(
 			SignerInformation signerInformation, CAdESSignatureParameters parameters, CustomContentSigner customContentSigner) {
 		InMemoryDocument toSignDocument = new InMemoryDocument(signerInformation.getSignature());
-		final SignerInfoGenerator signerInfoGenerator = new CMSSignerInfoGeneratorBuilder()
-				.build(toSignDocument, parameters, customContentSigner);
-		final CMSSignedDataGenerator cmsSignedDataGenerator = getCMSSignedDataBuilder(parameters)
-				.createCMSSignedDataGenerator(signerInfoGenerator);
-		return CMSUtils.generateCounterSigners(cmsSignedDataGenerator, signerInformation);
-	}
+		CMSForCAdESBuilderHelper cmsBuilderHelper = initCMSBuilderHelper(toSignDocument, parameters, customContentSigner);
+		final SignerInfoGenerator signerInfoGenerator = cmsBuilderHelper.createSignerInfoGenerator();
 
-	private CMSSignedDataBuilder getCMSSignedDataBuilder(CAdESSignatureParameters parameters) {
-		return new CMSSignedDataBuilder()
-				.setSigningCertificate(parameters.getSigningCertificate())
-				.setCertificateChain(parameters.getCertificateChain())
-				.setGenerateWithoutCertificates(parameters.isGenerateTBSWithoutCertificate())
-				.setTrustAnchorBPPolicy(parameters.bLevel().isTrustAnchorBPPolicy())
-				.setTrustedCertificateSource(certificateVerifier.getTrustedCertSources())
-				.setEncapsulate(false);
+		try {
+
+			// NOTE: use a simplified CMSSignedData generation to only create the required SignerInformationStore
+			CMSSignedDataGenerator cmsSignedDataGenerator = new CMSSignedDataGenerator();
+			cmsSignedDataGenerator.addSignerInfoGenerator(signerInfoGenerator);
+			return cmsSignedDataGenerator.generateCounterSigners(signerInformation);
+
+		} catch (CMSException e) {
+				throw new DSSException(String.format("Unable to generate counter-signature: %s", e.getMessage()), e);
+		}
 	}
 
 	/**
@@ -249,11 +266,11 @@ public class CAdESCounterSignatureBuilder {
 		Objects.requireNonNull(parameters.getSignatureIdToCounterSign(), "The Id of a signature to be counter signed shall be defined! "
 				+ "Please use SerializableCounterSignatureParameters.setSignatureIdToCounterSign(signatureId) method.");
 
-		CMSDocumentAnalyzer validator = new CMSDocumentAnalyzer(signatureDocument);
-		validator.setDetachedContents(parameters.getDetachedContents());
-		validator.setManifestFile(manifestFile);
+		CMSDocumentAnalyzer analyzer = new CMSDocumentAnalyzer(signatureDocument);
+		analyzer.setDetachedContents(parameters.getDetachedContents());
+		analyzer.setManifestFile(manifestFile);
 		
-		List<AdvancedSignature> signatures = validator.getSignatures();
+		List<AdvancedSignature> signatures = analyzer.getSignatures();
 		return findSignatureRecursive(signatures, parameters.getSignatureIdToCounterSign());
 	}
 
@@ -277,9 +294,26 @@ public class CAdESCounterSignatureBuilder {
 	}
 	
 	private void assertCounterSignaturePossible(SignerInformation signerInformation) {
-		if (CMSUtils.containsATSTv2(signerInformation)) {
+		if (CAdESUtils.containsATSTv2(signerInformation)) {
 			throw new IllegalInputException("Cannot add a counter signature to a CAdES containing an archiveTimestampV2");
 		}
+		if (CAdESUtils.containsEvidenceRecord(signerInformation)) {
+			throw new IllegalInputException("Cannot add a counter signature to a CMS containing an evidence record unsigned attribute.");
+		}
+	}
+
+	/**
+	 * Instantiates a {@code CMSForCAdESBuilderHelper}
+	 *
+	 * @param contentToSign {@link DSSDocument}
+	 * @param signatureParameters {@link CAdESSignatureParameters}
+	 * @param contentSigner {@link ContentSigner}
+	 * @return {@link CMSForCAdESBuilderHelper}
+	 */
+	protected CMSForCAdESBuilderHelper initCMSBuilderHelper(DSSDocument contentToSign, CAdESSignatureParameters signatureParameters,
+															ContentSigner contentSigner) {
+		return new CMSForCAdESBuilderHelper(contentToSign, signatureParameters, contentSigner)
+				.setTrustedCertificateSource(certificateVerifier.getTrustedCertSources());
 	}
 
 }

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,6 +21,7 @@
 package eu.europa.esig.dss.xades.signature;
 
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.SigningOperation;
 import eu.europa.esig.dss.enumerations.TimestampType;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
@@ -31,7 +32,6 @@ import eu.europa.esig.dss.model.TimestampParameters;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.signature.SignatureExtension;
 import eu.europa.esig.dss.signature.SignatureRequirementsChecker;
-import eu.europa.esig.dss.signature.SigningOperation;
 import eu.europa.esig.dss.spi.DSSASN1Utils;
 import eu.europa.esig.dss.spi.exception.IllegalInputException;
 import eu.europa.esig.dss.spi.signature.AdvancedSignature;
@@ -57,15 +57,20 @@ import eu.europa.esig.dss.xades.definition.xades141.XAdES141Element;
 import eu.europa.esig.dss.xades.validation.XAdESAttributeIdentifier;
 import eu.europa.esig.dss.xades.validation.XAdESSignature;
 import eu.europa.esig.dss.xades.validation.XMLDocumentAnalyzer;
+import eu.europa.esig.dss.xml.common.definition.DSSElement;
 import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigAttribute;
 import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigElement;
+import eu.europa.esig.dss.xml.common.xpath.XPathQueryBuilder;
 import eu.europa.esig.dss.xml.utils.DomUtils;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -123,7 +128,7 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements SignatureEx
 
 		List<AdvancedSignature> signatures = documentAnalyzer.getSignatures();
 		if (Utils.isCollectionEmpty(signatures)) {
-			throw new IllegalInputException("There is no signature to extend!");
+			throw new IllegalInputException("No signatures found to be extended!");
 		}
 
 		// In the case of the enveloped signature we have a specific treatment:<br>
@@ -434,7 +439,7 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements SignatureEx
 	 */
 	protected String removeOldCertificateValues() {
 		String text = null;
-		final Element toRemove = xadesSignature.getCertificateValues();
+		final Element toRemove = XPathUtils.getElement(xadesSignature.getSignatureElement(), xadesPath.getCertificateValuesPath());
 		if (toRemove != null) {
 			text = removeNode(toRemove);
 			xadesSignature.resetCertificateSource();
@@ -446,7 +451,7 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements SignatureEx
 	 * This method removes old revocation values from the unsigned signature properties element.
 	 */
 	protected void removeOldRevocationValues() {
-		final Element toRemove = xadesSignature.getRevocationValues();
+		final Element toRemove = XPathUtils.getElement(xadesSignature.getSignatureElement(), xadesPath.getRevocationValuesPath());
 		if (toRemove != null) {
 			removeNode(toRemove);
 			xadesSignature.resetRevocationSources();
@@ -454,19 +459,41 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements SignatureEx
 	}
 
 	/**
-	 * This method removes the timestamp validation data of the last archive timestamp.
+	 * This method removes the TimeStampValidationData and AnyValidationData elements appearing
+	 * in the end of the unsigned properties.
 	 *
-	 * @return indent of the last {@code TimeStampValidationData} xml element, if present
+	 * @return indent of the last {@code TimeStampValidationData} or {@code AnyValidationData} xml element, if any present
 	 */
-	protected String removeLastTimestampValidationData() {
-		final Element toRemove = xadesSignature.getLastTimestampValidationData();
-		if (toRemove != null) {
-			/* Certificate and revocation sources need to be reset because of
-			 * the removing of timeStampValidationData element */
-			xadesSignature.resetCertificateSource();
-			xadesSignature.resetRevocationSources();
+	protected String removeLastTimestampAndAnyValidationData() {
+		Element toRemove = getLastElementIfPresent(XAdES141Element.TIMESTAMP_VALIDATION_DATA, XAdES141Element.ANY_VALIDATION_DATA);
+		if (toRemove == null) {
+			return null;
+		}
+		String intent = null;
+		while (toRemove != null) {
+			intent = removeNode(toRemove);
+			toRemove = getLastElementIfPresent(XAdES141Element.TIMESTAMP_VALIDATION_DATA, XAdES141Element.ANY_VALIDATION_DATA);
+		}
+		/*
+		 * Certificate and revocation sources need to be reset because of
+		 * the removing of TimeStampValidationData or AnyValidationData element
+		 */
+		xadesSignature.resetCertificateSource();
+		xadesSignature.resetRevocationSources();
+		return intent;
+	}
 
-			return removeNode(toRemove);
+	private Element getLastElementIfPresent(DSSElement... xadesElements) {
+		final Node unsignedSignatureProperties = XPathUtils.getNode(xadesSignature.getSignatureElement(), xadesPath.getUnsignedSignaturePropertiesPath());
+		if (unsignedSignatureProperties != null) {
+			NodeList childNodes = XPathUtils.getNodeList(unsignedSignatureProperties, XPathQueryBuilder.fromCurrentPosition().build());
+			if (childNodes.getLength() > 0) {
+				final Element unsignedSignatureElement = (Element) childNodes.item(childNodes.getLength() - 1);
+				final String nodeName = unsignedSignatureElement.getLocalName();
+				if (Arrays.stream(xadesElements).anyMatch(e -> e.isSameTagName(nodeName))) {
+					return unsignedSignatureElement;
+				}
+			}
 		}
 		return null;
 	}
@@ -478,27 +505,49 @@ public class XAdESLevelBaselineT extends ExtensionBuilder implements SignatureEx
 	 * @param indent {@link String}
 	 */
 	protected void incorporateTimestampValidationData(final ValidationData validationDataForInclusion, String indent) {
+		incorporateValidationData(validationDataForInclusion, indent, XAdES141Element.TIMESTAMP_VALIDATION_DATA, TST_VD_PREFIX);
+	}
 
+	/**
+	 * This method incorporates the AnyValidationData in the signature
+	 *
+	 * @param validationDataForInclusion {@link ValidationData} to be included into the signature
+	 * @param indent {@link String}
+	 */
+	protected void incorporateAnyValidationData(final ValidationData validationDataForInclusion, String indent) {
+		incorporateValidationData(validationDataForInclusion, indent, XAdES141Element.ANY_VALIDATION_DATA, ANY_VD_PREFIX);
+	}
+
+	/**
+	 * This method incorporates the timestamp validation data in the signature
+	 *
+	 * @param validationDataForInclusion {@link ValidationData} to be included into the signature
+	 * @param indent {@link String}
+	 * @param element {@link DSSElement}
+	 * @param prefix {@link String}
+	 */
+	protected void incorporateValidationData(final ValidationData validationDataForInclusion, String indent,
+											 DSSElement element, String prefix) {
 		if (!validationDataForInclusion.isEmpty()) {
 
 			Set<CertificateToken> certificateValuesToAdd = validationDataForInclusion.getCertificateTokens();
 			Set<CRLToken> crlsToAdd = validationDataForInclusion.getCrlTokens();
 			Set<OCSPToken> ocspsToAdd = validationDataForInclusion.getOcspTokens();
 
-			final Element timeStampValidationDataDom = DomUtils.addElement(documentDom, unsignedSignaturePropertiesDom, getXades141Namespace(),
-					XAdES141Element.TIMESTAMP_VALIDATION_DATA);
+			final Element timeStampValidationDataDom = DomUtils.addElement(
+					documentDom, unsignedSignaturePropertiesDom, getXades141Namespace(), element);
 
 			incorporateCertificateValues(timeStampValidationDataDom, certificateValuesToAdd, indent);
 			incorporateRevocationValues(timeStampValidationDataDom, crlsToAdd, ocspsToAdd, indent);
 
 			String id = "1";
-			final List<TimestampToken> archiveTimestamps = xadesSignature.getArchiveTimestamps();
-			if (Utils.isCollectionNotEmpty(archiveTimestamps)) {
-				final TimestampToken timestampToken = archiveTimestamps.get(archiveTimestamps.size() - 1);
-				id = timestampToken.getDSSIdAsString();
+			final List<TimestampToken> timestamps = xadesSignature.getAllTimestamps();
+			if (Utils.isCollectionNotEmpty(timestamps)) {
+				final TimestampToken timestampToken = timestamps.get(timestamps.size() - 1);
+				id = toXmlIdentifier(timestampToken.getDSSId());
 			}
 
-			timeStampValidationDataDom.setAttribute("Id", ID_PREFIX + id);
+			timeStampValidationDataDom.setAttribute("Id", prefix + id);
 			if (params.isPrettyPrint()) {
 				DSSXMLUtils.indentAndReplace(documentDom, timeStampValidationDataDom);
 			}

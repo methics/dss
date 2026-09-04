@@ -342,17 +342,28 @@
             <Conclusion>
                 <Indication>PASSED</Indication>
             </Conclusion>
-            <CryptographicValidation secure="true">
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2020-02-10T06:53:57">
+            <Constraint>
+                <Name Key="ARCCM">Are cryptographic constraints met for the revocation data's signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Validation time : 2020-02-10 06:53 for token with ID : [R-53145250343A6AA12CA1A6CCD1AB58FFD487CD349F617351365F6A27F7B47AD3]</AdditionalInfo>
+            </Constraint>
+            <Conclusion>
+                <Indication>PASSED</Indication>
+            </Conclusion>
+            <SignatureCryptographicValidation TokenId="R-53145250343A6AA12CA1A6CCD1AB58FFD487CD349F617351365F6A27F7B47AD3">
                 <Algorithm>
                     <Name>RSA with SHA256</Name>
                     <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</Uri>
                     <KeyLength>2048</KeyLength>
                 </Algorithm>
                 <NotAfter>2022-12-31T23:00:00</NotAfter>
-                <ValidationTime>2020-02-10T13:14:22</ValidationTime>
-                <ConcernedMaterial>R-53145250343A6AA12CA1A6CCD1AB58FFD487CD349F617351365F6A27F7B47AD3</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="C-D2D0BDD02645B9AE9FD95EF266A19A73E9D243C7CD8D9F8FF35ECD96A5D9A54A">
                 <Source>OCSP_RESPONSE</Source>
@@ -423,17 +434,28 @@
             <Conclusion>
                 <Indication>PASSED</Indication>
             </Conclusion>
-            <CryptographicValidation secure="true">
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2020-02-10T13:14:22">
+            <Constraint>
+                <Name Key="ARCCM">Are cryptographic constraints met for the revocation data's signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Validation time : 2020-02-10 06:53 for token with ID : [R-402E755E0596CB9896D5BDF24BBFD11F2DE2601A7A03C2A9F1D2874260A7E210]</AdditionalInfo>
+            </Constraint>
+            <Conclusion>
+                <Indication>PASSED</Indication>
+            </Conclusion>
+            <SignatureCryptographicValidation TokenId="R-402E755E0596CB9896D5BDF24BBFD11F2DE2601A7A03C2A9F1D2874260A7E210">
                 <Algorithm>
                     <Name>RSA with SHA256</Name>
                     <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</Uri>
                     <KeyLength>4096</KeyLength>
                 </Algorithm>
                 <NotAfter>2025-12-31T23:00:00</NotAfter>
-                <ValidationTime>2020-02-10T13:14:22</ValidationTime>
-                <ConcernedMaterial>R-402E755E0596CB9896D5BDF24BBFD11F2DE2601A7A03C2A9F1D2874260A7E210</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="C-BED0F19ED46D94900D2A9FCD7C6F660B61FF7588D8B71CF8F279D5FAA3021CCF">
                 <Source>TRUSTED_LIST</Source>
@@ -722,17 +744,32 @@
                 <SubIndication>CRYPTO_CONSTRAINTS_FAILURE_NO_POE</SubIndication>
                 <Errors Key="ASCCM_ANS_5">The algorithm is no longer considered reliable!</Errors>
             </Conclusion>
-            <CryptographicValidation secure="false">
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2020-02-10T13:14:22">
+            <Constraint>
+                <Name Key="ARCCM">Are cryptographic constraints met for the revocation data's signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Validation time : 2020-02-10 06:53 for token with ID : [S-B076879EC80E7D31F8B4ABECDFB4B646AF9AF30843BA2C44B4261243CC8D4542]</AdditionalInfo>
+            </Constraint>
+            <Conclusion>
+                <Indication>INDETERMINATE</Indication>
+                <SubIndication>CRYPTO_CONSTRAINTS_FAILURE_NO_POE</SubIndication>
+                <Errors Key="ASCCM_ANS_5">The algorithm RSA with SHA1 with key length 2048 is no longer considered reliable!</Errors>
+            </Conclusion>
+            <SignatureCryptographicValidation TokenId="S-B076879EC80E7D31F8B4ABECDFB4B646AF9AF30843BA2C44B4261243CC8D4542">
                 <Algorithm>
                     <Name>RSA with SHA1</Name>
                     <Uri>http://www.w3.org/2000/09/xmldsig#rsa-sha1</Uri>
                     <KeyLength>2048</KeyLength>
                 </Algorithm>
                 <NotAfter>2008-12-31T23:00:00</NotAfter>
-                <ValidationTime>2020-02-10T13:14:22</ValidationTime>
-                <ConcernedMaterial>S-B076879EC80E7D31F8B4ABECDFB4B646AF9AF30843BA2C44B4261243CC8D4542</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <Conclusion>
+                    <Indication>INDETERMINATE</Indication>
+                    <SubIndication>CRYPTO_CONSTRAINTS_FAILURE_NO_POE</SubIndication>
+                    <Errors Key="ASCCM_ANS_5">The algorithm RSA with SHA1 with key length 2048 is no longer considered reliable!</Errors>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="C-0EC53B285E62AA6C9B3C1BF5346042BF4A53C35DF073E3034700420A5D3E30BA">
                 <Source>SIGNATURE</Source>

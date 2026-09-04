@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -26,6 +26,7 @@ import eu.europa.esig.dss.model.timedependent.BaseTimeDependent;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * This class represents a wrapper for TrustServiceEquivalenceInformation element from MRA scheme
@@ -325,6 +326,45 @@ public class ServiceEquivalence extends BaseTimeDependent {
 			return this;
 		}
 
+	}
+
+	@Override
+	public String toString() {
+		return "ServiceEquivalence [" +
+				"legalInfoIdentifier='" + legalInfoIdentifier + '\'' +
+				", status=" + status +
+				", typeAsiEquivalence=" + typeAsiEquivalence +
+				", statusEquivalence=" + statusEquivalence +
+				", certificateContentEquivalences=" + certificateContentEquivalences +
+				", qualifierEquivalence=" + qualifierEquivalence +
+				"] " + super.toString();
+	}
+
+	@Override
+	public boolean equals(Object object) {
+		if (this == object) return true;
+		if (object == null || getClass() != object.getClass()) return false;
+		if (!super.equals(object)) return false;
+
+		ServiceEquivalence that = (ServiceEquivalence) object;
+		return Objects.equals(legalInfoIdentifier, that.legalInfoIdentifier)
+				&& status == that.status
+				&& Objects.equals(typeAsiEquivalence, that.typeAsiEquivalence)
+				&& Objects.equals(statusEquivalence, that.statusEquivalence)
+				&& Objects.equals(certificateContentEquivalences, that.certificateContentEquivalences)
+				&& Objects.equals(qualifierEquivalence, that.qualifierEquivalence);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = super.hashCode();
+		result = 31 * result + Objects.hashCode(legalInfoIdentifier);
+		result = 31 * result + Objects.hashCode(status);
+		result = 31 * result + Objects.hashCode(typeAsiEquivalence);
+		result = 31 * result + Objects.hashCode(statusEquivalence);
+		result = 31 * result + Objects.hashCode(certificateContentEquivalences);
+		result = 31 * result + Objects.hashCode(qualifierEquivalence);
+		return result;
 	}
 
 }

@@ -6,11 +6,11 @@
 	<parent>
 		<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 		<artifactId>sd-dss</artifactId>
-		<version>6.1</version>
+		<version>6.5</version>
 	</parent>
 
 	<artifactId>specs-jades</artifactId>
-	<name>JAdES Schema Module</name>
+	<name>JAdES Schema Model</name>
 	<description>Generated sources from ETSI TS 119 182-1 JAdES JSON schema</description>
 
 	<properties>

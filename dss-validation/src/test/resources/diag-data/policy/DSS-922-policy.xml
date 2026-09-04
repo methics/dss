@@ -1,5 +1,5 @@
 
-<ConstraintsParameters Name="QES AdESQC TL based" xmlns="http://dss.esig.europa.eu/validation/policy">
+<ConstraintsParameters Name="QES AES/QC AES TL based" xmlns="http://dss.esig.europa.eu/validation/policy">
   <Description>RIA customized validation policy
   </Description>
   <SignatureConstraints>
@@ -35,6 +35,7 @@
         <Recognition Level="FAIL"/>
         <Signature Level="FAIL"/>
         <NotExpired Level="INFORM"/>
+        <SunsetDate Level="FAIL" />
         <RevocationDataAvailable Level="FAIL"/>
         <CRLNextUpdatePresent Level="WARN"/>
         <RevocationFreshness Level="FAIL" Unit="SECONDS" Value="0"/>
@@ -75,6 +76,7 @@
       <CACertificate>
         <Signature Level="FAIL"/>
         <NotExpired Level="FAIL"/>
+        <SunsetDate Level="FAIL" />
         <RevocationDataAvailable Level="FAIL"/>
         <CRLNextUpdatePresent Level="WARN"/>
         <RevocationFreshness Level="FAIL" Unit="SECONDS" Value="0"/>
@@ -132,8 +134,12 @@
       <CertDigestMatch Level="FAIL"/>
       <IssuerSerialMatch Level="WARN"/>
       <SigningTime Level="FAIL"/>
-      <!--<ContentType Level="FAIL" value="1.2.840.113549.1.7.1" />
-      <ContentHints Level="FAIL" value="*" />
+<!--  <ContentType Level="FAIL">
+          <Id>1.2.840.113549.1.7.1</Id>
+      </ContentType>
+      <ContentHints Level="FAIL">
+          <Id>*</Id>
+      </ContentHints>
       <CommitmentTypeIndication Level="FAIL">
           <Id>1.2.840.113549.1.9.16.6.1</Id>
           <Id>1.2.840.113549.1.9.16.6.4</Id>
@@ -178,6 +184,7 @@
         <Recognition Level="FAIL"/>
         <Signature Level="FAIL"/>
         <NotExpired Level="FAIL"/>
+        <SunsetDate Level="FAIL" />
         <RevocationDataAvailable Level="FAIL"/>
         <CRLNextUpdatePresent Level="WARN"/>
         <RevocationFreshness Level="FAIL" Unit="SECONDS" Value="0"/>
@@ -209,6 +216,7 @@
       <CACertificate>
         <Signature Level="FAIL"/>
         <NotExpired Level="FAIL"/>
+        <SunsetDate Level="FAIL" />
         <RevocationDataAvailable Level="FAIL"/>
         <CRLNextUpdatePresent Level="WARN"/>
         <RevocationFreshness Level="FAIL" Unit="SECONDS" Value="0"/>
@@ -282,6 +290,7 @@
         <Recognition Level="FAIL"/>
         <Signature Level="FAIL"/>
         <NotExpired Level="FAIL"/>
+        <SunsetDate Level="FAIL" />
         <RevocationDataSkip Level="IGNORE">
           <CertificateExtensions>
             <Id>1.3.6.1.5.5.7.48.1.5</Id> <!-- ocsp_noCheck -->
@@ -318,6 +327,7 @@
       <CACertificate>
         <Signature Level="FAIL"/>
         <NotExpired Level="FAIL"/>
+        <SunsetDate Level="FAIL" />
         <RevocationDataAvailable Level="FAIL"/>
         <CRLNextUpdatePresent Level="WARN"/>
         <RevocationFreshness Level="FAIL" Unit="SECONDS" Value="0"/>

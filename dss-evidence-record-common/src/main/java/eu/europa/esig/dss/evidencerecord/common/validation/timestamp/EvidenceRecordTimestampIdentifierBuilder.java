@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -36,11 +36,23 @@ public class EvidenceRecordTimestampIdentifierBuilder extends TimestampIdentifie
     /** Prefix string for order of archive time-stamp element */
     private static final String ARCHIVE_TIMESTAMP_ORDER_PREFIX = "-AT-";
 
+    /** Prefix string for order of evidence record's attribute */
+    private static final String EVIDENCE_RECORD_ATTRIBUTE_ORDER_PREFIX = "-ER-";
+
+    /** Prefix string for order of evidence record within its attribute */
+    private static final String EVIDENCE_RECORD_WITHIN_ATTRIBUTE_ORDER_PREFIX = "-ERA-";
+
     /** Position of the time-stamp token's corresponding archive time-stamp chain within an evidence record */
     private Integer archiveTimeStampChainOrder;
 
     /** Position of the time-stamp token within its archive time-stamp chain */
     private Integer archiveTimeStampOrder;
+
+    /** Position of an embedded evidence record's attribute within unsigned properties */
+    private Integer evidenceRecordAttributeOrder;
+
+    /** Position of an embedded evidence record within its unsigned attribute */
+    private Integer evidenceRecordWithinAttributeOrder;
 
     /**
      * Default constructor to build an identifier for an evidence record time-stamp
@@ -73,6 +85,28 @@ public class EvidenceRecordTimestampIdentifierBuilder extends TimestampIdentifie
         return this;
     }
 
+    /**
+     * Sets position of the embedded evidence record's attribute within the signature's unsigned properties
+     *
+     * @param evidenceRecordAttributeOrder position number
+     * @return this {@link EvidenceRecordTimestampIdentifierBuilder}
+     */
+    public EvidenceRecordTimestampIdentifierBuilder setEvidenceRecordAttributeOrder(Integer evidenceRecordAttributeOrder) {
+        this.evidenceRecordAttributeOrder = evidenceRecordAttributeOrder;
+        return this;
+    }
+
+    /**
+     * Sets position of the embedded evidence record within its unsigned attribute
+     *
+     * @param evidenceRecordWithinAttributeOrder position number
+     * @return this {@link EvidenceRecordTimestampIdentifierBuilder}
+     */
+    public EvidenceRecordTimestampIdentifierBuilder setEvidenceRecordWithinAttributeOrder(Integer evidenceRecordWithinAttributeOrder) {
+        this.evidenceRecordWithinAttributeOrder = evidenceRecordWithinAttributeOrder;
+        return this;
+    }
+
     @Override
     public EvidenceRecordTimestampIdentifierBuilder setFilename(String filename) {
         return (EvidenceRecordTimestampIdentifierBuilder) super.setFilename(filename);
@@ -88,6 +122,14 @@ public class EvidenceRecordTimestampIdentifierBuilder extends TimestampIdentifie
         if (archiveTimeStampOrder != null) {
             sb.append(ARCHIVE_TIMESTAMP_ORDER_PREFIX);
             sb.append(archiveTimeStampOrder);
+        }
+        if (evidenceRecordAttributeOrder != null) {
+            sb.append(EVIDENCE_RECORD_ATTRIBUTE_ORDER_PREFIX);
+            sb.append(evidenceRecordAttributeOrder);
+        }
+        if (evidenceRecordWithinAttributeOrder != null) {
+            sb.append(EVIDENCE_RECORD_WITHIN_ATTRIBUTE_ORDER_PREFIX);
+            sb.append(evidenceRecordWithinAttributeOrder);
         }
         return sb.toString();
     }

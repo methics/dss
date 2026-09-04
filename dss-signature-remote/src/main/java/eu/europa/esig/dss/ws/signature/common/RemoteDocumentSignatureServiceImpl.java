@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -23,11 +23,15 @@ package eu.europa.esig.dss.ws.signature.common;
 import eu.europa.esig.dss.asic.cades.signature.ASiCWithCAdESService;
 import eu.europa.esig.dss.asic.xades.signature.ASiCWithXAdESService;
 import eu.europa.esig.dss.cades.signature.CAdESService;
+import eu.europa.esig.dss.cbades.signature.CBAdESService;
 import eu.europa.esig.dss.enumerations.ASiCContainerType;
 import eu.europa.esig.dss.enumerations.SignatureForm;
+import eu.europa.esig.dss.enumerations.SignatureProfile;
 import eu.europa.esig.dss.enumerations.TimestampContainerForm;
+import eu.europa.esig.dss.extension.SignedDocumentExtender;
 import eu.europa.esig.dss.jades.signature.JAdESService;
 import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.SerializableCounterSignatureParameters;
 import eu.europa.esig.dss.model.SerializableSignatureParameters;
 import eu.europa.esig.dss.model.TimestampParameters;
@@ -68,6 +72,9 @@ public class RemoteDocumentSignatureServiceImpl extends AbstractRemoteSignatureS
 
 	/** JAdES signature service */
 	private JAdESService jadesService;
+
+	/** CB-AdES signature service */
+	private CBAdESService cbadesService;
 
 	/** ASiC with XAdES signature service */
 	private ASiCWithXAdESService asicWithXAdESService;
@@ -119,6 +126,15 @@ public class RemoteDocumentSignatureServiceImpl extends AbstractRemoteSignatureS
 	}
 
 	/**
+	 * Sets the CB-AdES signature service
+	 *
+	 * @param cbadesService {@link CBAdESService}
+	 */
+	public void setCbadesService(CBAdESService cbadesService) {
+		this.cbadesService = cbadesService;
+	}
+
+	/**
 	 * Sets the ASiC with XAdES signature service
 	 *
 	 * @param asicWithXAdESService {@link ASiCWithXAdESService}
@@ -138,70 +154,117 @@ public class RemoteDocumentSignatureServiceImpl extends AbstractRemoteSignatureS
 
 	@SuppressWarnings("rawtypes")
 	private DocumentSignatureService getServiceForSignature(SignatureForm signatureForm, ASiCContainerType asicContainerType) {
+		DocumentSignatureService service;
 		if (asicContainerType != null) {
 			switch (signatureForm) {
 				case XAdES:
-					return asicWithXAdESService;
+					service = asicWithXAdESService;
+					break;
 				case CAdES:
-					return asicWithCAdESService;
+					service = asicWithCAdESService;
+					break;
 				default:
 					throw new UnsupportedOperationException("Unrecognized format (XAdES or CAdES are allowed with ASiC) : " + signatureForm);
 				}
 		} else {
 			switch (signatureForm) {
 				case XAdES:
-					return xadesService;
+					service = xadesService;
+					break;
 				case CAdES:
-					return cadesService;
+					service = cadesService;
+					break;
 				case PAdES:
-					return padesService;
+					service = padesService;
+					break;
 				case JAdES:
-					return jadesService;
+					service = jadesService;
+					break;
+				case CBAdES:
+					service = cbadesService;
+					break;
 				default:
 					throw new UnsupportedOperationException("Unrecognized format " + signatureForm);
 				}
 		}
+		if (service == null) {
+			if (asicContainerType != null) {
+				throw new NullPointerException(String.format("No service has been provided for the signature form '%s' " +
+						"and ASiC type '%s'", signatureForm, asicContainerType));
+			} else {
+				throw new NullPointerException(String.format("No service has been provided for the signature form '%s'",
+						signatureForm));
+			}
+		}
+		return service;
 	}
 
 	@SuppressWarnings("rawtypes")
 	private CounterSignatureService getServiceForCounterSignature(SignatureForm signatureForm, ASiCContainerType asicContainerType) {
+		CounterSignatureService service;
 		if (asicContainerType != null) {
 			switch (signatureForm) {
 				case XAdES:
-					return asicWithXAdESService;
+					service = asicWithXAdESService;
+					break;
 				case CAdES:
-					return asicWithCAdESService;
+					service = asicWithCAdESService;
+					break;
 				default:
 					throw new UnsupportedOperationException("Unrecognized format (XAdES or CAdES are allowed with ASiC) : " + signatureForm);
 				}
 		} else {
 			switch (signatureForm) {
 				case XAdES:
-					return xadesService;
+					service = xadesService;
+					break;
 				case CAdES:
-					return cadesService;
+					service = cadesService;
+					break;
 				case PAdES:
 					throw new UnsupportedOperationException(String.format("The Counter Signature is not supported with %s", signatureForm));
 				case JAdES:
-					return jadesService;
+					service = jadesService;
+					break;
+				case CBAdES:
+					service = cbadesService;
+					break;
 				default:
 					throw new UnsupportedOperationException("Unrecognized format " + signatureForm);
 			}
 		}
+		if (service == null) {
+			if (asicContainerType != null) {
+				throw new NullPointerException(String.format("No service has been provided for the signature form '%s' " +
+						"and ASiC type '%s'", signatureForm, asicContainerType));
+			} else {
+				throw new NullPointerException(String.format("No service has been provided for the signature form '%s'",
+						signatureForm));
+			}
+		}
+		return service;
 	}
 
 	@SuppressWarnings("rawtypes")
 	private DocumentSignatureService getServiceForTimestamp(TimestampContainerForm timestampContainerForm) {
 		Objects.requireNonNull(timestampContainerForm, "The timestampContainerForm must be defined!");
+		DocumentSignatureService service;
 		switch(timestampContainerForm) {
 			case PDF:
-				return padesService;
+				service = padesService;
+				break;
 			case ASiC_E:
 			case ASiC_S:
-				return asicWithCAdESService;
+				service = asicWithCAdESService;
+				break;
 			default:
 				throw new UnsupportedOperationException("Unrecognized format (only PDF, ASiC-E and ASiC-S are allowed) : " + timestampContainerForm);
 		}
+		if (service == null) {
+			throw new NullPointerException(String.format("No service has been provided for the timestamp form '%s'",
+					timestampContainerForm));
+		}
+		return service;
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -225,6 +288,7 @@ public class RemoteDocumentSignatureServiceImpl extends AbstractRemoteSignatureS
 		Objects.requireNonNull(remoteDocument, "remoteDocument must be defined!");
 		Objects.requireNonNull(remoteParameters, "remoteParameters must be defined!");
 		Objects.requireNonNull(remoteParameters.getSignatureLevel(), "signatureLevel must be defined!");
+		Objects.requireNonNull(signatureValueDTO, "signatureValue must be defined!");
 		LOG.info("SignDocument in process...");
 		SerializableSignatureParameters parameters = createParameters(remoteParameters);
 		DocumentSignatureService service = getServiceForSignature(remoteParameters.getSignatureLevel().getSignatureForm(), remoteParameters.getAsicContainerType());
@@ -234,17 +298,39 @@ public class RemoteDocumentSignatureServiceImpl extends AbstractRemoteSignatureS
 		return RemoteDocumentConverter.toRemoteDocument(signDocument);
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
-	public RemoteDocument extendDocument(RemoteDocument remoteDocument, RemoteSignatureParameters remoteParameters) {
+	public RemoteDocument extendDocument(RemoteDocument remoteDocument, SignatureProfile signatureProfile, RemoteSignatureParameters remoteParameters) throws DSSException {
 		Objects.requireNonNull(remoteDocument, "remoteDocument must be defined!");
-		Objects.requireNonNull(remoteParameters, "remoteParameters must be defined!");
-		Objects.requireNonNull(remoteParameters.getSignatureLevel(), "signatureLevel must be defined!");
+		if (signatureProfile == null && (remoteParameters == null || remoteParameters.getSignatureLevel() == null)) {
+			throw new NullPointerException("One of the signatureProfile or remoteParameters.signatureLevel must be defined!");
+		}
 		LOG.info("ExtendDocument in process...");
-		SerializableSignatureParameters parameters = createParameters(remoteParameters);
-		DocumentSignatureService service = getServiceForSignature(remoteParameters.getSignatureLevel().getSignatureForm(), remoteParameters.getAsicContainerType());
+
 		DSSDocument dssDocument = RemoteDocumentConverter.toDSSDocument(remoteDocument);
-		DSSDocument extendDocument = service.extendDocument(dssDocument, parameters);
+		SignedDocumentExtender documentExtender = SignedDocumentExtender.fromDocument(dssDocument);
+		documentExtender.setServices(xadesService, cadesService, padesService, jadesService, cbadesService, asicWithXAdESService, asicWithCAdESService);
+
+		SignatureForm signatureForm = documentExtender.getSignatureForm();
+		SerializableSignatureParameters signatureParameters;
+		if (remoteParameters == null) {
+			signatureParameters = null;
+		} else if (documentExtender.isASiC()) {
+			signatureParameters = getASiCSignatureParameters(null, signatureForm);
+		} else {
+			signatureParameters = getExtensionParameters(signatureForm, remoteParameters);
+		}
+
+		fillParameters(signatureParameters, remoteParameters, signatureForm);
+
+		if (signatureProfile == null) {
+			signatureProfile = remoteParameters.getSignatureLevel().getSignatureProfile();
+			LOG.info("Target signature profile has been derived from the RemoteSignatureParameters : {}. " +
+					"SignatureProfile is to be required in future versions.", signatureProfile);
+		} else if (remoteParameters != null && remoteParameters.getSignatureLevel() != null) {
+			LOG.warn("Both SignatureProfile and RemoteSignatureParameters.SignatureLevel are defined. The SignatureProfile will be used : {}", signatureProfile);
+		}
+
+		DSSDocument extendDocument = documentExtender.extendDocument(signatureProfile, signatureParameters);
 		LOG.info("ExtendDocument is finished");
 		return RemoteDocumentConverter.toRemoteDocument(extendDocument);
 	}

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -23,9 +23,11 @@ package eu.europa.esig.dss.service.http.commons;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.spi.client.http.DataLoader;
 import eu.europa.esig.dss.spi.client.http.DataLoader.DataAndUrl;
 import eu.europa.esig.dss.spi.client.http.IgnoreDataLoader;
 import eu.europa.esig.dss.spi.client.http.MemoryDataLoader;
+import eu.europa.esig.dss.spi.exception.DSSExternalResourceException;
 import eu.europa.esig.dss.utils.Utils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,10 +43,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -100,7 +105,7 @@ class FileCacheDataLoaderTest {
 	}
 
 	@Test
-	void testNotNetworkProtocol() throws IOException {
+	void testNotNetworkProtocol() {
 		FileCacheDataLoader specificDataLoader = new FileCacheDataLoader();
 		specificDataLoader.setDataLoader(new MemoryDataLoader(new HashMap<>()));
 		specificDataLoader.setFileCacheDirectory(cacheDirectory);
@@ -179,6 +184,61 @@ class FileCacheDataLoaderTest {
 		assertNotNull(dataAndUrl.getData());
 	}
 
+	@Test
+	void testCacheConditions() {
+		dataLoader.setCachePredicate(it -> false);
+		assertThrows(DSSExternalResourceException.class, () -> dataLoader.get(URL_TO_LOAD));
+		assertNull(getCachedFile(cacheDirectory));
+	}
+
+	@Test
+	void testCacheConditionsMultiplePredicatesFalse() {
+		Predicate<byte[]> predicate = new Predicate<byte[]>() {
+			@Override
+			public boolean test(byte[] bytes) {
+				return true;
+			}
+		}.and(new Predicate<byte[]>() {
+			@Override
+			public boolean test(byte[] bytes) {
+				return false;
+			}
+		});
+		dataLoader.setCachePredicate(predicate);
+		assertThrows(DSSExternalResourceException.class, () -> dataLoader.get(URL_TO_LOAD));
+		assertNull(getCachedFile(cacheDirectory));
+	}
+
+	@Test
+	void testCacheConditionsMultiplePredicatesTrue() {
+		Predicate<byte[]> predicate = new Predicate<byte[]>() {
+			@Override
+			public boolean test(byte[] bytes) {
+				return true;
+			}
+		}.or(new Predicate<byte[]>() {
+			@Override
+			public boolean test(byte[] bytes) {
+				return false;
+			}
+		});
+		dataLoader.setCachePredicate(predicate);
+		assertNotNull(dataLoader.get(URL_TO_LOAD));
+		assertNotNull(getCachedFile(cacheDirectory));
+	}
+
+	@Test
+	void testFallbackDataLoader() {
+		Map<String, byte[]> dataMap = new HashMap<>();
+		dataMap.put(URL_TO_LOAD, URL_TO_LOAD.getBytes());
+		DataLoader fallbackDataLoader = new MemoryDataLoader(dataMap);
+		dataLoader.setCachePredicate(it -> false);
+		dataLoader.setFallbackDataLoader(fallbackDataLoader);
+
+		assertArrayEquals(URL_TO_LOAD.getBytes(), dataLoader.get(URL_TO_LOAD));
+		assertNull(getCachedFile(cacheDirectory));
+	}
+
 	private long getUrlAndReturnCacheCreationTime() {
 		byte[] bytesArray = dataLoader.get(URL_TO_LOAD);
 		assertTrue(bytesArray.length > 0);
@@ -208,4 +268,5 @@ class FileCacheDataLoaderTest {
 		nextSecond.add(Calendar.SECOND, 1);
 		await().atMost(2, TimeUnit.SECONDS).until(() -> Calendar.getInstance().getTime().compareTo(nextSecond.getTime()) > 0);
 	}
+
 }

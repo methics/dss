@@ -183,6 +183,38 @@ DSS provides a set of functions to align a text with respect to an image.
 The parameters must be applied to a 'SignatureImageTextParameters' object.
 See section <<TextImageCombi>> in the Annex for a concrete example.
 
+[[PdfDPI]]
+====== DPI
+
+In general, DSS aims to keep the original image attributes, such as size and DPI, when provided for a visual signature creation.
+This behavior can be configured using various settings, some of them being:
+
+ * Signature field dimensions (height and width);
+ * Target DPI configuration;
+ * Image stretching behavior;
+ * etc.
+
+Since version `6.5`, DSS changes the behavior on DPI settings handling, impacting the final image's dimensions, where applicable. To simplify the migration, an option to choose between the old "legacy" behavior (DSS 6.4 and before) and the new one is provided:
+
+ * When enabled (default in DSS `6.5`, to be changed later), the image size for not enforced dimensions is computed based on the ratio PDF_DPI/Image_DPI (where PDF_DPI=72, and Image_DPI is extracted from the image attributes). The image attributes are extracted only for image files with a defined filename.
+ * When disabled (recommended, to be enforced in future DSS versions), the original image size is used on visual signature field's dimension computation (when not explicitly defined), with image being scaled in the ratio Image_DPI/Target_DPI, where Image_DPI is extracted from the image attributes, and Target_DPI being the DPI setting in the signature image parameters. If no DPI is explicitly defined, the original image DPI is used for the Target_DPI, thus effectively keeping the original image dimensions. The image attributes are extracted for all image files based on the file type, when supported.
+
+[source,java,indent=0]
+.Set legacy DPI handling on PDF visual signature creation
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/PAdESVisibleSignatureSnippet.java[tags=pdfLegacyDpi]
+----
+
+NOTE: The rationale for migration to the new DPI handling is that the old behavior was not consistent with final image having a different size when no signature field's width or height were defined. The new behavior aims to provide a clearer and easier to use across different settings solution.
+
+Should you need assistance on migration to the new DPI handling behavior, please see some possible options below:
+
+[source,java,indent=0]
+.Migration options to the new DPI handling behavior (6.5+)
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/PAdESVisibleSignatureSnippet.java[tags=dss65Migration]
+----
+
 ===== Fonts usage
 
 To customize a text representation a custom font can be defined. The font must be added as an instance of the `DSSFont` interface to a `SignatureImageTextParameters` object.
@@ -274,7 +306,7 @@ The class `PdfPermissionsChecker` is responsible for configuration of the setup.
 * FieldMDP `/FieldMDP` (as per "12.8.2.4 FieldMDP" of ISO 32000-1 <<R06>>) - defines permission issued for modifications within form fields (including signature fields).
 * Signature Lock dictionary `/Lock` (as per "12.7.4.5 Signature fields" of ISO 32000-1 <<R06>>) - defines permission for a particular signature field.
 
-NOTE: ETSI EN 319 142-1 (cf. <<R03>>) and ISO 32000-2 (cf. <<R28>>) allow augmentation of signatures having modification restriction dictionaries, thus supporting the long-term validity preservation mechanism for PDF signatures (e.g. for certification signatures). Therefore, DSS does not invalidate those signatures, nor restricts their augmentation.
+NOTE: ETSI EN 319 142-1 (cf. <<R03>>) and ISO 32000-2 (cf. <<R29>>) allow augmentation of signatures having modification restriction dictionaries, thus supporting the long-term validity preservation mechanism for PDF signatures (e.g. for certification signatures). Therefore, DSS does not invalidate those signatures, nor restricts their augmentation.
 
 A configured instance of the class should be provided to the used `IPdfObjFactory`. The behaviour has to be defined with a `StatusAlert` (see <<Alerts>> for more information):
 
@@ -371,7 +403,7 @@ include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/SignHttpHeader
 * `OBJECT_ID_BY_URI_HASH` similarly provides a possibility to sign multiple documents, by signing the computed digests of the original documents. The JWS Payload for this format stays empty.
 
 [source,java,indent=0]
-.Configuration for signing with detached mechanism ObjectIdByURIHash
+.Configuration for signing JAdES with detached mechanism ObjectIdByURIHash
 ----
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/SignMultipleDocumentsJadesTTest.java[tags=demo]
 ----
@@ -402,6 +434,77 @@ WARNING: The current version of DSS does not allow `JAdES-BASELINE-LTA` level cr
 .Represent EtsiU components as clear JSON instances
 ----
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/SignMultipleDocumentsJadesTTest.java[tags=clearEtsiU]
+----
+
+=== CB-AdES signature (COSE)
+
+Since version `6.5` DSS includes a possibility of creation and validation of CBOR Advanced signatures (CB-AdES).
+
+The CBOR format for AdES Signatures (cf. <<R41>>) represents an extension of CBOR Object Signing and Encryption (COSE) as specified in https://www.ietf.org/rfc/rfc9052.txt[IETF RFC 9052].
+
+A typical example of a CB-AdES signature creation can be found in section <<CBAdES>> of the Annex.
+
+The specific parameters for CB-AdES signature are described in the next sections.
+
+==== COSE structure
+
+A COSE signature can be represented in different forms which are also supported by the CB-AdES standard, namely
+
+* `COSE_SIGN1` represents a CBOR data structure, which may contain only a single signature, as defined in IETF RFC 9052 <<R42>>.
+* `COSE_SIGN` represents a CBOR data structure, which may contain multiple signatures, as defined in IETF RFC 9052 <<R42>>.
+
+NOTE: Both supported COSE structure types allow signature augmentation to the corresponding `CB-AdES-BASELINE-T/-LT/-LTA` profiles.
+
+CB-AdES signature structures may either be tagged or untagged. See an example below for a CB-AdES structure definition.
+
+[source,java,indent=0]
+.COSE structure definition
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/SignXmlCbadesBTest.java[tags=structure]
+----
+
+==== SigD header parameter
+
+CB-AdES signatures allow two types of payload (signed data) incorporation: `ENVELOPING` and `DETACHED`.
+
+===== Enveloping packaging
+
+With `ENVELOPING` packaging the signare payload is enveloped into the CB-AdES Signature. The type only allows signing one document.
+
+===== Detached packaging
+
+A simple COSE signature allows a `DETACHED` packaging by omitting the payload in the created signature. For the validation process the detached content shall be provided and it is treated in the same way as if it were attached.
+
+To create such a signature, the parameter `SigDMechanism.NO_SIG_D` shall be set. The solution allows signing of only one document.
+
+The CB-AdES standard <<R41>> provides a possibility for signing multiple documents within one signature in a detached way.
+
+The following mechanisms are possible:
+
+* `OBJECT_ID_BY_URI` can be used for signing of multiple documents. The signed files are dereferenced by URIs and their content is concatenated for generation of the signature payload.
+
+* `OBJECT_ID_BY_URI_HASH` similarly provides a possibility to sign multiple documents, by signing the computed digests of the original documents. The signature payload for this format stays empty.
+
+[source,java,indent=0]
+.Configuration for signing CB-AdES with detached mechanism ObjectIdByURIHash
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/SignMultipleDocumentsCbadesTTest.java[tags=demo]
+----
+
+==== Externally supplied data
+
+One of the features offered in COSE is the ability for applications to provide additional data that is to be authenticated but is not carried as part of the COSE object, effectively becoming a separate detached data content.
+
+The externally supplied data can be used in both `ENVELOPING` and `DETACHED` packaging (with the latest the externally supplied data effectively becoming a second detached document).
+
+When used, the externally supplied data must be provided to the validation process, otherwise the validation of the signature will result to a failure.
+
+See below an example of an externally supplied data configuration on the signature creation:
+
+[source,java,indent=0]
+.Externally supplied data definition
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/SignXmlCbadesBTest.java[tags=externally-supplied-data]
 ----
 
 === ASiC signature (containers)

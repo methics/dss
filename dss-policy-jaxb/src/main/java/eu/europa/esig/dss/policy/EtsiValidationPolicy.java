@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,18 +21,28 @@
 package eu.europa.esig.dss.policy;
 
 import eu.europa.esig.dss.enumerations.Context;
+import eu.europa.esig.dss.enumerations.SubContext;
+import eu.europa.esig.dss.enumerations.ValidationModel;
+import eu.europa.esig.dss.model.policy.CertificateApplicabilityRule;
+import eu.europa.esig.dss.model.policy.CryptographicSuite;
+import eu.europa.esig.dss.model.policy.DurationRule;
+import eu.europa.esig.dss.model.policy.LevelRule;
+import eu.europa.esig.dss.model.policy.MultiValuesRule;
+import eu.europa.esig.dss.model.policy.NumericValueRule;
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
+import eu.europa.esig.dss.model.policy.ValueRule;
 import eu.europa.esig.dss.policy.jaxb.BasicSignatureConstraints;
 import eu.europa.esig.dss.policy.jaxb.CertificateConstraints;
 import eu.europa.esig.dss.policy.jaxb.CertificateValuesConstraint;
 import eu.europa.esig.dss.policy.jaxb.ConstraintsParameters;
 import eu.europa.esig.dss.policy.jaxb.ContainerConstraints;
 import eu.europa.esig.dss.policy.jaxb.CryptographicConstraint;
+import eu.europa.esig.dss.policy.jaxb.AttestationRevocationConstraints;
 import eu.europa.esig.dss.policy.jaxb.EIDAS;
+import eu.europa.esig.dss.policy.jaxb.AttestationConstraints;
 import eu.europa.esig.dss.policy.jaxb.EvidenceRecordConstraints;
 import eu.europa.esig.dss.policy.jaxb.IntValueConstraint;
-import eu.europa.esig.dss.policy.jaxb.Level;
 import eu.europa.esig.dss.policy.jaxb.LevelConstraint;
-import eu.europa.esig.dss.policy.jaxb.Model;
 import eu.europa.esig.dss.policy.jaxb.ModelConstraint;
 import eu.europa.esig.dss.policy.jaxb.MultiValuesConstraint;
 import eu.europa.esig.dss.policy.jaxb.PDFAConstraints;
@@ -48,15 +58,16 @@ import org.slf4j.LoggerFactory;
 
 /**
  * This class encapsulates the constraint file that controls the policy to be used during the validation process. It
- * adds the functions to direct access to the
- * file data. It is the implementation of the ETSI 102853 standard.
+ * adds the functions to direct access to the file data.
+ * It is the implementation of the ETSI TS 102 853 standard.
+ *
  */
 public class EtsiValidationPolicy implements ValidationPolicy {
 
 	private static final Logger LOG = LoggerFactory.getLogger(EtsiValidationPolicy.class);
 
 	/** The default validation model (SHELL) */
-	private static final Model DEFAULT_VALIDATION_MODEL = Model.SHELL;
+	private static final ValidationModel DEFAULT_VALIDATION_MODEL = ValidationModel.SHELL;
 
 	/** Validation policy constraints */
 	private ConstraintsParameters policy;
@@ -71,370 +82,388 @@ public class EtsiValidationPolicy implements ValidationPolicy {
 	}
 
 	@Override
-	public MultiValuesConstraint getSignaturePolicyConstraint(Context context) {
+	public MultiValuesRule getSignaturePolicyConstraint(Context context) {
 		SignatureConstraints signatureConstraints = getSignatureConstraintsByContext(context);
 		if (signatureConstraints != null) {
-			return signatureConstraints.getAcceptablePolicies();
+			return toRule(signatureConstraints.getAcceptablePolicies());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSignaturePolicyIdentifiedConstraint(Context context) {
+	public LevelRule getSignaturePolicyIdentifiedConstraint(Context context) {
 		SignatureConstraints signatureConstraints = getSignatureConstraintsByContext(context);
 		if (signatureConstraints != null) {
-			return signatureConstraints.getPolicyAvailable();
+			return toLevelRule(signatureConstraints.getPolicyAvailable());
 		}
 		return null;
 	}
 	
 	@Override
-	public LevelConstraint getSignaturePolicyStorePresentConstraint(Context context) {
+	public LevelRule getSignaturePolicyStorePresentConstraint(Context context) {
 		SignatureConstraints signatureConstraints = getSignatureConstraintsByContext(context);
 		if (signatureConstraints != null) {
-			return signatureConstraints.getSignaturePolicyStorePresent();
+			return toLevelRule(signatureConstraints.getSignaturePolicyStorePresent());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSignaturePolicyPolicyHashValid(Context context) {
+	public LevelRule getSignaturePolicyPolicyHashValid(Context context) {
 		SignatureConstraints signatureConstraints = getSignatureConstraintsByContext(context);
 		if (signatureConstraints != null) {
-			return signatureConstraints.getPolicyHashMatch();
+			return toLevelRule(signatureConstraints.getPolicyHashMatch());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getSignatureFormatConstraint(Context context) {
+	public MultiValuesRule getSignatureFormatConstraint(Context context) {
 		SignatureConstraints signatureConstraints = getSignatureConstraintsByContext(context);
 		if (signatureConstraints != null) {
-			return signatureConstraints.getAcceptableFormats();
+			return toRule(signatureConstraints.getAcceptableFormats());
 		}
 		return null;
 	}
 	
 	@Override
-	public LevelConstraint getSignerInformationStoreConstraint(Context context) {
+	public LevelRule getSignerInformationStoreConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getSignerInformationStore();
+			return toLevelRule(basicSignatureConstraints.getSignerInformationStore());
 		}
 		return null;
 	}
 	
 	@Override
-	public LevelConstraint getByteRangeConstraint(Context context) {
+	public LevelRule getByteRangeConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getByteRange();
+			return toLevelRule(basicSignatureConstraints.getByteRange());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getByteRangeCollisionConstraint(Context context) {
+	public LevelRule getByteRangeCollisionConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getByteRangeCollision();
+			return toLevelRule(basicSignatureConstraints.getByteRangeCollision());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getByteRangeAllDocumentConstraint(Context context) {
+	public LevelRule getByteRangeAllDocumentConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getByteRangeAllDocument();
+			return toLevelRule(basicSignatureConstraints.getByteRangeAllDocument());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getPdfSignatureDictionaryConstraint(Context context) {
+	public LevelRule getPdfSignatureDictionaryConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getPdfSignatureDictionary();
+			return toLevelRule(basicSignatureConstraints.getPdfSignatureDictionary());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getPdfPageDifferenceConstraint(Context context) {
+	public LevelRule getPdfPageDifferenceConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getPdfPageDifference();
+			return toLevelRule(basicSignatureConstraints.getPdfPageDifference());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getPdfAnnotationOverlapConstraint(Context context) {
+	public LevelRule getPdfAnnotationOverlapConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getPdfAnnotationOverlap();
+			return toLevelRule(basicSignatureConstraints.getPdfAnnotationOverlap());
 		}
 		return null;
 	}
 	
 	@Override
-	public LevelConstraint getPdfVisualDifferenceConstraint(Context context) {
+	public LevelRule getPdfVisualDifferenceConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getPdfVisualDifference();
+			return toLevelRule(basicSignatureConstraints.getPdfVisualDifference());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getDocMDPConstraint(Context context) {
+	public LevelRule getDocMDPConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getDocMDP();
+			return toLevelRule(basicSignatureConstraints.getDocMDP());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getFieldMDPConstraint(Context context) {
+	public LevelRule getFieldMDPConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getFieldMDP();
+			return toLevelRule(basicSignatureConstraints.getFieldMDP());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSigFieldLockConstraint(Context context) {
+	public LevelRule getSigFieldLockConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getSigFieldLock();
+			return toLevelRule(basicSignatureConstraints.getSigFieldLock());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getFormFillChangesConstraint(Context context) {
+	public LevelRule getFormFillChangesConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getFormFillChanges();
+			return toLevelRule(basicSignatureConstraints.getFormFillChanges());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getAnnotationChangesConstraint(Context context) {
+	public LevelRule getAnnotationChangesConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getAnnotationChanges();
+			return toLevelRule(basicSignatureConstraints.getAnnotationChanges());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getUndefinedChangesConstraint(Context context) {
+	public LevelRule getUndefinedChangesConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getUndefinedChanges();
+			return toLevelRule(basicSignatureConstraints.getUndefinedChanges());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getStructuralValidationConstraint(Context context) {
+	public LevelRule getStructuralValidationConstraint(Context context) {
 		SignatureConstraints signatureConstraints = getSignatureConstraintsByContext(context);
 		if (signatureConstraints != null) {
-			return signatureConstraints.getStructuralValidation();
+			return toLevelRule(signatureConstraints.getStructuralValidation());
 		}
 		return null;
 	}
 	
 	@Override
-	public LevelConstraint getSigningCertificateRefersCertificateChainConstraint(Context context) {
+	public LevelRule getSigningCertificateRefersCertificateChainConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getSigningCertificateRefersCertificateChain();
+			return toLevelRule(signedAttributeConstraints.getSigningCertificateRefersCertificateChain());
 		}
 		return null;
 	}
 	
 	@Override
-	public LevelConstraint getReferencesToAllCertificateChainPresentConstraint(Context context) {
+	public LevelRule getReferencesToAllCertificateChainPresentConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getReferencesToAllCertificateChainPresent();
+			return toLevelRule(signedAttributeConstraints.getReferencesToAllCertificateChainPresent());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSigningCertificateDigestAlgorithmConstraint(Context context) {
+	public LevelRule getSigningCertificateDigestAlgorithmConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getSigningCertificateDigestAlgorithm();
+			return toLevelRule(signedAttributeConstraints.getSigningCertificateDigestAlgorithm());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSigningTimeConstraint(Context context) {
+	public LevelRule getSigningTimeConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getSigningTime();
+			return toLevelRule(signedAttributeConstraints.getSigningTime());
 		}
 		return null;
 	}
 
 	@Override
-	public ValueConstraint getContentTypeConstraint(Context context) {
+	public LevelRule getSigningTimeInCertRangeConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getContentType();
+			return toLevelRule(signedAttributeConstraints.getSigningTimeInCertRange());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCounterSignatureConstraint(Context context) {
+	public MultiValuesRule getSignatureTypeConstraint(Context context) {
+		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
+		if (signedAttributeConstraints != null) {
+			return toRule(signedAttributeConstraints.getSignatureType());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getContentTypeConstraint(Context context) {
+		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
+		if (signedAttributeConstraints != null) {
+			return toRule(signedAttributeConstraints.getContentType());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getContentHintsConstraint(Context context) {
+		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
+		if (signedAttributeConstraints != null) {
+			return toRule(signedAttributeConstraints.getContentHints());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getContentIdentifierConstraint(Context context) {
+		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
+		if (signedAttributeConstraints != null) {
+			return toRule(signedAttributeConstraints.getContentIdentifier());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getCounterSignatureConstraint(Context context) {
 		UnsignedAttributesConstraints unsignedAttributeConstraints = getUnsignedAttributeConstraints(context);
 		if (unsignedAttributeConstraints != null) {
-			return unsignedAttributeConstraints.getCounterSignature();
+			return toLevelRule(unsignedAttributeConstraints.getCounterSignature());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSignatureTimeStampConstraint(Context context) {
+	public LevelRule getSignatureTimeStampConstraint(Context context) {
 		UnsignedAttributesConstraints unsignedAttributeConstraints = getUnsignedAttributeConstraints(context);
 		if (unsignedAttributeConstraints != null) {
-			return unsignedAttributeConstraints.getSignatureTimeStamp();
+			return toLevelRule(unsignedAttributeConstraints.getSignatureTimeStamp());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getValidationDataTimeStampConstraint(Context context) {
+	public LevelRule getValidationDataTimeStampConstraint(Context context) {
 		UnsignedAttributesConstraints unsignedAttributeConstraints = getUnsignedAttributeConstraints(context);
 		if (unsignedAttributeConstraints != null) {
-			return unsignedAttributeConstraints.getValidationDataTimeStamp();
+			return toLevelRule(unsignedAttributeConstraints.getValidationDataTimeStamp());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getValidationDataRefsOnlyTimeStampConstraint(Context context) {
+	public LevelRule getValidationDataRefsOnlyTimeStampConstraint(Context context) {
 		UnsignedAttributesConstraints unsignedAttributeConstraints = getUnsignedAttributeConstraints(context);
 		if (unsignedAttributeConstraints != null) {
-			return unsignedAttributeConstraints.getValidationDataRefsOnlyTimeStamp();
+			return toLevelRule(unsignedAttributeConstraints.getValidationDataRefsOnlyTimeStamp());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getArchiveTimeStampConstraint(Context context) {
+	public LevelRule getArchiveTimeStampConstraint(Context context) {
 		UnsignedAttributesConstraints unsignedAttributeConstraints = getUnsignedAttributeConstraints(context);
 		if (unsignedAttributeConstraints != null) {
-			return unsignedAttributeConstraints.getArchiveTimeStamp();
+			return toLevelRule(unsignedAttributeConstraints.getArchiveTimeStamp());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getDocumentTimeStampConstraint(Context context) {
+	public LevelRule getDocumentTimeStampConstraint(Context context) {
 		UnsignedAttributesConstraints unsignedAttributeConstraints = getUnsignedAttributeConstraints(context);
 		if (unsignedAttributeConstraints != null) {
-			return unsignedAttributeConstraints.getDocumentTimeStamp();
+			return toLevelRule(unsignedAttributeConstraints.getDocumentTimeStamp());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getTLevelTimeStampConstraint(Context context) {
+	public LevelRule getTLevelTimeStampConstraint(Context context) {
 		UnsignedAttributesConstraints unsignedAttributeConstraints = getUnsignedAttributeConstraints(context);
 		if (unsignedAttributeConstraints != null) {
-			return unsignedAttributeConstraints.getTLevelTimeStamp();
+			return toLevelRule(unsignedAttributeConstraints.getTLevelTimeStamp());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getLTALevelTimeStampConstraint(Context context) {
+	public LevelRule getLTALevelTimeStampConstraint(Context context) {
 		UnsignedAttributesConstraints unsignedAttributeConstraints = getUnsignedAttributeConstraints(context);
 		if (unsignedAttributeConstraints != null) {
-			return unsignedAttributeConstraints.getLTALevelTimeStamp();
+			return toLevelRule(unsignedAttributeConstraints.getLTALevelTimeStamp());
 		}
 		return null;
 	}
 
 	@Override
-	public ValueConstraint getContentHintsConstraint(Context context) {
+	public LevelRule getMessageDigestOrSignedPropertiesConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getContentHints();
+			return toLevelRule(signedAttributeConstraints.getMessageDigestOrSignedPropertiesPresent());
 		}
 		return null;
 	}
 
 	@Override
-	public ValueConstraint getContentIdentifierConstraint(Context context) {
+	public LevelRule getEllipticCurveKeySizeConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getContentIdentifier();
+			return toLevelRule(signedAttributeConstraints.getEllipticCurveKeySize());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getMessageDigestOrSignedPropertiesConstraint(Context context) {
+	public MultiValuesRule getCommitmentTypeIndicationConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getMessageDigestOrSignedPropertiesPresent();
+			return toRule(signedAttributeConstraints.getCommitmentTypeIndication());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getEllipticCurveKeySizeConstraint(Context context) {
+	public LevelRule getSignerLocationConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getEllipticCurveKeySize();
+			return toLevelRule(signedAttributeConstraints.getSignerLocation());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCommitmentTypeIndicationConstraint(Context context) {
+	public MultiValuesRule getClaimedRoleConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getCommitmentTypeIndication();
+			return toRule(signedAttributeConstraints.getClaimedRoles());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSignerLocationConstraint(Context context) {
+	public MultiValuesRule getCertifiedRolesConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getSignerLocation();
-		}
-		return null;
-	}
-
-	@Override
-	public MultiValuesConstraint getClaimedRoleConstraint(Context context) {
-		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
-		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getClaimedRoles();
-		}
-		return null;
-	}
-
-	@Override
-	public MultiValuesConstraint getCertifiedRolesConstraint(Context context) {
-		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
-		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getCertifiedRoles();
+			return toRule(signedAttributeConstraints.getCertifiedRoles());
 		}
 		return null;
 	}
@@ -450,35 +479,45 @@ public class EtsiValidationPolicy implements ValidationPolicy {
 	}
 
 	@Override
-	public CryptographicConstraint getSignatureCryptographicConstraint(Context context) {
+	public CryptographicSuite getSignatureCryptographicConstraint(Context context) {
+		CryptographicConstraint sigCryptographic = new CryptographicConstraint();
 		BasicSignatureConstraints basicSignature = getBasicSignatureConstraintsByContext(context);
-		if (basicSignature != null) {
-			CryptographicConstraint sigCryptographic = basicSignature.getCryptographic();
-			initializeCryptographicConstraint(sigCryptographic, getDefaultCryptographicConstraint());
-			return sigCryptographic;
+		if (basicSignature != null && basicSignature.getCryptographic() != null) {
+			sigCryptographic = basicSignature.getCryptographic();
 		}
-		return null;
+		initializeCryptographicSuite(sigCryptographic, getCryptographic());
+		return toCryptographicSuite(sigCryptographic);
+	}
+
+	private CryptographicConstraint getSignatureCryptographic(Context context) {
+		CryptographicConstraint sigCryptographic = new CryptographicConstraint();
+		BasicSignatureConstraints basicSignature = getBasicSignatureConstraintsByContext(context);
+		if (basicSignature != null && basicSignature.getCryptographic() != null) {
+			sigCryptographic = basicSignature.getCryptographic();
+		}
+		initializeCryptographicSuite(sigCryptographic, getCryptographic());
+		return sigCryptographic;
 	}
 
 	@Override
-	public CryptographicConstraint getCertificateCryptographicConstraint(Context context, SubContext subContext) {
+	public CryptographicSuite getCertificateCryptographicConstraint(Context context, SubContext subContext) {
+		CryptographicConstraint certCryptographic = new CryptographicConstraint();
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
-		if (certificateConstraints != null) {
-			CryptographicConstraint certCryptographic = certificateConstraints.getCryptographic();
-			initializeCryptographicConstraint(certCryptographic, getSignatureCryptographicConstraint(context));
-			return certCryptographic;
+		if (certificateConstraints != null && certificateConstraints.getCryptographic() != null) {
+			certCryptographic = certificateConstraints.getCryptographic();
 		}
-		return null;
+		initializeCryptographicSuite(certCryptographic, getSignatureCryptographic(context));
+		return toCryptographicSuite(certCryptographic);
 	}
 	
 	/**
-	 * Overrides all empty fields for the given {@code cryptographicConstraint}
+	 * Overrides all empty fields for the given {@code CryptographicConstraint}
 	 * by the default {@link CryptographicConstraint}
 	 *
 	 * @param cryptographicConstraint {@link CryptographicConstraint}
 	 * @param defaultConstraint {@link CryptographicConstraint}
 	 */
-	private void initializeCryptographicConstraint(CryptographicConstraint cryptographicConstraint, CryptographicConstraint defaultConstraint) {
+	private void initializeCryptographicSuite(CryptographicConstraint cryptographicConstraint, CryptographicConstraint defaultConstraint) {
 		if (defaultConstraint != null) {
 			if (cryptographicConstraint.getAcceptableDigestAlgo() == null) {
 				cryptographicConstraint.setAcceptableDigestAlgo(defaultConstraint.getAcceptableDigestAlgo());
@@ -498,919 +537,1089 @@ public class EtsiValidationPolicy implements ValidationPolicy {
 		}
 	}
 
-	/**
-	 * Gets the global cryptographic constraints
-	 *
-	 * @return {@link CryptographicConstraint}
-	 */
-	public CryptographicConstraint getDefaultCryptographicConstraint() {
-		return policy.getCryptographic();
-	}
-
 	@Override
-	public LevelConstraint getCertificateCAConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateCAConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getCA();
+			return toLevelRule(certificateConstraints.getCA());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateIssuerNameConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateMaxPathLengthConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getIssuerName();
+			return toLevelRule(certificateConstraints.getMaxPathLength());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateMaxPathLengthConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateKeyUsageConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getMaxPathLength();
+			return toRule(certificateConstraints.getKeyUsage());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateKeyUsageConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateExtendedKeyUsageConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getKeyUsage();
+			return toRule(certificateConstraints.getExtendedKeyUsage());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateExtendedKeyUsageConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificatePolicyTreeConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getExtendedKeyUsage();
+			return toLevelRule(certificateConstraints.getPolicyTree());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificatePolicyTreeConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateNameConstraintsConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getPolicyTree();
+			return toLevelRule(certificateConstraints.getNameConstraints());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateNameConstraintsConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateAuthorityKeyIdentifierPresentConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getNameConstraints();
+			return toLevelRule(certificateConstraints.getAuthorityKeyIdentifierPresent());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateSupportedCriticalExtensionsConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateSubjectKeyIdentifierPresentConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getSupportedCriticalExtensions();
+			return toLevelRule(certificateConstraints.getSubjectKeyIdentifierPresent());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateForbiddenExtensionsConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateNoRevAvailConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getForbiddenExtensions();
+			return toLevelRule(certificateConstraints.getNoRevAvail());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateSurnameConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateSupportedCriticalExtensionsConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getSurname();
+			return toRule(certificateConstraints.getSupportedCriticalExtensions());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateGivenNameConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateForbiddenExtensionsConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getGivenName();
+			return toRule(certificateConstraints.getForbiddenExtensions());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateCommonNameConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateIssuerNameConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getCommonName();
+			return toLevelRule(certificateConstraints.getIssuerName());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificatePseudonymConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateSurnameConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getPseudonym();
+			return toRule(certificateConstraints.getSurname());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateTitleConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateGivenNameConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getTitle();
+			return toRule(certificateConstraints.getGivenName());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateEmailConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateCommonNameConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getEmail();
+			return toRule(certificateConstraints.getCommonName());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateCountryConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificatePseudonymConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getCountry();
+			return toRule(certificateConstraints.getPseudonym());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateLocalityConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateTitleConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getLocality();
+			return toRule(certificateConstraints.getTitle());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateStateConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateEmailConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getState();
+			return toRule(certificateConstraints.getEmail());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateOrganizationIdentifierConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateCountryConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getOrganizationIdentifier();
+			return toRule(certificateConstraints.getCountry());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateOrganizationNameConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateLocalityConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getOrganizationName();
+			return toRule(certificateConstraints.getLocality());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateOrganizationUnitConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateStateConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getOrganizationUnit();
+			return toRule(certificateConstraints.getState());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificatePseudoUsageConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateOrganizationIdentifierConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getUsePseudonym();
+			return toRule(certificateConstraints.getOrganizationIdentifier());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateSerialNumberConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateOrganizationNameConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getSerialNumberPresent();
+			return toRule(certificateConstraints.getOrganizationName());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateNotExpiredConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateOrganizationUnitConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getNotExpired();
+			return toRule(certificateConstraints.getOrganizationUnit());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getProspectiveCertificateChainConstraint(Context context) {
+	public LevelRule getCertificatePseudoUsageConstraint(Context context, SubContext subContext) {
+		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
+		if (certificateConstraints != null) {
+			return toLevelRule(certificateConstraints.getUsePseudonym());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getCertificateSerialNumberConstraint(Context context, SubContext subContext) {
+		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
+		if (certificateConstraints != null) {
+			return toLevelRule(certificateConstraints.getSerialNumberPresent());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getCertificateNotExpiredConstraint(Context context, SubContext subContext) {
+		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
+		if (certificateConstraints != null) {
+			return toLevelRule(certificateConstraints.getNotExpired());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getCertificateSunsetDateConstraint(Context context, SubContext subContext) {
+		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
+		if (certificateConstraints != null) {
+			return toLevelRule(certificateConstraints.getSunsetDate());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getProspectiveCertificateChainConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getProspectiveCertificateChain();
+			return toLevelRule(basicSignatureConstraints.getProspectiveCertificateChain());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateAuthorityInfoAccessPresentConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateAuthorityInfoAccessPresentConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getAuthorityInfoAccessPresent();
+			return toLevelRule(certificateConstraints.getAuthorityInfoAccessPresent());
 		}
 		return null;
 	}
 
 	@Override
-	public CertificateValuesConstraint getRevocationDataSkipConstraint(Context context, SubContext subContext) {
+	public CertificateApplicabilityRule getRevocationDataSkipConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null && certificateConstraints.getRevocationDataSkip() != null) {
-			return certificateConstraints.getRevocationDataSkip();
-		}
-
-		// TODO : temporary handling since 6.1 to ensure smooth migration to DSS 6.2. To be removed in 6.2.
-		if (Context.REVOCATION == context && SubContext.SIGNING_CERT == subContext) {
-			LOG.warn("No RevocationDataSkip constraint is defined in the validation policy for Revocation/SigningCertificate element! " +
-					"Default behavior with ocsp-no-check is added to processing. Please set the constraint explicitly. To be required since DSS 6.2.");
-			CertificateValuesConstraint certificateValuesConstraint = new CertificateValuesConstraint();
-			certificateValuesConstraint.setLevel(Level.IGNORE);
-			MultiValuesConstraint certificateExtensionConstraints = new MultiValuesConstraint();
-			certificateExtensionConstraints.getId().add("1.3.6.1.5.5.7.48.1.5"); // ocsp-no-check
-			certificateValuesConstraint.setCertificateExtensions(certificateExtensionConstraints);
-			return certificateValuesConstraint;
+			return toRule(certificateConstraints.getRevocationDataSkip());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateRevocationInfoAccessPresentConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateRevocationInfoAccessPresentConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getRevocationInfoAccessPresent();
+			return toLevelRule(certificateConstraints.getRevocationInfoAccessPresent());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateSignatureConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateSignatureConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getSignature();
+			return toLevelRule(certificateConstraints.getSignature());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getUnknownStatusConstraint() {
+	public LevelRule getUnknownStatusConstraint() {
 		RevocationConstraints revocationConstraints = getRevocationConstraints();
 		if (revocationConstraints != null) {
-			return revocationConstraints.getUnknownStatus();
+			return toLevelRule(revocationConstraints.getUnknownStatus());
 		}
 		return null;
 	}
 	
 	@Override
-	public LevelConstraint getOCSPResponseResponderIdMatchConstraint() {
+	public LevelRule getThisUpdatePresentConstraint() {
 		RevocationConstraints revocationConstraints = getRevocationConstraints();
 		if (revocationConstraints != null) {
-			return revocationConstraints.getOCSPResponderIdMatch();
+			return toLevelRule(revocationConstraints.getThisUpdatePresent());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getOCSPResponseCertHashPresentConstraint() {
+	public LevelRule getRevocationIssuerKnownConstraint() {
 		RevocationConstraints revocationConstraints = getRevocationConstraints();
 		if (revocationConstraints != null) {
-			return revocationConstraints.getOCSPCertHashPresent();
+			return toLevelRule(revocationConstraints.getRevocationIssuerKnown());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getOCSPResponseCertHashMatchConstraint() {
+	public LevelRule getRevocationIssuerValidAtProductionTimeConstraint() {
 		RevocationConstraints revocationConstraints = getRevocationConstraints();
 		if (revocationConstraints != null) {
-			return revocationConstraints.getOCSPCertHashMatch();
+			return toLevelRule(revocationConstraints.getRevocationIssuerValidAtProductionTime());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSelfIssuedOCSPConstraint() {
+	public LevelRule getRevocationAfterCertificateIssuanceConstraint() {
 		RevocationConstraints revocationConstraints = getRevocationConstraints();
 		if (revocationConstraints != null) {
-			return revocationConstraints.getSelfIssuedOCSP();
+			return toLevelRule(revocationConstraints.getRevocationAfterCertificateIssuance());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getRevocationDataAvailableConstraint(final Context context, final SubContext subContext) {
+	public LevelRule getRevocationHasInformationAboutCertificateConstraint() {
+		RevocationConstraints revocationConstraints = getRevocationConstraints();
+		if (revocationConstraints != null) {
+			return toLevelRule(revocationConstraints.getRevocationHasInformationAboutCertificate());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getOCSPResponseResponderIdMatchConstraint() {
+		RevocationConstraints revocationConstraints = getRevocationConstraints();
+		if (revocationConstraints != null) {
+			return toLevelRule(revocationConstraints.getOCSPResponderIdMatch());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getOCSPResponseCertHashPresentConstraint() {
+		RevocationConstraints revocationConstraints = getRevocationConstraints();
+		if (revocationConstraints != null) {
+			return toLevelRule(revocationConstraints.getOCSPCertHashPresent());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getOCSPResponseCertHashMatchConstraint() {
+		RevocationConstraints revocationConstraints = getRevocationConstraints();
+		if (revocationConstraints != null) {
+			return toLevelRule(revocationConstraints.getOCSPCertHashMatch());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getSelfIssuedOCSPConstraint() {
+		RevocationConstraints revocationConstraints = getRevocationConstraints();
+		if (revocationConstraints != null) {
+			return toLevelRule(revocationConstraints.getSelfIssuedOCSP());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getRevocationDataAvailableConstraint(final Context context, final SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getRevocationDataAvailable();
+			return toLevelRule(certificateConstraints.getRevocationDataAvailable());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getAcceptableRevocationDataFoundConstraint(Context context, SubContext subContext) {
+	public LevelRule getAcceptableRevocationDataFoundConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getAcceptableRevocationDataFound();
+			return toLevelRule(certificateConstraints.getAcceptableRevocationDataFound());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCRLNextUpdatePresentConstraint(Context context, SubContext subContext) {
+	public LevelRule getCRLNextUpdatePresentConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getCRLNextUpdatePresent();
+			return toLevelRule(certificateConstraints.getCRLNextUpdatePresent());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getOCSPNextUpdatePresentConstraint(Context context, SubContext subContext) {
+	public LevelRule getOCSPNextUpdatePresentConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getOCSPNextUpdatePresent();
+			return toLevelRule(certificateConstraints.getOCSPNextUpdatePresent());
 		}
 		return null;
 	}
 
 	@Override
-	public TimeConstraint getRevocationFreshnessConstraint(Context context, SubContext subContext) {
+	public DurationRule getRevocationFreshnessConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getRevocationFreshness();
+			return toRule(certificateConstraints.getRevocationFreshness());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getRevocationFreshnessNextUpdateConstraint(Context context, SubContext subContext) {
+	public LevelRule getRevocationFreshnessNextUpdateConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getRevocationFreshnessNextUpdate();
+			return toLevelRule(certificateConstraints.getRevocationFreshnessNextUpdate());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateNotRevokedConstraint(final Context context, final SubContext subContext) {
+	public LevelRule getCertificateNotRevokedConstraint(final Context context, final SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getNotRevoked();
+			return toLevelRule(certificateConstraints.getNotRevoked());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateNotOnHoldConstraint(final Context context, final SubContext subContext) {
+	public LevelRule getCertificateNotOnHoldConstraint(final Context context, final SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getNotOnHold();
+			return toLevelRule(certificateConstraints.getNotOnHold());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getRevocationIssuerNotExpiredConstraint(Context context, SubContext subContext) {
+	public LevelRule getRevocationIssuerNotExpiredConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getRevocationIssuerNotExpired();
+			return toLevelRule(certificateConstraints.getRevocationIssuerNotExpired());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateNotSelfSignedConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateNotSelfSignedConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getNotSelfSigned();
+			return toLevelRule(certificateConstraints.getNotSelfSigned());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateSelfSignedConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateSelfSignedConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getSelfSigned();
+			return toLevelRule(certificateConstraints.getSelfSigned());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getTrustServiceStatusConstraint(Context context) {
+	public MultiValuesRule getTrustServiceStatusConstraint(Context context) {
 		BasicSignatureConstraints sigConstraints = getBasicSignatureConstraintsByContext(context);
 		if (sigConstraints != null) {
-			return sigConstraints.getTrustServiceStatus();
+			return toRule(sigConstraints.getTrustServiceStatus());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getTrustServiceTypeIdentifierConstraint(Context context) {
+	public MultiValuesRule getTrustServiceTypeIdentifierConstraint(Context context) {
 		BasicSignatureConstraints sigConstraints = getBasicSignatureConstraintsByContext(context);
 		if (sigConstraints != null) {
-			return sigConstraints.getTrustServiceTypeIdentifier();
+			return toRule(sigConstraints.getTrustServiceTypeIdentifier());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificatePolicyIdsConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificatePolicyIdsConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getPolicyIds();
+			return toRule(certificateConstraints.getPolicyIds());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificatePolicyQualificationIdsConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificatePolicyQualificationIdsConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getPolicyQualificationIds();
+			return toLevelRule(certificateConstraints.getPolicyQualificationIds());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificatePolicySupportedByQSCDIdsConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificatePolicySupportedByQSCDIdsConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getPolicySupportedByQSCDIds();
+			return toLevelRule(certificateConstraints.getPolicySupportedByQSCDIds());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateQCComplianceConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateQCComplianceConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getQcCompliance();
+			return toLevelRule(certificateConstraints.getQcCompliance());
 		}
 		return null;
 	}
 
 	@Override
-	public ValueConstraint getCertificateQcEuLimitValueCurrencyConstraint(Context context, SubContext subContext) {
+	public ValueRule getCertificateQcEuLimitValueCurrencyConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getQcEuLimitValueCurrency();
+			return toRule(certificateConstraints.getQcEuLimitValueCurrency());
 		}
 		return null;
 	}
 
 	@Override
-	public IntValueConstraint getCertificateMinQcEuLimitValueConstraint(Context context, SubContext subContext) {
+	public NumericValueRule getCertificateMinQcEuLimitValueConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getMinQcEuLimitValue();
+			return toRule(certificateConstraints.getMinQcEuLimitValue());
 		}
 		return null;
 	}
 
 	@Override
-	public IntValueConstraint getCertificateMinQcEuRetentionPeriodConstraint(Context context, SubContext subContext) {
+	public NumericValueRule getCertificateMinQcEuRetentionPeriodConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getMinQcEuRetentionPeriod();
+			return toRule(certificateConstraints.getMinQcEuRetentionPeriod());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateQcSSCDConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateQcSSCDConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getQcSSCD();
+			return toLevelRule(certificateConstraints.getQcSSCD());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateQcEuPDSLocationConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateQcEuPDSLocationConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getQcEuPDSLocation();
+			return toRule(certificateConstraints.getQcEuPDSLocation());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateQcTypeConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateQcTypeConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getQcType();
+			return toRule(certificateConstraints.getQcType());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateQcCCLegislationConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateQcCCLegislationConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getQcLegislationCountryCodes();
+			return toRule(certificateConstraints.getQcLegislationCountryCodes());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateIssuedToNaturalPersonConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateIssuedToNaturalPersonConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getIssuedToNaturalPerson();
+			return toLevelRule(certificateConstraints.getIssuedToNaturalPerson());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getCertificateIssuedToLegalPersonConstraint(Context context, SubContext subContext) {
+	public LevelRule getCertificateIssuedToLegalPersonConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getIssuedToLegalPerson();
+			return toLevelRule(certificateConstraints.getIssuedToLegalPerson());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificateSemanticsIdentifierConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificateSemanticsIdentifierConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getSemanticsIdentifier();
+			return toRule(certificateConstraints.getSemanticsIdentifier());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificatePS2DQcTypeRolesOfPSPConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificatePS2DQcTypeRolesOfPSPConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getPSD2QcTypeRolesOfPSP();
+			return toRule(certificateConstraints.getPSD2QcTypeRolesOfPSP());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificatePS2DQcCompetentAuthorityNameConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificatePS2DQcCompetentAuthorityNameConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getPSD2QcCompetentAuthorityName();
+			return toRule(certificateConstraints.getPSD2QcCompetentAuthorityName());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getCertificatePS2DQcCompetentAuthorityIdConstraint(Context context, SubContext subContext) {
+	public MultiValuesRule getCertificatePS2DQcCompetentAuthorityIdConstraint(Context context, SubContext subContext) {
 		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getPSD2QcCompetentAuthorityId();
+			return toRule(certificateConstraints.getPSD2QcCompetentAuthorityId());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSigningCertificateRecognitionConstraint(Context context) {
+	public MultiValuesRule getCertificateQcQSCDLegislationConstraint(Context context, SubContext subContext) {
+		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
+		if (certificateConstraints != null) {
+			return toRule(certificateConstraints.getQcQSCDLegislation());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getCertificateQcIdentificationMethodConstraint(Context context, SubContext subContext) {
+		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
+		if (certificateConstraints != null) {
+			return toRule(certificateConstraints.getQcIdentificationMethod());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getCertificateQcPSBCountryOfLegislationConstraint(Context context, SubContext subContext) {
+		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
+		if (certificateConstraints != null) {
+			return toRule(certificateConstraints.getQcPSBCountryOfLegislation());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getCertificateQcPSBAuthSourceIdentificationConstraint(Context context, SubContext subContext) {
+		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
+		if (certificateConstraints != null) {
+			return toRule(certificateConstraints.getQcPSBAuthSourceIdentification());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getCertificateQcPSBLegislationIdentificationConstraint(Context context, SubContext subContext) {
+		CertificateConstraints certificateConstraints = getCertificateConstraints(context, subContext);
+		if (certificateConstraints != null) {
+			return toRule(certificateConstraints.getQcPSBLegislationIdentification());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getSigningCertificateRecognitionConstraint(Context context) {
 		CertificateConstraints certificateConstraints = getSigningCertificateByContext(context);
 		if (certificateConstraints != null) {
-			return certificateConstraints.getRecognition();
+			return toLevelRule(certificateConstraints.getRecognition());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSigningCertificateAttributePresentConstraint(Context context) {
+	public LevelRule getSigningCertificateAttributePresentConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getSigningCertificatePresent();
+			return toLevelRule(signedAttributeConstraints.getSigningCertificatePresent());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getUnicitySigningCertificateAttributeConstraint(Context context) {
+	public LevelRule getUnicitySigningCertificateAttributeConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getUnicitySigningCertificate();
+			return toLevelRule(signedAttributeConstraints.getUnicitySigningCertificate());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSigningCertificateDigestValuePresentConstraint(Context context) {
+	public LevelRule getSigningCertificateDigestValuePresentConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getCertDigestPresent();
+			return toLevelRule(signedAttributeConstraints.getCertDigestPresent());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSigningCertificateDigestValueMatchConstraint(Context context) {
+	public LevelRule getSigningCertificateDigestValueMatchConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getCertDigestMatch();
+			return toLevelRule(signedAttributeConstraints.getCertDigestMatch());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSigningCertificateIssuerSerialMatchConstraint(Context context) {
+	public LevelRule getSigningCertificateIssuerSerialMatchConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getIssuerSerialMatch();
+			return toLevelRule(signedAttributeConstraints.getIssuerSerialMatch());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getKeyIdentifierPresent(Context context) {
+	public LevelRule getKeyIdentifierPresent(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getKeyIdentifierPresent();
+			return toLevelRule(signedAttributeConstraints.getKeyIdentifierPresent());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getKeyIdentifierMatch(Context context) {
+	public LevelRule getKeyIdentifierMatch(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getKeyIdentifierMatch();
+			return toLevelRule(signedAttributeConstraints.getKeyIdentifierMatch());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getReferenceDataExistenceConstraint(Context context) {
+	public LevelRule getX509UrlPresent(Context context) {
+		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
+		if (signedAttributeConstraints != null) {
+			return toLevelRule(signedAttributeConstraints.getX509UrlPresent());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getX509UrlMatch(Context context) {
+		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
+		if (signedAttributeConstraints != null) {
+			return toLevelRule(signedAttributeConstraints.getX509UrlMatch());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getReferenceDataExistenceConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getReferenceDataExistence();
+			return toLevelRule(basicSignatureConstraints.getReferenceDataExistence());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getReferenceDataIntactConstraint(Context context) {
+	public LevelRule getReferenceDataIntactConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getReferenceDataIntact();
+			return toLevelRule(basicSignatureConstraints.getReferenceDataIntact());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getReferenceDataNameMatchConstraint(Context context) {
+	public LevelRule getReferenceDataNameMatchConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getReferenceDataNameMatch();
+			return toLevelRule(basicSignatureConstraints.getReferenceDataNameMatch());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getManifestEntryObjectExistenceConstraint(Context context) {
+	public LevelRule getManifestEntryObjectExistenceConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getManifestEntryObjectExistence();
+			return toLevelRule(basicSignatureConstraints.getManifestEntryObjectExistence());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getManifestEntryObjectIntactConstraint(Context context) {
+	public LevelRule getManifestEntryObjectIntactConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getManifestEntryObjectIntact();
+			return toLevelRule(basicSignatureConstraints.getManifestEntryObjectIntact());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getManifestEntryObjectGroupConstraint(Context context) {
+	public LevelRule getManifestEntryObjectGroupConstraint(Context context) {
 
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getManifestEntryObjectGroup();
+			return toLevelRule(basicSignatureConstraints.getManifestEntryObjectGroup());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getManifestEntryNameMatchConstraint(Context context) {
+	public LevelRule getManifestEntryNameMatchConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getManifestEntryNameMatch();
+			return toLevelRule(basicSignatureConstraints.getManifestEntryNameMatch());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSignatureIntactConstraint(Context context) {
+	public LevelRule getSignatureIntactConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getSignatureIntact();
+			return toLevelRule(basicSignatureConstraints.getSignatureIntact());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getSignatureDuplicatedConstraint(Context context) {
+	public LevelRule getSignatureDuplicatedConstraint(Context context) {
 		BasicSignatureConstraints basicSignatureConstraints = getBasicSignatureConstraintsByContext(context);
 		if (basicSignatureConstraints != null) {
-			return basicSignatureConstraints.getSignatureDuplicated();
+			return toLevelRule(basicSignatureConstraints.getSignatureDuplicated());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getBestSignatureTimeBeforeExpirationDateOfSigningCertificateConstraint() {
+	public LevelRule getBestSignatureTimeBeforeExpirationDateOfSigningCertificateConstraint() {
 		TimestampConstraints timestamp = getTimestampConstraints();
 		if (timestamp != null) {
-			return timestamp.getBestSignatureTimeBeforeExpirationDateOfSigningCertificate();
+			return toLevelRule(timestamp.getBestSignatureTimeBeforeExpirationDateOfSigningCertificate());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getRevocationTimeAgainstBestSignatureTimeConstraint() {
+	public LevelRule getRevocationTimeAgainstBestSignatureTimeConstraint() {
 		TimestampConstraints timestampConstraints = getTimestampConstraints();
 		if (timestampConstraints != null) {
-			return timestampConstraints.getRevocationTimeAgainstBestSignatureTime();
+			return toLevelRule(timestampConstraints.getRevocationTimeAgainstBestSignatureTime());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getTimestampCoherenceConstraint() {
+	public LevelRule getTimestampCoherenceConstraint() {
 		TimestampConstraints timestampConstraints = getTimestampConstraints();
 		if (timestampConstraints != null) {
-			return timestampConstraints.getCoherence();
+			return toLevelRule(timestampConstraints.getCoherence());
 		}
 		return null;
 	}
 
 	@Override
-	public TimeConstraint getTimestampDelayConstraint() {
+	public DurationRule getTimestampDelayConstraint() {
 		TimestampConstraints timestampConstraints = getTimestampConstraints();
 		if (timestampConstraints != null) {
-			return timestampConstraints.getTimestampDelay();
+			return toRule(timestampConstraints.getTimestampDelay());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getTimestampValidConstraint() {
+	public LevelRule getTimestampValidConstraint() {
 		TimestampConstraints timestampConstraints = getTimestampConstraints();
 		if (timestampConstraints != null) {
-			return timestampConstraints.getTimestampValid();
+			return toLevelRule(timestampConstraints.getTimestampValid());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getTimestampTSAGeneralNamePresent() {
+	public LevelRule getTimestampTSAGeneralNamePresent() {
 		TimestampConstraints timestampConstraints = getTimestampConstraints();
 		if (timestampConstraints != null) {
-			return timestampConstraints.getTSAGeneralNamePresent();
+			return toLevelRule(timestampConstraints.getTSAGeneralNamePresent());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getTimestampTSAGeneralNameContentMatch() {
+	public LevelRule getTimestampTSAGeneralNameContentMatch() {
 		TimestampConstraints timestampConstraints = getTimestampConstraints();
 		if (timestampConstraints != null) {
-			return timestampConstraints.getTSAGeneralNameContentMatch();
+			return toLevelRule(timestampConstraints.getTSAGeneralNameContentMatch());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getTimestampTSAGeneralNameOrderMatch() {
+	public LevelRule getTimestampTSAGeneralNameOrderMatch() {
 		TimestampConstraints timestampConstraints = getTimestampConstraints();
 		if (timestampConstraints != null) {
-			return timestampConstraints.getTSAGeneralNameOrderMatch();
+			return toLevelRule(timestampConstraints.getTSAGeneralNameOrderMatch());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getFullScopeConstraint() {
+	public LevelRule getAtsHashIndexConstraint() {
+		TimestampConstraints timestampConstraints = getTimestampConstraints();
+		if (timestampConstraints != null) {
+			return toLevelRule(timestampConstraints.getAtsHashIndex());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getTimestampContainerSignedAndTimestampedFilesCoveredConstraint() {
+		TimestampConstraints timestampConstraints = getTimestampConstraints();
+		if (timestampConstraints != null) {
+			return toLevelRule(timestampConstraints.getContainerSignedAndTimestampedFilesCovered());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getFullScopeConstraint() {
 		SignatureConstraints mainSignature = getSignatureConstraints();
 		if (mainSignature != null) {
-			return mainSignature.getFullScope();
+			return toLevelRule(mainSignature.getFullScope());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getContentTimeStampConstraint(Context context) {
+	public LevelRule getContentTimeStampConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getContentTimeStamp();
+			return toLevelRule(signedAttributeConstraints.getContentTimeStamp());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getContentTimeStampMessageImprintConstraint(Context context) {
+	public LevelRule getContentTimeStampMessageImprintConstraint(Context context) {
 		SignedAttributesConstraints signedAttributeConstraints = getSignedAttributeConstraints(context);
 		if (signedAttributeConstraints != null) {
-			return signedAttributeConstraints.getContentTimeStampMessageImprint();
+			return toLevelRule(signedAttributeConstraints.getContentTimeStampMessageImprint());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getEvidenceRecordValidConstraint() {
+	public LevelRule getEvidenceRecordValidConstraint() {
 		EvidenceRecordConstraints evidenceRecordConstraints = getEvidenceRecordConstraints();
 		if (evidenceRecordConstraints != null) {
-			return evidenceRecordConstraints.getEvidenceRecordValid();
+			return toLevelRule(evidenceRecordConstraints.getEvidenceRecordValid());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getEvidenceRecordDataObjectExistenceConstraint() {
+	public LevelRule getEvidenceRecordDataObjectExistenceConstraint() {
 		EvidenceRecordConstraints evidenceRecordConstraints = getEvidenceRecordConstraints();
 		if (evidenceRecordConstraints != null) {
-			return evidenceRecordConstraints.getDataObjectExistence();
+			return toLevelRule(evidenceRecordConstraints.getDataObjectExistence());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getEvidenceRecordDataObjectIntactConstraint() {
+	public LevelRule getEvidenceRecordDataObjectIntactConstraint() {
 		EvidenceRecordConstraints evidenceRecordConstraints = getEvidenceRecordConstraints();
 		if (evidenceRecordConstraints != null) {
-			return evidenceRecordConstraints.getDataObjectIntact();
+			return toLevelRule(evidenceRecordConstraints.getDataObjectIntact());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getEvidenceRecordDataObjectFoundConstraint() {
+	public LevelRule getEvidenceRecordDataObjectFoundConstraint() {
 		EvidenceRecordConstraints evidenceRecordConstraints = getEvidenceRecordConstraints();
 		if (evidenceRecordConstraints != null) {
-			return evidenceRecordConstraints.getDataObjectFound();
+			return toLevelRule(evidenceRecordConstraints.getDataObjectFound());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getEvidenceRecordDataObjectGroupConstraint() {
+	public LevelRule getEvidenceRecordDataObjectGroupConstraint() {
 		EvidenceRecordConstraints evidenceRecordConstraints = getEvidenceRecordConstraints();
 		if (evidenceRecordConstraints != null) {
-			return evidenceRecordConstraints.getDataObjectGroup();
+			return toLevelRule(evidenceRecordConstraints.getDataObjectGroup());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getEvidenceRecordHashTreeRenewalConstraint() {
+	public LevelRule getEvidenceRecordSignedFilesCoveredConstraint() {
 		EvidenceRecordConstraints evidenceRecordConstraints = getEvidenceRecordConstraints();
 		if (evidenceRecordConstraints != null) {
-			return evidenceRecordConstraints.getHashTreeRenewal();
+			return toLevelRule(evidenceRecordConstraints.getSignedFilesCovered());
 		}
 		return null;
 	}
 
 	@Override
-	public CryptographicConstraint getEvidenceRecordCryptographicConstraint() {
+	public LevelRule getEvidenceRecordContainerSignedAndTimestampedFilesCoveredConstraint() {
 		EvidenceRecordConstraints evidenceRecordConstraints = getEvidenceRecordConstraints();
 		if (evidenceRecordConstraints != null) {
-			CryptographicConstraint evidenceRecordCryptographic = evidenceRecordConstraints.getCryptographic();
-			initializeCryptographicConstraint(evidenceRecordCryptographic, getDefaultCryptographicConstraint());
-			return evidenceRecordCryptographic;
+			return toLevelRule(evidenceRecordConstraints.getContainerSignedAndTimestampedFilesCovered());
 		}
 		return null;
+	}
+
+	@Override
+	public LevelRule getEvidenceRecordHashTreeRenewalConstraint() {
+		EvidenceRecordConstraints evidenceRecordConstraints = getEvidenceRecordConstraints();
+		if (evidenceRecordConstraints != null) {
+			return toLevelRule(evidenceRecordConstraints.getHashTreeRenewal());
+		}
+		return null;
+	}
+
+	@Override
+	public CryptographicSuite getEvidenceRecordCryptographicConstraint() {
+		CryptographicConstraint evidenceRecordCryptographic = new CryptographicConstraint();
+		EvidenceRecordConstraints evidenceRecordConstraints = getEvidenceRecordConstraints();
+		if (evidenceRecordConstraints != null && evidenceRecordConstraints.getCryptographic() != null) {
+			evidenceRecordCryptographic = evidenceRecordConstraints.getCryptographic();
+		}
+		initializeCryptographicSuite(evidenceRecordCryptographic, getCryptographic());
+		return toCryptographicSuite(evidenceRecordCryptographic);
+	}
+
+	@Override
+	public CryptographicSuite getAttestationCryptographicConstraint() {
+		CryptographicConstraint attestationPresentationCryptographic = new CryptographicConstraint();
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null && attestationConstraints.getCryptographic() != null) {
+			attestationPresentationCryptographic = attestationConstraints.getCryptographic();
+		}
+		initializeCryptographicSuite(attestationPresentationCryptographic, getCryptographic());
+		return toCryptographicSuite(attestationPresentationCryptographic);
 	}
 
 	private CertificateConstraints getSigningCertificateByContext(Context context) {
@@ -1444,6 +1653,12 @@ public class EtsiValidationPolicy implements ValidationPolicy {
 					return counterSignature.getBasicSignatureConstraints();
 				}
 				break;
+			case KEY_BINDING_SIGNATURE:
+				SignatureConstraints keyBindingSignature = getKeyBindingSignatureConstraints();
+				if (keyBindingSignature != null) {
+					return keyBindingSignature.getBasicSignatureConstraints();
+				}
+				break;
 			case TIMESTAMP:
 				TimestampConstraints timestampConstraints = getTimestampConstraints();
 				if (timestampConstraints != null) {
@@ -1456,6 +1671,14 @@ public class EtsiValidationPolicy implements ValidationPolicy {
 					return revocationConstraints.getBasicSignatureConstraints();
 				}
 				break;
+			case ATTESTATION:
+				return null;
+			case ATTESTATION_REVOCATION:
+				AttestationRevocationConstraints attestationRevocationConstraints = getAttestationRevocationConstraints();
+				if (attestationRevocationConstraints != null) {
+					return attestationRevocationConstraints.getBasicSignatureConstraints();
+				}
+				break;
 			default:
 				throw new UnsupportedOperationException(String.format("Unsupported context '%s'", context));
 		}
@@ -1464,29 +1687,35 @@ public class EtsiValidationPolicy implements ValidationPolicy {
 
 	private SignedAttributesConstraints getSignedAttributeConstraints(Context context) {
 		switch (context) {
-		case SIGNATURE:
-		case CERTIFICATE: // TODO improve
-			SignatureConstraints mainSignature = getSignatureConstraints();
-			if (mainSignature != null) {
-				return mainSignature.getSignedAttributes();
+			case SIGNATURE:
+			case CERTIFICATE: // TODO improve
+				SignatureConstraints mainSignature = getSignatureConstraints();
+				if (mainSignature != null) {
+					return mainSignature.getSignedAttributes();
+				}
+				break;
+			case COUNTER_SIGNATURE:
+				SignatureConstraints counterSignature = getCounterSignatureConstraints();
+				if (counterSignature != null) {
+					return counterSignature.getSignedAttributes();
+				}
+				break;
+			case KEY_BINDING_SIGNATURE:
+				SignatureConstraints keyBindingSignature = getKeyBindingSignatureConstraints();
+				if (keyBindingSignature != null) {
+					return keyBindingSignature.getSignedAttributes();
+				}
+				break;
+			case TIMESTAMP:
+				TimestampConstraints timestampConstraints = getTimestampConstraints();
+				if (timestampConstraints != null) {
+					return timestampConstraints.getSignedAttributes();
+				}
+				break;
+			default:
+				LOG.warn("Unsupported context {}", context);
+				break;
 			}
-			break;
-		case COUNTER_SIGNATURE:
-			SignatureConstraints counterSignature = getCounterSignatureConstraints();
-			if (counterSignature != null) {
-				return counterSignature.getSignedAttributes();
-			}
-			break;
-		case TIMESTAMP:
-			TimestampConstraints timestampConstraints = getTimestampConstraints();
-			if (timestampConstraints != null) {
-				return timestampConstraints.getSignedAttributes();
-			}
-			break;
-		default:
-			LOG.warn("Unsupported context {}", context);
-			break;
-		}
 		return null;
 	}
 
@@ -1504,6 +1733,12 @@ public class EtsiValidationPolicy implements ValidationPolicy {
 					return counterSignature.getUnsignedAttributes();
 				}
 				break;
+			case KEY_BINDING_SIGNATURE:
+				SignatureConstraints keyBindingSignature = getKeyBindingSignatureConstraints();
+				if (keyBindingSignature != null) {
+					return keyBindingSignature.getUnsignedAttributes();
+				}
+				break;
 			default:
 				LOG.warn("Unsupported context {}", context);
 				break;
@@ -1513,104 +1748,511 @@ public class EtsiValidationPolicy implements ValidationPolicy {
 
 	private SignatureConstraints getSignatureConstraintsByContext(Context context) {
 		switch (context) {
-		case SIGNATURE:
-		case CERTIFICATE: // TODO improve
-			return getSignatureConstraints();
-		case COUNTER_SIGNATURE:
-			return getCounterSignatureConstraints();
-		default:
-			LOG.warn("Unsupported context {}", context);
-			break;
+			case SIGNATURE:
+			case CERTIFICATE: // TODO improve
+				return getSignatureConstraints();
+			case COUNTER_SIGNATURE:
+				return getCounterSignatureConstraints();
+			case KEY_BINDING_SIGNATURE:
+				return getKeyBindingSignatureConstraints();
+			default:
+				LOG.warn("Unsupported context {}", context);
+				break;
+			}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getAcceptedContainerTypesConstraint() {
+		ContainerConstraints containerConstraints = getContainerConstraints();
+		if (containerConstraints != null) {
+			return toRule(containerConstraints.getAcceptableContainerTypes());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getAcceptedContainerTypesConstraint() {
+	public LevelRule getZipCommentPresentConstraint() {
 		ContainerConstraints containerConstraints = getContainerConstraints();
 		if (containerConstraints != null) {
-			return containerConstraints.getAcceptableContainerTypes();
+			return toLevelRule(containerConstraints.getZipCommentPresent());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getZipCommentPresentConstraint() {
+	public MultiValuesRule getAcceptedZipCommentsConstraint() {
 		ContainerConstraints containerConstraints = getContainerConstraints();
 		if (containerConstraints != null) {
-			return containerConstraints.getZipCommentPresent();
+			return toRule(containerConstraints.getAcceptableZipComment());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getAcceptedZipCommentsConstraint() {
+	public LevelRule getMimeTypeFilePresentConstraint() {
 		ContainerConstraints containerConstraints = getContainerConstraints();
 		if (containerConstraints != null) {
-			return containerConstraints.getAcceptableZipComment();
+			return toLevelRule(containerConstraints.getMimeTypeFilePresent());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getMimeTypeFilePresentConstraint() {
+	public MultiValuesRule getAcceptedMimeTypeContentsConstraint() {
 		ContainerConstraints containerConstraints = getContainerConstraints();
 		if (containerConstraints != null) {
-			return containerConstraints.getMimeTypeFilePresent();
+			return toRule(containerConstraints.getAcceptableMimeTypeFileContent());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getAcceptedMimeTypeContentsConstraint() {
+	public LevelRule getManifestFilePresentConstraint() {
 		ContainerConstraints containerConstraints = getContainerConstraints();
 		if (containerConstraints != null) {
-			return containerConstraints.getAcceptableMimeTypeFileContent();
-		}
-		return null;
-	}
-
-	@Override
-	public LevelConstraint getAllFilesSignedConstraint() {
-		ContainerConstraints containerConstraints = getContainerConstraints();
-		if (containerConstraints != null) {
-			return containerConstraints.getAllFilesSigned();
-		}
-		return null;
-	}
-
-	@Override
-	public LevelConstraint getManifestFilePresentConstraint() {
-		ContainerConstraints containerConstraints = getContainerConstraints();
-		if (containerConstraints != null) {
-			return containerConstraints.getManifestFilePresent();
+			return toLevelRule(containerConstraints.getManifestFilePresent());
 		}
 		return null;
 	}
 	
 	@Override
-	public LevelConstraint getSignedFilesPresentConstraint() {
+	public LevelRule getSignedFilesPresentConstraint() {
 		ContainerConstraints containerConstraints = getContainerConstraints();
 		if (containerConstraints != null) {
-			return containerConstraints.getSignedFilesPresent();
+			return toLevelRule(containerConstraints.getSignedFilesPresent());
 		}
 		return null;
 	}
 
 	@Override
-	public MultiValuesConstraint getAcceptablePDFAProfilesConstraint() {
-		PDFAConstraints pdfaConstraints = getPDFAConstraints();
-		if (pdfaConstraints != null) {
-			return pdfaConstraints.getAcceptablePDFAProfiles();
+	public LevelRule getFilenameAdherenceConstraint() {
+		ContainerConstraints containerConstraints = getContainerConstraints();
+		if (containerConstraints != null) {
+			return toLevelRule(containerConstraints.getFilenameAdherence());
+		}
+		return null;
+	}
+	
+	@Override
+	public LevelRule getAllFilesSignedConstraint() {
+		ContainerConstraints containerConstraints = getContainerConstraints();
+		if (containerConstraints != null) {
+			return toLevelRule(containerConstraints.getAllFilesSigned());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getPDFACompliantConstraint() {
+	public MultiValuesRule getAcceptablePDFAProfilesConstraint() {
 		PDFAConstraints pdfaConstraints = getPDFAConstraints();
 		if (pdfaConstraints != null) {
-			return pdfaConstraints.getPDFACompliant();
+			return toRule(pdfaConstraints.getAcceptablePDFAProfiles());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getPDFACompliantConstraint() {
+		PDFAConstraints pdfaConstraints = getPDFAConstraints();
+		if (pdfaConstraints != null) {
+			return toLevelRule(pdfaConstraints.getPDFACompliant());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationSignatureUnicityConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getAttestationSignatureUnicity());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationSignatureValidConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getAttestationSignatureValid());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationDisclosurePresentConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getDisclosurePresent());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationDisclosureFoundConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getDisclosureFound());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationDisclosureIntactConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getDisclosureIntact());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationDisclosureListExhaustiveConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getDisclosureListExhaustive());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationKeyBindingSignaturePresentConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getKeyBindingSignaturePresent());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationKeyBindingSignatureValidConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getKeyBindingSignatureValid());
+		}
+		return null;
+	}
+
+    @Override
+    public LevelRule getAttestationTypeIntegrityPresentConstraint() {
+        AttestationConstraints attestationConstraints = getAttestationConstraints();
+        if (attestationConstraints != null) {
+            return toLevelRule(attestationConstraints.getAttestationTypeIntegrityPresent());
+        }
+        return null;
+    }
+
+    @Override
+    public LevelRule getAttestationIdentifierPresentConstraint() {
+        AttestationConstraints attestationConstraints = getAttestationConstraints();
+        if (attestationConstraints != null) {
+            return toLevelRule(attestationConstraints.getIdentifierPresent());
+        }
+        return null;
+    }
+
+    @Override
+    public LevelRule getAttestationIssuanceDatePresentConstraint() {
+        AttestationConstraints attestationConstraints = getAttestationConstraints();
+        if (attestationConstraints != null) {
+            return toLevelRule(attestationConstraints.getIssuanceDatePresent());
+        }
+        return null;
+    }
+
+	@Override
+	public MultiValuesRule getCategoryConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toRule(attestationConstraints.getCategory());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getSubjectConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toRule(attestationConstraints.getSubject());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getAttestationPseudonymConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toRule(attestationConstraints.getPseudonym());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getIssuingCountryConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toRule(attestationConstraints.getIssuingCountry());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getIssuingAuthorityConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toRule(attestationConstraints.getIssuingAuthority());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getIssuingAuthorityRegistrationIdentifierConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toRule(attestationConstraints.getIssuingAuthorityRegistrationIdentifier());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getRevocationPresentConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getRevocationPresent());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getShortLivedConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getShortLived());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getOneTimeUseConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getOneTimeUse());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getUsePseudonymConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getUsePseudonym());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getClaimsConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toRule(attestationConstraints.getClaims());
+		}
+		return null;
+	}
+
+	@Override
+    public MultiValuesRule getSupportedClaimsConstraint() {
+        AttestationConstraints attestationConstraints = getAttestationConstraints();
+        if (attestationConstraints != null) {
+            return toRule(attestationConstraints.getSupportedClaims());
+        }
+        return null;
+    }
+
+	@Override
+	public MultiValuesRule getSupportedNamespacesConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toRule(attestationConstraints.getSupportedNamespaces());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getRevocationAvailableConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getRevocationAvailable());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationAcceptableRevocationFoundConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getAcceptableRevocationFound());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationRevocationNotRevokedConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getNotRevoked());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationRevocationNotOnHoldConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getNotOnHold());
+		}
+		return null;
+	}
+
+	@Override
+    public MultiValuesRule getAttestationTypeConstraint() {
+        AttestationConstraints attestationConstraints = getAttestationConstraints();
+        if (attestationConstraints != null) {
+            return toRule(attestationConstraints.getAttestationType());
+        }
+        return null;
+    }
+
+    @Override
+    public LevelRule getAttestationNotBeforePresentConstraint() {
+        AttestationConstraints attestationConstraints = getAttestationConstraints();
+        if (attestationConstraints != null) {
+            return toLevelRule(attestationConstraints.getNotBeforePresent());
+        }
+        return null;
+    }
+
+    @Override
+    public LevelRule getAttestationExpirationPresentConstraint() {
+        AttestationConstraints attestationConstraints = getAttestationConstraints();
+        if (attestationConstraints != null) {
+            return toLevelRule(attestationConstraints.getExpirationPresent());
+        }
+        return null;
+    }
+
+	@Override
+	public LevelRule getNotExpiredConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getNotExpired());
+		}
+		return null;
+	}
+
+	@Override
+    public LevelRule getAdministrativeIssuanceDatePresentConstraint() {
+        AttestationConstraints attestationConstraints = getAttestationConstraints();
+        if (attestationConstraints != null) {
+            return toLevelRule(attestationConstraints.getAdministrativeIssuanceDatePresent());
+        }
+        return null;
+    }
+
+    @Override
+    public LevelRule getAdministrativeExpirationDatePresentConstraint() {
+        AttestationConstraints attestationConstraints = getAttestationConstraints();
+        if (attestationConstraints != null) {
+            return toLevelRule(attestationConstraints.getAdministrativeExpirationDatePresent());
+        }
+        return null;
+    }
+
+	@Override
+	public LevelRule getAdministrativePeriodNotExpiredConstraint() {
+		AttestationConstraints attestationConstraints = getAttestationConstraints();
+		if (attestationConstraints != null) {
+			return toLevelRule(attestationConstraints.getAdministrativePeriodNotExpired());
+		}
+		return null;
+	}
+
+	@Override
+    public LevelRule getAttestationETSI194721ConformanceConstraint() {
+        AttestationConstraints attestationConstraints = getAttestationConstraints();
+        if (attestationConstraints != null) {
+            return toLevelRule(attestationConstraints.getETSI194721Conformance());
+        }
+        return null;
+    }
+
+	@Override
+	public MultiValuesRule getAttestationRevocationTokenTypeConstraint() {
+		AttestationRevocationConstraints attestationRevocationConstraints = getAttestationRevocationConstraints();
+		if (attestationRevocationConstraints != null) {
+			return toRule(attestationRevocationConstraints.getType());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationRevocationUnknownStatusConstraint() {
+		AttestationRevocationConstraints attestationRevocationConstraints = getAttestationRevocationConstraints();
+		if (attestationRevocationConstraints != null) {
+			return toLevelRule(attestationRevocationConstraints.getUnknownStatus());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationRevocationIssuanceTimeConstraint() {
+		AttestationRevocationConstraints attestationRevocationConstraints = getAttestationRevocationConstraints();
+		if (attestationRevocationConstraints != null) {
+			return toLevelRule(attestationRevocationConstraints.getIssuanceTime());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationRevocationExpirationTimeConstraint() {
+		AttestationRevocationConstraints attestationRevocationConstraints = getAttestationRevocationConstraints();
+		if (attestationRevocationConstraints != null) {
+			return toLevelRule(attestationRevocationConstraints.getExpirationTime());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationRevocationNotExpiredConstraint() {
+		AttestationRevocationConstraints attestationRevocationConstraints = getAttestationRevocationConstraints();
+		if (attestationRevocationConstraints != null) {
+			return toLevelRule(attestationRevocationConstraints.getNotExpired());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getAttestationRevocationSubjectConstraint() {
+		AttestationRevocationConstraints attestationRevocationConstraints = getAttestationRevocationConstraints();
+		if (attestationRevocationConstraints != null) {
+			return toRule(attestationRevocationConstraints.getSubject());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationRevocationSubjectMatchConstraint() {
+		AttestationRevocationConstraints attestationRevocationConstraints = getAttestationRevocationConstraints();
+		if (attestationRevocationConstraints != null) {
+			return toLevelRule(attestationRevocationConstraints.getSubjectMatch());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getAttestationRevocationIssuerValidAtIssuanceTimeConstraint() {
+		AttestationRevocationConstraints attestationRevocationConstraints = getAttestationRevocationConstraints();
+		if (attestationRevocationConstraints != null) {
+			return toLevelRule(attestationRevocationConstraints.getIssuerValidAtIssuanceTime());
 		}
 		return null;
 	}
@@ -1621,94 +2263,265 @@ public class EtsiValidationPolicy implements ValidationPolicy {
 	}
 
 	@Override
-	public TimeConstraint getTLFreshnessConstraint() {
+	public DurationRule getTLFreshnessConstraint() {
 		EIDAS eIDASConstraints = getEIDASConstraints();
 		if (eIDASConstraints != null) {
-			return eIDASConstraints.getTLFreshness();
+			return toRule(eIDASConstraints.getTLFreshness());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getTLWellSignedConstraint() {
+	public LevelRule getTLWellSignedConstraint() {
 		EIDAS eIDASConstraints = getEIDASConstraints();
 		if (eIDASConstraints != null) {
-			return eIDASConstraints.getTLWellSigned();
+			return toLevelRule(eIDASConstraints.getTLWellSigned());
 		}
 		return null;
 	}
 
 	@Override
-	public LevelConstraint getTLNotExpiredConstraint() {
+	public LevelRule getTLNotExpiredConstraint() {
 		EIDAS eIDASConstraints = getEIDASConstraints();
 		if (eIDASConstraints != null) {
-			return eIDASConstraints.getTLNotExpired();
+			return toLevelRule(eIDASConstraints.getTLNotExpired());
 		}
 		return null;
 	}
 
 	@Override
-	public ValueConstraint getTLVersionConstraint() {
+	public MultiValuesRule getTLVersionConstraint() {
 		EIDAS eIDASConstraints = getEIDASConstraints();
 		if (eIDASConstraints != null) {
-			return eIDASConstraints.getTLVersion();
+			return toRule(eIDASConstraints.getTLVersion());
 		}
 		return null;
 	}
 
 	@Override
-	public Model getValidationModel() {
-		Model currentModel = DEFAULT_VALIDATION_MODEL;
+	public LevelRule getTLStructureConstraint() {
+		EIDAS eIDASConstraints = getEIDASConstraints();
+		if (eIDASConstraints != null) {
+			return toLevelRule(eIDASConstraints.getTLStructure());
+		}
+		return null;
+	}
+
+	@Override
+	public DurationRule getLoTEFreshnessConstraint() {
+		EIDAS eIDASConstraints = getEIDASConstraints();
+		if (eIDASConstraints != null) {
+			return toRule(eIDASConstraints.getLoTEFreshness());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getLoTEWellSignedConstraint() {
+		EIDAS eIDASConstraints = getEIDASConstraints();
+		if (eIDASConstraints != null) {
+			return toLevelRule(eIDASConstraints.getLoTEWellSigned());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getLoTENotExpiredConstraint() {
+		EIDAS eIDASConstraints = getEIDASConstraints();
+		if (eIDASConstraints != null) {
+			return toLevelRule(eIDASConstraints.getLoTENotExpired());
+		}
+		return null;
+	}
+
+	@Override
+	public MultiValuesRule getLoTEVersionConstraint() {
+		EIDAS eIDASConstraints = getEIDASConstraints();
+		if (eIDASConstraints != null) {
+			return toRule(eIDASConstraints.getLoTEVersion());
+		}
+		return null;
+	}
+
+	@Override
+	public LevelRule getLoTEStructureConstraint() {
+		EIDAS eIDASConstraints = getEIDASConstraints();
+		if (eIDASConstraints != null) {
+			return toLevelRule(eIDASConstraints.getLoTEStructure());
+		}
+		return null;
+	}
+
+	@Override
+	public ValidationModel getValidationModel() {
+		ValidationModel currentModel = DEFAULT_VALIDATION_MODEL;
 		ModelConstraint modelConstraint = policy.getModel();
 		if (modelConstraint != null && modelConstraint.getValue() != null) {
 			currentModel = modelConstraint.getValue();
 		}
 		return currentModel;
 	}
-	
-	@Override
-	public ContainerConstraints getContainerConstraints() {
-		return policy.getContainerConstraints();
-	}
 
-	@Override
-	public PDFAConstraints getPDFAConstraints() {
-		return policy.getPDFAConstraints();
-	}
-
-	@Override
+	/**
+	 * Returns the constraint used for Signature validation
+	 *
+	 * @return {@link SignatureConstraints}
+	 */
 	public SignatureConstraints getSignatureConstraints() {
 		return policy.getSignatureConstraints();
 	}
-	
-	@Override
+
+	/**
+	 * Returns the constraint used for Counter Signature validation
+	 *
+	 * @return {@link SignatureConstraints}
+	 */
 	public SignatureConstraints getCounterSignatureConstraints() {
 		return policy.getCounterSignatureConstraints();
 	}
 
-	@Override
+	/**
+	 * Returns the constraint used for Key Binding Signature validation
+	 *
+	 * @return {@link SignatureConstraints}
+	 */
+	public SignatureConstraints getKeyBindingSignatureConstraints() {
+		return policy.getKeyBindingSignatureConstraints();
+	}
+
+	/**
+	 * Returns the constraint used for Timestamp validation
+	 *
+	 * @return {@link TimestampConstraints}
+	 */
 	public TimestampConstraints getTimestampConstraints() {
 		return policy.getTimestamp();
 	}
-	
-	@Override
+
+	/**
+	 * Returns the constraint used for Revocation validation
+	 *
+	 * @return {@code RevocationConstraints}
+	 */
 	public RevocationConstraints getRevocationConstraints() {
 		return policy.getRevocation();
 	}
 
-	@Override
+	/**
+	 * Returns the constraint used for Evidence Record validation
+	 *
+	 * @return {@code EvidenceRecordConstraints}
+	 */
 	public EvidenceRecordConstraints getEvidenceRecordConstraints() {
 		return policy.getEvidenceRecord();
 	}
 
-	@Override
+	/**
+	 * Returns the constraint used for Attestation validation
+	 *
+	 * @return {@code AttestationConstraints}
+	 */
+	public AttestationConstraints getAttestationConstraints() {
+		return policy.getAttestation();
+	}
+
+
+	/**
+	 * Returns the constraint used for Attestation revocation token validation
+	 *
+	 * @return {@code AttestationRevocationConstraints}
+	 */
+	public AttestationRevocationConstraints getAttestationRevocationConstraints() {
+		return policy.getAttestationRevocation();
+	}
+
+	/**
+	 * Returns the constraint used for ASiC Container validation
+	 *
+	 * @return {@code ContainerConstraints}
+	 */
+	public ContainerConstraints getContainerConstraints() {
+		return policy.getContainerConstraints();
+	}
+
+	/**
+	 * Returns the constraint used for ASiC Container validation
+	 *
+	 * @return {@code ContainerConstraints}
+	 */
+	public PDFAConstraints getPDFAConstraints() {
+		return policy.getPDFAConstraints();
+	}
+
+	/**
+	 * Returns the constraint used for qualification validation
+	 *
+	 * @return {@code EIDAS}
+	 */
 	public EIDAS getEIDASConstraints() {
 		return policy.getEIDAS();
 	}
-	
-	@Override
+
+	/**
+	 * Returns the common constraint used for cryptographic validation
+	 *
+	 * @return {@code CryptographicConstraint}
+	 */
 	public CryptographicConstraint getCryptographic() {
 		return policy.getCryptographic();
+	}
+
+	private LevelConstraintWrapper toLevelRule(LevelConstraint constraint) {
+		if (constraint == null) {
+			return null;
+		}
+		return new LevelConstraintWrapper(constraint);
+	}
+
+	private MultiValuesConstraintWrapper toRule(MultiValuesConstraint constraint) {
+		if (constraint == null) {
+			return null;
+		}
+		return new MultiValuesConstraintWrapper(constraint);
+	}
+
+	private ValueConstraintWrapper toRule(ValueConstraint constraint) {
+		if (constraint == null) {
+			return null;
+		}
+		return new ValueConstraintWrapper(constraint);
+	}
+
+	private IntValueConstraintWrapper toRule(IntValueConstraint constraint) {
+		if (constraint == null) {
+			return null;
+		}
+		return new IntValueConstraintWrapper(constraint);
+	}
+
+	private TimeConstraintWrapper toRule(TimeConstraint constraint) {
+		if (constraint == null) {
+			return null;
+		}
+		return new TimeConstraintWrapper(constraint);
+	}
+
+	private CertificateValuesConstraintWrapper toRule(CertificateValuesConstraint constraint) {
+		if (constraint == null) {
+			return null;
+		}
+		return new CertificateValuesConstraintWrapper(constraint);
+	}
+
+	private CryptographicConstraintWrapper toCryptographicSuite(CryptographicConstraint constraint) {
+		return new CryptographicConstraintWrapper(constraint);
+	}
+
+	@Override
+	public String toString() {
+		return "EtsiValidationPolicy [" +
+				"policyName=" + getPolicyName() +
+				']';
 	}
 
 }

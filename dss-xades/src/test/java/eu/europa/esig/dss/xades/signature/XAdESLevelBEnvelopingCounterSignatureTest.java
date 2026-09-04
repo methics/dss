@@ -1,26 +1,25 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.xades.signature;
 
-import eu.europa.esig.dss.xml.utils.DomUtils;
 import eu.europa.esig.dss.diagnostic.DiagnosticData;
 import eu.europa.esig.dss.diagnostic.SignatureWrapper;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlCommitmentTypeIndication;
@@ -40,6 +39,8 @@ import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.XAdESTimestampParameters;
 import eu.europa.esig.dss.xades.definition.xades132.XAdES132Element;
 import eu.europa.esig.dss.xades.definition.xades132.XAdES132Path;
+import eu.europa.esig.dss.xml.utils.DomUtils;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -98,17 +99,17 @@ public class XAdESLevelBEnvelopingCounterSignatureTest extends AbstractXAdESCoun
 		super.onDocumentSigned(byteArray);
 		
 		Document document = DomUtils.buildDOM(byteArray);
-		NodeList counterSignaturesList = DomUtils.getNodeList(document, XAdES132Path.all(XAdES132Element.COUNTER_SIGNATURE));
+		NodeList counterSignaturesList = XPathUtils.getNodeList(document, XAdES132Path.all(XAdES132Element.COUNTER_SIGNATURE));
 		assertEquals(1, counterSignaturesList.getLength());
 		
 		Node counterSignature = counterSignaturesList.item(0);
-		NodeList signedDataObjectPropsList = DomUtils.getNodeList(counterSignature, XAdES132Path.allFromCurrentPosition(XAdES132Element.SIGNED_DATA_OBJECT_PROPERTIES));
+		NodeList signedDataObjectPropsList = XPathUtils.getNodeList(counterSignature, XAdES132Path.allFromCurrentPosition(XAdES132Element.SIGNED_DATA_OBJECT_PROPERTIES));
 		assertEquals(1, signedDataObjectPropsList.getLength());
 		
-		NodeList commitmentTypeIndicationList = DomUtils.getNodeList(signedDataObjectPropsList.item(0), XAdES132Path.allFromCurrentPosition(XAdES132Element.COMMITMENT_TYPE_INDICATION));
+		NodeList commitmentTypeIndicationList = XPathUtils.getNodeList(signedDataObjectPropsList.item(0), XAdES132Path.allFromCurrentPosition(XAdES132Element.COMMITMENT_TYPE_INDICATION));
 		assertEquals(1, commitmentTypeIndicationList.getLength());
 		
-		NodeList dataObjectFormatList = DomUtils.getNodeList(signedDataObjectPropsList.item(0), XAdES132Path.allFromCurrentPosition(XAdES132Element.DATA_OBJECT_FORMAT));
+		NodeList dataObjectFormatList = XPathUtils.getNodeList(signedDataObjectPropsList.item(0), XAdES132Path.allFromCurrentPosition(XAdES132Element.DATA_OBJECT_FORMAT));
 		assertEquals(0, dataObjectFormatList.getLength());
 	}
 

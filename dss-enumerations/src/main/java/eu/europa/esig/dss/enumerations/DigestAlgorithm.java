@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -32,45 +32,47 @@ import java.util.Map;
  */
 public enum DigestAlgorithm implements OidAndUriBasedEnum {
 
+	// TODO : refactor to the same architecture as SignatureAlgorithm
+
 	// see DEPRECATED http://www.w3.org/TR/2012/WD-xmlsec-algorithms-20120105/
 	// see http://www.w3.org/TR/2013/NOTE-xmlsec-algorithms-20130411/
 	// @formatter:off
 	/** SHA-1 */
-	SHA1("SHA1", "SHA-1", "1.3.14.3.2.26", "http://www.w3.org/2000/09/xmldsig#sha1", null, "SHA", 20),
+	SHA1("SHA1", "SHA-1", "1.3.14.3.2.26", "http://www.w3.org/2000/09/xmldsig#sha1", null, "SHA", null, null, -14L, null, 20),
 
 	/** SHA-224 */
 	SHA224("SHA224", "SHA-224", "2.16.840.1.101.3.4.2.4", "http://www.w3.org/2001/04/xmldsig-more#sha224", "S224", 28),
 
 	/** SHA-256 */
-	SHA256("SHA256", "SHA-256", "2.16.840.1.101.3.4.2.1", "http://www.w3.org/2001/04/xmlenc#sha256", "S256", "SHA-256", 32),
+	SHA256("SHA256", "SHA-256", "2.16.840.1.101.3.4.2.1", "http://www.w3.org/2001/04/xmlenc#sha256", "S256", "SHA-256", "sha-256", "sha256", -16L, "SHA-256", 32),
 
 	/** SHA-384 */
-	SHA384("SHA384", "SHA-384", "2.16.840.1.101.3.4.2.2", "http://www.w3.org/2001/04/xmldsig-more#sha384", "S384", 48),
+	SHA384("SHA384", "SHA-384", "2.16.840.1.101.3.4.2.2", "http://www.w3.org/2001/04/xmldsig-more#sha384", "S384", null, "sha-384", "sha384", -43L, "SHA-384", 48),
 
 	/** SHA-512 */
-	SHA512("SHA512", "SHA-512", "2.16.840.1.101.3.4.2.3", "http://www.w3.org/2001/04/xmlenc#sha512", "S512", "SHA-512", 64),
+	SHA512("SHA512", "SHA-512", "2.16.840.1.101.3.4.2.3", "http://www.w3.org/2001/04/xmlenc#sha512", "S512", "SHA-512", "sha-512", "sha512", -44L, "SHA-512", 64),
 
 	// see https://tools.ietf.org/html/rfc6931
 	/** SHA3-224 */
-	SHA3_224("SHA3-224", "SHA3-224", "2.16.840.1.101.3.4.2.7", "http://www.w3.org/2007/05/xmldsig-more#sha3-224", 28),
+	SHA3_224("SHA3-224", "SHA3-224", "2.16.840.1.101.3.4.2.7", "http://www.w3.org/2007/05/xmldsig-more#sha3-224", null, null, "sha3-224", 28),
 
 	/** SHA3-256 */
-	SHA3_256("SHA3-256", "SHA3-256", "2.16.840.1.101.3.4.2.8", "http://www.w3.org/2007/05/xmldsig-more#sha3-256", "S3-256", 32),
+	SHA3_256("SHA3-256", "SHA3-256", "2.16.840.1.101.3.4.2.8", "http://www.w3.org/2007/05/xmldsig-more#sha3-256", "S3-256", null, "sha3-256", 32),
 
 	/** SHA3-384 */
-	SHA3_384("SHA3-384", "SHA3-384", "2.16.840.1.101.3.4.2.9", "http://www.w3.org/2007/05/xmldsig-more#sha3-384", "S3-384", 48),
+	SHA3_384("SHA3-384", "SHA3-384", "2.16.840.1.101.3.4.2.9", "http://www.w3.org/2007/05/xmldsig-more#sha3-384", "S3-384", null, "sha3-384", 48),
 
 	/** SHA3-512 */
-	SHA3_512("SHA3-512", "SHA3-512", "2.16.840.1.101.3.4.2.10", "http://www.w3.org/2007/05/xmldsig-more#sha3-512", "S3-512", 64),
+	SHA3_512("SHA3-512", "SHA3-512", "2.16.840.1.101.3.4.2.10", "http://www.w3.org/2007/05/xmldsig-more#sha3-512", "S3-512", null, "sha3-512", 64),
 
 	/** SHAKE-128 */
-	SHAKE128("SHAKE-128", "SHAKE-128", "2.16.840.1.101.3.4.2.11", null),
+	SHAKE128("SHAKE-128", "SHAKE-128", "2.16.840.1.101.3.4.2.11", null, -18L),
 
 	/** SHAKE-256 */
 	SHAKE256("SHAKE-256", "SHAKE-256", "2.16.840.1.101.3.4.2.12", null),
 
 	/** SHAKE-256 + output 512bits */
-	SHAKE256_512("SHAKE256-512", "SHAKE256-512", "2.16.840.1.101.3.4.2.18", null),
+	SHAKE256_512("SHAKE256-512", "SHAKE256-512", "2.16.840.1.101.3.4.2.18", null, -45L),
 
 	/** RIPEMD160 */
 	RIPEMD160("RIPEMD160", "RIPEMD160", "1.3.36.3.2.1", "http://www.w3.org/2001/04/xmlenc#ripemd160"),
@@ -113,6 +115,18 @@ public enum DigestAlgorithm implements OidAndUriBasedEnum {
 	/** URI of the algorithm for JAdES HTTPHeaders (see RFC 5843, sigD HTTP_HEADER)  */
 	private final String httpHeaderId;
 
+	/** Identifier of the algorithm present within an SD-JWT token */
+	private final String sdJwtId;
+
+	/** Identifier of the algorithm present within the subresource integrity claim */
+	private final String srIntegrityId;
+
+	/** Identifier of the algorithm for a CB-AdES (COSE) signatures */
+	private final Long coseId;
+
+	/** Identifier of the algorithm for a MobileSecurityObject (MSO) used for mdoc signed items integrity preservation */
+	private final String msoId;
+
 	/** Salt length for MGF usage */
 	private final int saltLength;
 
@@ -130,6 +144,14 @@ public enum DigestAlgorithm implements OidAndUriBasedEnum {
 		private static final Map<String, DigestAlgorithm> JADES_ALGORITHMS = registerJAdESAlgorithms();
 		/** A map between JAdES HTTPHeader URLs and algorithms */
 		private static final Map<String, DigestAlgorithm> HTTP_HEADER_ALGORITHMS = registerJwsHttpHeaderAlgorithms();
+		/** A map between SD-JWT token ids and algorithms */
+		private static final Map<String, DigestAlgorithm> SD_JWT_ALGORITHMS = registerSDJWTAlgorithms();
+		/** A map between SubResource integrity ids and algorithms */
+		private static final Map<String, DigestAlgorithm> SR_INTEGRITY_ALGORITHMS = registerSubResourceIntegrityAlgorithms();
+		/** A map between COSE IDs and algorithms */
+		private static final Map<Long, DigestAlgorithm> COSE_ALGORITHMS = registerCOSEAlgorithms();
+		/** A map between MSO IDs and algorithms */
+		private static final Map<String, DigestAlgorithm> MSO_ALGORITHMS = registerMSOAlgorithms();
 
 		private static Map<String, DigestAlgorithm> registerOIDAlgorithms() {
 			final Map<String, DigestAlgorithm> map = new HashMap<>();
@@ -178,6 +200,39 @@ public enum DigestAlgorithm implements OidAndUriBasedEnum {
 			}
 			return map;
 		}
+
+		private static Map<String, DigestAlgorithm> registerSDJWTAlgorithms() {
+			final Map<String, DigestAlgorithm> map = new HashMap<>();
+			for (final DigestAlgorithm digestAlgorithm : values()) {
+				map.put(digestAlgorithm.sdJwtId, digestAlgorithm);
+			}
+			return map;
+		}
+
+		private static Map<String, DigestAlgorithm> registerSubResourceIntegrityAlgorithms() {
+			final Map<String, DigestAlgorithm> map = new HashMap<>();
+			for (final DigestAlgorithm digestAlgorithm : values()) {
+				map.put(digestAlgorithm.srIntegrityId, digestAlgorithm);
+			}
+			return map;
+		}
+
+		private static Map<Long, DigestAlgorithm> registerCOSEAlgorithms() {
+			final Map<Long, DigestAlgorithm> map = new HashMap<>();
+			for (final DigestAlgorithm digestAlgorithm : values()) {
+				map.put(digestAlgorithm.coseId, digestAlgorithm);
+			}
+			return map;
+		}
+
+		private static Map<String, DigestAlgorithm> registerMSOAlgorithms() {
+			final Map<String, DigestAlgorithm> map = new HashMap<>();
+			for (final DigestAlgorithm digestAlgorithm : values()) {
+				map.put(digestAlgorithm.msoId, digestAlgorithm);
+			}
+			return map;
+		}
+
 	}
 
 	/**
@@ -315,6 +370,74 @@ public enum DigestAlgorithm implements OidAndUriBasedEnum {
 	}
 
 	/**
+	 * Returns the digest algorithm associated to the algorithm identifiers used within SD-JWT tokens.
+	 * See <a href="https://www.iana.org/assignments/named-information/named-information.xhtml">IANA "Named Information Hash Algorithm" registry</a>.
+	 *
+	 * @param sdJwtId the algorithm name according to IANA "Named Information Hash Algorithm" registry
+	 * @return the digest algorithm linked to the given name
+	 * @throws IllegalArgumentException if the name doesn't match any digest
+	 *                                  algorithm
+	 */
+	public static DigestAlgorithm forSdJwtId(final String sdJwtId) {
+		final DigestAlgorithm algorithm = Registry.SD_JWT_ALGORITHMS.get(sdJwtId);
+		if (algorithm == null) {
+			throw new IllegalArgumentException(String.format(UNSUPPORTED_ALGORITHM_MESSAGE, sdJwtId));
+		}
+		return algorithm;
+	}
+
+	/**
+	 * Returns the digest algorithm associated to a subresource integrity definition as defined in
+	 * <a href="https://www.w3.org/TR/2016/REC-SRI-20160623/#integrity-metadata">W3C Subresource Integrity</a>.
+	 * The algorithm identifiers are defined in
+	 * <a href="https://www.w3.org/TR/CSP2/#source-list-valid-hashes">W3C Content Security Policy Level 2</a>.
+	 *
+	 * @param srIntegrityId the algorithm name according to W3C "Subresource Integrity"
+	 * @return the digest algorithm linked to the given name
+	 * @throws IllegalArgumentException if the name doesn't match any digest
+	 *                                  algorithm
+	 */
+	public static DigestAlgorithm forSrIntegrityId(final String srIntegrityId) {
+		final DigestAlgorithm algorithm = Registry.SR_INTEGRITY_ALGORITHMS.get(srIntegrityId);
+		if (algorithm == null) {
+			throw new IllegalArgumentException(String.format(UNSUPPORTED_ALGORITHM_MESSAGE, srIntegrityId));
+		}
+		return algorithm;
+	}
+
+	/**
+	 * Returns the digest algorithm associated with the given identifier, according to
+	 * <a href="https://www.iana.org/assignments/cose/cose.xhtml">IANA CBOR Object Signing and Encryption (COSE)</a>.
+	 *
+	 * @param algoId {@link Long} COSE algorithm identifier
+	 * @return the digest algorithm linked to the given identifier
+	 * @throws IllegalArgumentException if the name doesn't match any digest  algorithm
+	 */
+	public static DigestAlgorithm forCOSE(final Long algoId) {
+		final DigestAlgorithm algorithm = Registry.COSE_ALGORITHMS.get(algoId);
+		if (algorithm == null) {
+			throw new IllegalArgumentException(String.format(UNSUPPORTED_ALGORITHM_MESSAGE, algoId));
+		}
+		return algorithm;
+	}
+
+	/**
+	 * Returns the digest algorithm associated with the given identifier, according to
+	 * ISO 18013-5 "9.1.2.5 Message digest function"
+	 *
+	 * @param algoId {@link Long} MSO digest algorithm identifier
+	 * @return the digest algorithm linked to the given identifier
+	 * @throws IllegalArgumentException if the name doesn't match any digest  algorithm
+	 */
+	public static DigestAlgorithm forMSO(final String algoId) {
+		final DigestAlgorithm algorithm = Registry.MSO_ALGORITHMS.get(algoId);
+		if (algorithm == null) {
+			throw new IllegalArgumentException(String.format(UNSUPPORTED_ALGORITHM_MESSAGE, algoId));
+		}
+		return algorithm;
+	}
+
+	/**
 	 * Constructor with OID and XML URI
 	 *
 	 * @param name {@link String} algorithm name
@@ -323,7 +446,20 @@ public enum DigestAlgorithm implements OidAndUriBasedEnum {
 	 * @param xmlId {@link String} algorithm XML URI
 	 */
 	DigestAlgorithm(final String name, final String javaName, final String oid, final String xmlId) {
-		this(name, javaName, oid, xmlId, null, 0);
+		this(name, javaName, oid, xmlId, 0);
+	}
+
+	/**
+	 * Constructor with OID and XML URI
+	 *
+	 * @param name {@link String} algorithm name
+	 * @param javaName {@link String} algorithm Java name
+	 * @param oid {@link String} algorithm OID
+	 * @param xmlId {@link String} algorithm XML URI
+	 * @param coseId {@link Long} algorithm COSE Id
+	 */
+	DigestAlgorithm(final String name, final String javaName, final String oid, final String xmlId, final Long coseId) {
+		this(name, javaName, oid, xmlId, null, null, null, null, coseId, null, 0);
 	}
 
 	/**
@@ -338,7 +474,7 @@ public enum DigestAlgorithm implements OidAndUriBasedEnum {
 	 */
 	DigestAlgorithm(final String name, final String javaName, final String oid, final String xmlId,
 			final String jadesId, final String httpHeaderId) {
-		this(name, javaName, oid, xmlId, jadesId, httpHeaderId, 0);
+		this(name, javaName, oid, xmlId, jadesId, httpHeaderId, null, 0);
 	}
 
 	/**
@@ -366,7 +502,7 @@ public enum DigestAlgorithm implements OidAndUriBasedEnum {
 	 */
 	DigestAlgorithm(final String name, final String javaName, final String oid, final String xmlId,
 			final String jadesId, final int saltLength) {
-		this(name, javaName, oid, xmlId, jadesId, null, saltLength);
+		this(name, javaName, oid, xmlId, jadesId, null, null, saltLength);
 	}
 
 	/**
@@ -378,16 +514,42 @@ public enum DigestAlgorithm implements OidAndUriBasedEnum {
 	 * @param xmlId {@link String} algorithm XML URI
 	 * @param jadesId {@link String} algorithm JAdES URI
 	 * @param httpHeaderId {@link String} algorithm JAdES HTTPHeader URI
+	 * @param sdJwtId {@link String} algorithm name for SD-JWT token
 	 * @param saltLength {@link String} salt length for MGF
 	 */
 	DigestAlgorithm(final String name, final String javaName, final String oid, final String xmlId,
-			final String jadesId, final String httpHeaderId, final int saltLength) {
+					final String jadesId, final String httpHeaderId, final String sdJwtId, final int saltLength) {
+		this(name, javaName, oid, xmlId, jadesId, httpHeaderId, sdJwtId, null, null, null, saltLength);
+	}
+
+	/**
+	 * Constructor with OID, XML URI and JAdES URIs with MGF support
+	 *
+	 * @param name {@link String} algorithm name
+	 * @param javaName {@link String} algorithm Java name
+	 * @param oid {@link String} algorithm OID
+	 * @param xmlId {@link String} algorithm XML URI
+	 * @param jadesId {@link String} algorithm JAdES URI
+	 * @param httpHeaderId {@link String} algorithm JAdES HTTPHeader URI
+	 * @param sdJwtId {@link String} algorithm name for SD-JWT token
+	 * @param srIntegrityId {@link String} subresource integrity Id
+	 * @param coseId {@link Long} algorithm COSE Id
+	 * @param msoId {@link String} MobileSecurityObject algorithm identifier
+	 * @param saltLength {@link String} salt length for MGF
+	 */
+	DigestAlgorithm(final String name, final String javaName, final String oid, final String xmlId,
+					final String jadesId, final String httpHeaderId, final String sdJwtId, final String srIntegrityId,
+					final Long coseId, final String msoId, final int saltLength) {
 		this.name = name;
 		this.javaName = javaName;
 		this.oid = oid;
 		this.xmlId = xmlId;
 		this.jadesId = jadesId;
 		this.httpHeaderId = httpHeaderId;
+		this.sdJwtId = sdJwtId;
+		this.srIntegrityId = srIntegrityId;
+		this.coseId = coseId;
+		this.msoId = msoId;
 		this.saltLength = saltLength;
 	}
 
@@ -431,7 +593,7 @@ public enum DigestAlgorithm implements OidAndUriBasedEnum {
 
 	/**
 	 * Get the algorithm id used in JAdES Signatures.
-	 * 
+	 * <p>
 	 * TS 119-182 Annex E (normative): Digest algorithms identifiers for JAdES
 	 * signatures
 	 * 
@@ -448,6 +610,50 @@ public enum DigestAlgorithm implements OidAndUriBasedEnum {
 	 */
 	public String getHttpHeaderAlgo() {
 		return httpHeaderId;
+	}
+
+	/**
+	 * Get the algorithm id used for claims integrity definition within SD-JWT.
+	 * <p>
+	 * The allowed values are available at
+	 * <a href="https://www.iana.org/assignments/named-information/named-information.xhtml">IANA Named Information</a>.
+	 *
+	 * @return the algorithm SD-JWT claim hash identifier
+	 */
+	public String getSDJWTId() {
+		return sdJwtId;
+	}
+
+	/**
+	 * Get the algorithm id used for subresource integrity calculation.
+	 * <p>
+	 * The allowed values are available at
+	 * <a href="https://www.w3.org/TR/2016/REC-SRI-20160623/#integrity-metadata">W3C Subresource Integrity</a>.
+	 *
+	 * @return the algorithm subresource integrity claim id
+	 */
+	public String getSubresourceIntegrityId() {
+		return srIntegrityId;
+	}
+
+	/**
+	 * Get the algorithm Id used in COSE Signatures.
+	 * IANA COSE Algorithms registry: COSE Algorithms
+	 *
+	 * @return the algorithm COSE identifier
+	 */
+	public Long getCoseId() {
+		return coseId;
+	}
+
+	/**
+	 * Get the algorithm Id used in MobileSecurityObject structure of mdoc.
+	 * Values are defined in ISO/IEC 18013-5 "9.1.2.5 Message digest function".
+	 *
+	 * @return {@link String} the algorithm MSO identifier
+	 */
+	public String getMSOId() {
+		return msoId;
 	}
 
 	/**

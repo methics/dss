@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -24,6 +24,7 @@ import eu.europa.esig.dss.jades.DSSJsonUtils;
 import eu.europa.esig.dss.jades.JAdESHeaderParameterNames;
 import eu.europa.esig.dss.model.Digest;
 import eu.europa.esig.dss.spi.DSSASN1Utils;
+import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.spi.x509.ResponderId;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLRef;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPRef;
@@ -60,7 +61,7 @@ public final class JAdESRevocationRefExtractionUtils {
 		try {
 			Map<?, ?> ocspId = (Map<?, ?>) ocpRef.get(JAdESHeaderParameterNames.OCSP_ID);
 			if (Utils.isMapNotEmpty(ocspId)) {
-				producedAt = DSSJsonUtils.getDate((String) ocspId.get(JAdESHeaderParameterNames.PRODUCED_AT));
+				producedAt = DSSUtils.parseRFCDate((String) ocspId.get(JAdESHeaderParameterNames.PRODUCED_AT));
 				responderId = getResponderId(ocspId);
 			}
 
@@ -109,7 +110,7 @@ public final class JAdESRevocationRefExtractionUtils {
 	 */
 	public static CRLRef createCRLRef(Map<?, ?> crlRefMap) {
 
-		X500Name crlIssuer = null;
+		X500Principal crlIssuer = null;
 		Date crlIssuedTime = null;
 		BigInteger crlNumber = null;
 
@@ -118,12 +119,12 @@ public final class JAdESRevocationRefExtractionUtils {
 			if (Utils.isMapNotEmpty(crlId)) {
 				String issuerB64 = (String) crlId.get(JAdESHeaderParameterNames.ISSUER);
 				if (Utils.isStringNotEmpty(issuerB64) && Utils.isBase64Encoded(issuerB64)) {
-					crlIssuer = X500Name.getInstance(Utils.fromBase64(issuerB64));
+					crlIssuer = DSSASN1Utils.toX500Principal(X500Name.getInstance(Utils.fromBase64(issuerB64)));
 				}
 
 				String issueTimeStr = (String) crlId.get(JAdESHeaderParameterNames.ISSUE_TIME);
 				if (Utils.isStringNotEmpty(issueTimeStr)) {
-					crlIssuedTime = DSSJsonUtils.getDate(issueTimeStr);
+					crlIssuedTime = DSSUtils.parseRFCDate(issueTimeStr);
 				}
 
 				String crlNumberString = (String) crlId.get(JAdESHeaderParameterNames.NUMBER);
@@ -134,11 +135,7 @@ public final class JAdESRevocationRefExtractionUtils {
 
 			Digest digest = DSSJsonUtils.getDigest(crlRefMap);
 			if (digest != null) {
-				CRLRef crlRef = new CRLRef(digest);
-				crlRef.setCrlIssuer(crlIssuer);
-				crlRef.setCrlIssuedTime(crlIssuedTime);
-				crlRef.setCrlNumber(crlNumber);
-				return crlRef;
+				return new CRLRef(digest, crlIssuer, crlIssuedTime, crlNumber);
 
 			} else {
 				LOG.warn("Missing digest information in CRLRef");

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -22,9 +22,9 @@ package eu.europa.esig.dss.spi;
 
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
+import eu.europa.esig.dss.enumerations.ObjectIdentifier;
 import eu.europa.esig.dss.enumerations.ObjectIdentifierQualifier;
 import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
-import eu.europa.esig.dss.enumerations.X520Attributes;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.Digest;
@@ -34,33 +34,29 @@ import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.UserNotice;
 import eu.europa.esig.dss.model.identifier.TokenIdentifier;
 import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.spi.security.DSSCertificateTokenSecurityFactory;
+import eu.europa.esig.dss.spi.security.DSSP7CCertificatesSecurityFactory;
 import eu.europa.esig.dss.utils.Utils;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.DigestInfo;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.IssuerSerial;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSSignedData;
+import org.bouncycastle.cms.CMSSignedDataParser;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.io.DigestOutputStream;
 import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
-import org.bouncycastle.tsp.TimeStampToken;
+import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.x500.X500Principal;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -69,15 +65,16 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -88,6 +85,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -98,7 +97,7 @@ public final class DSSUtils {
 	private static final Logger LOG = LoggerFactory.getLogger(DSSUtils.class);
 
 	static {
-		Security.addProvider(DSSSecurityProvider.getSecurityProvider());
+		DSSSecurityProvider.initSystemProviders();
 	}
 
 	/** Empty byte array */
@@ -113,6 +112,9 @@ public final class DSSUtils {
 	/** RFC 3339 DateTime format used by default */
 	public static final String RFC3339_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
+	/** Format date-time as specified in ISO 8601-1 */
+	public static final String ISO8601_DATE_FORMAT = "yyyy-MM-dd";
+
 	/** The UTC timezone (GMT+0), used by default */
 	public static final TimeZone UTC_TIMEZONE = TimeZone.getTimeZone("UTC");
 
@@ -123,7 +125,11 @@ public final class DSSUtils {
 	private static final byte[] LINE_BREAK_CHARS = { CARRIAGE_RETURN, LINE_FEED };
 
 	/** The URN OID prefix (RFC 3061) */
-	public static final String OID_NAMESPACE_PREFIX = "urn:oid:";
+	private static final String OID_NAMESPACE_PREFIX = "urn:oid:";
+
+	/** URI regex defined in RFC 3986 Appendix B */
+	private static final Pattern RFC3986_URI_PATTERN = Pattern.compile(
+			"^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
 
 	/**
 	 * This class is a utility class and cannot be instantiated.
@@ -145,20 +151,101 @@ public final class DSSUtils {
 	}
 
 	/**
+	 * This method checks silently whether the date is conformant to the RFC 3339 date-time
+	 * pattern "yyyy-MM-dd'T'HH:mm:ss'Z'".
+	 *
+	 * @param dateTimeString {@link String} to check
+	 * @return TRUE if the string is confofmant to the RFC 3339 date-time pattern definition, FALSE otherwise
+	 */
+	public static boolean isRFCDate(final String dateTimeString) {
+		if (Utils.isStringNotEmpty(dateTimeString)) {
+			try {
+				SimpleDateFormat sdf = new SimpleDateFormat(RFC3339_TIME_FORMAT);
+				sdf.setTimeZone(UTC_TIMEZONE);
+				sdf.setLenient(false);
+				sdf.parse(dateTimeString);
+				return true;
+
+			} catch (ParseException e) {
+				// skip silently
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Parses a {@code String} date to {@code Date}
 	 *
-	 * @param str {@link String} in RFC format, e.g. "2019-11-19T17:28:15Z"
+	 * @param dateTimeString {@link String} in RFC format, e.g. "2019-11-19T17:28:15Z"
 	 * @return {@link Date}
 	 */
-	public static Date parseRFCDate(final String str) {
-		try {
-			SimpleDateFormat sdf = new SimpleDateFormat(RFC3339_TIME_FORMAT);
-			sdf.setTimeZone(UTC_TIMEZONE);
-			sdf.setLenient(false);
-			return sdf.parse(str);
-		} catch (Exception e) {
-			throw new IllegalArgumentException(String.format("String '%s' doesn't follow the pattern '%s'", str, RFC3339_TIME_FORMAT));
+	public static Date parseRFCDate(final String dateTimeString) {
+		if (Utils.isStringNotEmpty(dateTimeString)) {
+			try {
+				SimpleDateFormat sdf = new SimpleDateFormat(RFC3339_TIME_FORMAT);
+				sdf.setTimeZone(UTC_TIMEZONE);
+				sdf.setLenient(false);
+				return sdf.parse(dateTimeString);
+			} catch (ParseException e) {
+				LOG.warn("Unable to parse date with value '{}' as RFC 3339 : {}", dateTimeString, e.getMessage());
+			}
 		}
+		return null;
+	}
+
+	/**
+	 * Formats a date to use according to ISO/IEC 8601-1 date pattern "yyyy-MM-dd".
+	 * Example: "2019-11-19"
+	 *
+	 * @param date
+	 *            the date to be converted
+	 * @return the textual representation (a null date will result in "N/A")
+	 */
+	public static String formatDateToISO8601(final Date date) {
+		return formatDateWithCustomFormat(date, ISO8601_DATE_FORMAT);
+	}
+
+	/**
+	 * This method checks silently whether the date is conformant to the ISO/IEC 8601-1 date
+	 * pattern "yyyy-MM-dd".
+	 *
+	 * @param dateString {@link String} to check
+	 * @return TRUE if the string is confofmant to the ISO/IEC 8601-1 date pattern definition, FALSE otherwise
+	 */
+	public static boolean isISO8601Date(final String dateString) {
+		if (Utils.isStringNotEmpty(dateString)) {
+			try {
+				SimpleDateFormat sdf = new SimpleDateFormat(ISO8601_DATE_FORMAT);
+				sdf.setTimeZone(UTC_TIMEZONE);
+				sdf.setLenient(false);
+				sdf.parse(dateString);
+				return true;
+
+			} catch (ParseException e) {
+				// skip silently
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Parses an ISO 8601-1 date String
+	 *
+	 * @param dateString {@link String} in the ISO 8601-1 format to parse, e.g. "2001-01-01"
+	 * @return {@link Date}
+	 */
+	public static Date parseISO8601Date(String dateString) {
+		if (Utils.isStringNotEmpty(dateString)) {
+			try {
+				SimpleDateFormat sdf = new SimpleDateFormat(ISO8601_DATE_FORMAT);
+				sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+				sdf.setLenient(false);
+				return sdf.parse(dateString);
+			} catch (ParseException e) {
+				LOG.warn("Unable to parse date with value '{}' as ISO 8601-1 : {}", dateString, e.getMessage());
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -174,7 +261,7 @@ public final class DSSUtils {
 	
 	/**
 	 * Formats the date according to the given format and timeZone as {@code String}.
-	 *
+	 * <p>
 	 * NOTE : When null or empty string is provided, the system default timezone is used!
 	 * 
 	 * @param date {@link Date} to transform to a String
@@ -269,78 +356,38 @@ public final class DSSUtils {
 	/**
 	 * This method loads a certificate from the given location. The certificate must be DER-encoded and may be supplied
 	 * in binary or printable (PEM / Base64) encoding.
-	 * 
+	 * <p>
 	 * If the certificate is provided in Base64 encoding, it must be bounded at the beginning by
 	 * {@code -----BEGIN CERTIFICATE-----}, and must be bounded at the end by {@code -----END CERTIFICATE-----}.
+	 * <p>
+	 * This method will at first try to load the certificate with a default security Provider,
+	 * if it fails, it will try to load the certificate using alternative security providers, until the first success.
+	 * In case of a success, the first obtained implementation of a certificate is returned, otherwise,
+	 * if all security providers fail to load the certificate, an exception is thrown.
 	 * 
 	 * @param file
 	 *            the file with the certificate
 	 * @return the certificate token
 	 */
 	public static CertificateToken loadCertificate(final File file) {
-		final InputStream inputStream = DSSUtils.toByteArrayInputStream(file);
-		return loadCertificate(inputStream);
-	}
-
-	/**
-	 * This method loads a certificate from the given location. The certificate must be DER-encoded and may be supplied
-	 * in binary or printable (PEM / Base64) encoding.
-	 * 
-	 * If the certificate is provided in Base64 encoding, it must be bounded at the beginning by
-	 * {@code -----BEGIN CERTIFICATE-----}, and must be bounded at the end by {@code -----END CERTIFICATE-----}.
-	 * 
-	 * @param inputStream
-	 *            input stream containing the certificate
-	 * @return the certificate token
-	 */
-	public static CertificateToken loadCertificate(final InputStream inputStream) {
-		List<CertificateToken> certificates = loadCertificates(inputStream);
-		if (certificates.size() == 1) {
-			return certificates.get(0);
-		}
-		throw new DSSException("Could not parse certificate");
-	}
-
-	/**
-	 * Loads a collection of certificates from a p7c source
-	 *
-	 * @param is {@link InputStream} p7c
-	 * @return a list of {@link CertificateToken}s
-	 */
-	public static List<CertificateToken> loadCertificateFromP7c(InputStream is) {
-		return loadCertificates(is);
-	}
-
-	private static List<CertificateToken> loadCertificates(InputStream is) {
-		final List<CertificateToken> certificates = new ArrayList<>();
-		try {
-			@SuppressWarnings("unchecked")
-			final Collection<X509Certificate> certificatesCollection = (Collection<X509Certificate>) CertificateFactory
-					.getInstance("X.509", DSSSecurityProvider.getSecurityProviderName()).generateCertificates(is);
-			if (certificatesCollection != null) {
-				for (X509Certificate cert : certificatesCollection) {
-					certificates.add(new CertificateToken(cert));
-				}
-			}
-			if (certificates.isEmpty()) {
-				throw new DSSException("No certificate found in the InputStream");
-			}
-			return certificates;
-		} catch (DSSException e) {
-		  	throw e;
-		} catch (Exception e) {
-			throw new DSSException("Unable to load certificate(s) : " + e.getMessage(), e);
-		}
+		Objects.requireNonNull(file, "Input file cannot be null");
+		return DSSCertificateTokenSecurityFactory.FILE_INSTANCE.build(file);
 	}
 
 	/**
 	 * This method loads a certificate from the byte array. The certificate must be DER-encoded and may be supplied in
-	 * binary or printable
-	 * (Base64) encoding. If the certificate is provided in Base64 encoding, it must be bounded at the beginning by
+	 * binary or printable (Base64) encoding.
+	 * <p>
+	 * If the certificate is provided in Base64 encoding, it must be bounded at the beginning by
 	 * -----BEGIN CERTIFICATE-----, and
 	 * must be bounded at the end by -----END CERTIFICATE-----. It throws an {@code DSSException} or return {@code null}
 	 * when the
 	 * certificate cannot be loaded.
+	 * <p>
+	 * This method will at first try to load the certificate with a default security Provider,
+	 * if it fails, it will try to load the certificate using alternative security providers, until the first success.
+	 * In case of a success, the first obtained implementation of a certificate is returned, otherwise,
+	 * if all security providers fail to load the certificate, an exception is thrown.
 	 *
 	 * @param input
 	 *            array of bytes containing the certificate
@@ -348,11 +395,75 @@ public final class DSSUtils {
 	 */
 	public static CertificateToken loadCertificate(final byte[] input) {
 		Objects.requireNonNull(input, "Input binary cannot be null");
-		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(input)) {
-			return loadCertificate(inputStream);
-		} catch (IOException e) {
-			throw new DSSException(String.format("Unable to create a CertificateToken from binaries : %s", e.getMessage()), e);
-		}
+		return DSSCertificateTokenSecurityFactory.BINARY_INSTANCE.build(input);
+	}
+
+	/**
+	 * This method loads a certificate from the given location. The certificate must be DER-encoded and may be supplied
+	 * in binary or printable (PEM / Base64) encoding.
+	 * <p>
+	 * If the certificate is provided in Base64 encoding, it must be bounded at the beginning by
+	 * {@code -----BEGIN CERTIFICATE-----}, and must be bounded at the end by {@code -----END CERTIFICATE-----}.
+	 * <p>
+	 * NOTE: As the certificate is provided in the form of an {@code InputStream}, only single reading of the stream is possible.
+	 *       Therefore, the method uses only a default security provider to load a certificate.
+	 *       Should you need to use an alternative security provider, please use
+	 *       {@code #loadCertificate(InputStream inputStream, String providerName)} method instead.
+	 * 
+	 * @param inputStream
+	 *            input stream containing the certificate
+	 * @return the certificate token
+	 */
+	public static CertificateToken loadCertificate(final InputStream inputStream) {
+		Objects.requireNonNull(inputStream, "InputStream cannot be null");
+		return DSSCertificateTokenSecurityFactory.INPUT_STREAM_INSTANCE.build(inputStream);
+	}
+
+	/**
+	 * Loads a collection of certificates from a p7c file
+	 * <p>
+	 * This method will at first try to load the certificate with a default security Provider,
+	 * if it fails, it will try to load the certificate using alternative security providers, until the first success.
+	 * In case of a success, the first obtained implementation of a certificate is returned, otherwise,
+	 * if all security providers fail to load the certificate, an exception is thrown.
+	 *
+	 * @param file {@link File} p7c
+	 * @return a list of {@link CertificateToken}s
+	 */
+	public static List<CertificateToken> loadCertificateFromP7c(File file) {
+		Objects.requireNonNull(file, "Input file cannot be null");
+		return DSSP7CCertificatesSecurityFactory.FILE_INSTANCE.build(file);
+	}
+
+	/**
+	 * Loads a collection of certificates from a p7c byte array
+	 * <p>
+	 * This method will at first try to load the certificate with a default security Provider,
+	 * if it fails, it will try to load the certificate using alternative security providers, until the first success.
+	 * In case of a success, the first obtained implementation of a certificate is returned, otherwise,
+	 * if all security providers fail to load the certificate, an exception is thrown.
+	 *
+	 * @param input {@link InputStream} p7c
+	 * @return a list of {@link CertificateToken}s
+	 */
+	public static List<CertificateToken> loadCertificateFromP7c(byte[] input) {
+		Objects.requireNonNull(input, "Input binary cannot be null");
+		return DSSP7CCertificatesSecurityFactory.BINARY_INSTANCE.build(input);
+	}
+
+	/**
+	 * Loads a collection of certificates from a p7c {@code InputStream}
+	 * <p>
+	 * NOTE: As the certificate is provided in the form of an {@code InputStream}, only single reading of the stream is possible.
+	 *       Therefore, the method uses only a default security provider to load p7c certificates.
+	 *       Should you need to use an alternative security provider, please use
+	 *       {@code #loadCertificateFromP7c(InputStream inputStream, String providerName)} method instead.
+	 *
+	 * @param inputStream {@link InputStream} p7c
+	 * @return a list of {@link CertificateToken}s
+	 */
+	public static List<CertificateToken> loadCertificateFromP7c(InputStream inputStream) {
+		return DSSP7CCertificatesSecurityFactory.INPUT_STREAM_INSTANCE.build(inputStream);
 	}
 
 	/**
@@ -456,27 +567,6 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * This method wraps the digest value in a DigestInfo (combination of digest
-	 * algorithm and value). This encapsulation is required to operate NONEwithRSA
-	 * signatures.
-	 * 
-	 * @param digestAlgorithm
-	 *                        the used digest algorithm
-	 * @param digest
-	 *                        the digest value
-	 * @return DER encoded binaries of the related digest info
-	 */
-	public static byte[] encodeRSADigest(final DigestAlgorithm digestAlgorithm, final byte[] digest) {
-		try {
-			AlgorithmIdentifier algId = new AlgorithmIdentifier(new ASN1ObjectIdentifier(digestAlgorithm.getOid()), DERNull.INSTANCE);
-			DigestInfo digestInfo = new DigestInfo(algId, digest);
-			return digestInfo.getEncoded(ASN1Encoding.DER);
-		} catch (IOException e) {
-			throw new DSSException("Unable to encode digest", e);
-		}
-	}
-
-	/**
 	 * This method allows to digest the data in the {@code InputStream} with the given algorithm.
 	 *
 	 * @param digestAlgo
@@ -526,36 +616,6 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * This method returns an {@code InputStream} which needs to be closed, based on
-	 * {@code FileInputStream}.
-	 *
-	 * @param file
-	 *             {@code File} to read.
-	 * @return an {@code InputStream} materialized by a {@code FileInputStream}
-	 *         representing the contents of the file @ if an I/O error occurred
-	 */
-	public static InputStream toInputStream(final File file) {
-		Objects.requireNonNull(file, "The file cannot be null");
-		try {
-			return openInputStream(file);
-		} catch (IOException e) {
-			throw new DSSException(String.format("Unable to read InputStream : %s", e.getMessage()), e);
-		}
-	}
-
-	/**
-	 * This method returns an {@code InputStream} which does not need to be closed, based on
-	 * {@code ByteArrayInputStream}.
-	 *
-	 * @param file
-	 *            {@code File} to read
-	 * @return {@code InputStream} based on {@code ByteArrayInputStream}
-	 */
-	public static InputStream toByteArrayInputStream(final File file) {
-		return new ByteArrayInputStream(toByteArray(file));
-	}
-
-	/**
 	 * FROM: Apache
 	 * Reads the contents of a file into a byte array.
 	 * The file is always closed.
@@ -571,37 +631,6 @@ public final class DSSUtils {
 		} catch (Exception e) {
 			throw new DSSException(String.format("Unable to read content of file '%s'. Reason : %s",
 					file, e.getMessage()), e);
-		}
-	}
-
-	/**
-	 * This method create a new document from a sub-part of another document
-	 * 
-	 * @param origin
-	 *            the original document
-	 * @param start
-	 *            the start position to retrieve
-	 * @param end
-	 *            the end position to retrieve
-	 * @return a new DSSDocument
-	 */
-	public static DSSDocument splitDocument(DSSDocument origin, int start, int end) {
-		try (InputStream is = origin.openStream();
-			 BufferedInputStream bis = new BufferedInputStream(is);
-			 ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-
-			int i = 0;
-			int r;
-			while ((r = bis.read()) != -1) {
-				if (i >= start && i <= end) {
-					baos.write(r);
-				}
-				i++;
-			}
-			baos.flush();
-			return new InMemoryDocument(baos.toByteArray());
-		} catch (Exception e) {
-			throw new DSSException("Unable to split document", e);
 		}
 	}
 
@@ -634,7 +663,7 @@ public final class DSSUtils {
 		} else {
 			throw new FileNotFoundException("File '" + file + "' does not exist");
 		}
-		return new FileInputStream(file);
+		return Files.newInputStream(file.toPath());
 	}
 
 	/**
@@ -700,11 +729,7 @@ public final class DSSUtils {
 	 * @return {@link CMSSignedData}
 	 */
 	public static CMSSignedData toCMSSignedData(final byte[] encoded) {
-		try {
-			return new CMSSignedData(encoded);
-		} catch (CMSException e) {
-			throw new DSSException("Not a valid CMS", e);
-		}
+		return toCMSSignedData(new ByteArrayInputStream(encoded));
 	}
 
 	/**
@@ -732,14 +757,13 @@ public final class DSSUtils {
 	 * @return true if the document is a timestamp
 	 */
 	public static boolean isTimestampToken(final DSSDocument document) {
-		TimeStampToken timeStampToken = null;
-		try {
-			CMSSignedData cmsSignedData = toCMSSignedData(document);
-			timeStampToken = new TimeStampToken(cmsSignedData);
+		try (InputStream is = document.openStream()) {
+			CMSSignedDataParser cmsSignedDataParser = new CMSSignedDataParser(new BcDigestCalculatorProvider(), is);
+			return PKCSObjectIdentifiers.id_ct_TSTInfo.getId().equals(cmsSignedDataParser.getSignedContentTypeOID());
 		} catch (Exception e) {
-			// ignore
+			// skip exception
+			return false;
 		}
-		return timeStampToken != null;
 	}
 
 	/**		
@@ -765,7 +789,7 @@ public final class DSSUtils {
 	 */
 	public static void saveToFile(final byte[] bytes, final File file) {
 		file.getParentFile().mkdirs();
-		try (InputStream is = new ByteArrayInputStream(bytes); OutputStream os = new FileOutputStream(file)) {
+		try (InputStream is = new ByteArrayInputStream(bytes); OutputStream os = Files.newOutputStream(file.toPath())) {
 			Utils.copy(is, os);
 		} catch (IOException e) {
 			throw new DSSException(String.format("Unable to save a file : %s", e.getMessage()), e);
@@ -853,23 +877,6 @@ public final class DSSUtils {
 	}
 
 	/**
-	 * This method returns the {@code X500Principal} corresponding to the given string or {@code null} if the conversion
-	 * is not possible.
-	 *
-	 * @param x500PrincipalString
-	 *            a {@code String} representation of the {@code X500Principal}
-	 * @return {@code X500Principal} or null
-	 */
-	public static X500Principal getX500PrincipalOrNull(final String x500PrincipalString) {
-		try {
-			return new X500Principal(x500PrincipalString, X520Attributes.getUppercaseDescriptionForOids());
-		} catch (Exception e) {
-			LOG.warn("Unable to create an instance of X500Principal : {}", e.getMessage());
-			return null;
-		} 
-	}
-
-	/**
 	 * This method returns an UTC date base on the year, the month and the day. 
 	 * The year must be encoded as 1978... and not 78
 	 *
@@ -940,111 +947,41 @@ public final class DSSUtils {
 	}
 	
 	/**
-	 * Skip the defined {@code n} number of bytes from the {@code InputStream}
-	 * and validates success of the operation
-	 * @param is {@link InputStream} to skip bytes from
-	 * @param n {@code int} number bytes to skip
-	 * @return actual number of bytes have been skipped
-     * @exception IllegalStateException in case of {@code InputStream} reading error 
-	 */
-	public static long skipAvailableBytes(InputStream is, int n) throws IllegalStateException {
-		try {
-			long skipped = is.skip(n);
-			if (skipped != n) {
-				throw new IllegalStateException(String.format("The number of skipped bytes [%s] differs from the expected value [%s]! "
-						+ "The InputStream is too small, corrupted or not accessible!", skipped, n));
-			}
-			return skipped;
-		} catch (IOException e) {
-			throw new DSSException("Cannot read the InputStream!", e);
-		}
-	}
-
-	/**
-	 * Read the requested number of bytes from {@code DSSDocument} according to the
-	 * size of the provided {@code byte}[] buffer and validates success of the
-	 * operation
-	 * 
-	 * @param dssDocument
-	 *                    {@link DSSDocument} to read bytes from
-	 * @param b
-	 *                    {@code byte}[] buffer to fill
-	 * @return the total number of bytes read into buffer
-	 * @throws IllegalStateException
-	 *                               in case of {@code InputStream} reading error
-	 */
-	public static long readAvailableBytes(DSSDocument dssDocument, byte[] b) throws IllegalStateException {
-		try (InputStream is = dssDocument.openStream()) {
-			return readAvailableBytes(is, b);
-		} catch (IOException e) {
-			throw new DSSException("Cannot read a sequence of bytes from the document.", e);
-		}
-	}
-	
-	/**
-	 * Read the requested number of bytes from {@code InputStream} according to the size of 
-	 * the provided {@code byte}[] buffer and validates success of the operation
-	 * @param is {@link InputStream} to read bytes from
-	 * @param b {@code byte}[] buffer to fill
-	 * @return the total number of bytes read into buffer
-	 * @throws IllegalStateException in case of {@code InputStream} reading error 
-	 */
-	public static long readAvailableBytes(InputStream is, byte[] b) throws IllegalStateException {
-		return readAvailableBytes(is, b, 0, b.length);
-	}
-	
-	/**
-	 * Read the requested number of bytes from {@code InputStream}
-	 * and validates success of the operation
-	 * @param is {@link InputStream} to read bytes from
-	 * @param b {@code byte}[] buffer to fill
-	 * @param off {@code int} offset in the destination array
-	 * @param len {@code int} number of bytes to read
-	 * @return the total number of bytes read into buffer
-	 * @throws IllegalStateException in case of {@code InputStream} reading error 
-	 */
-	public static long readAvailableBytes(InputStream is, byte[] b, int off, int len) throws IllegalStateException {
-		try {
-			long read = is.read(b, off, len);
-			if (read != len) {
-				throw new IllegalStateException(String.format("The number of read bytes [%s] differs from the expected value [%s]! "
-						+ "The InputStream is too small, corrupted or not accessible!", read, len));
-			}
-			return read;
-		} catch (IOException e) {
-			throw new DSSException("Cannot read the InputStream!", e);
-		}
-	}
-	
-	/**
-	 * This method encodes a URI to be compliant with the RFC 3986 (see DSS-1475 for details)
+	 * This method encodes a URI (e.g. to be used within a ds:Reference element).
+	 * NOTE: This method aims for compliance with the RFC 2396 / RFC 3986 (see DSS-1475 and DSS-3750 for details),
+	 * but keeps non Unicode letter characters in their plain representation as they are allowed for definition within
+	 * filenames and/or XML elements.
 	 *
 	 * @param fileURI the uri to be encoded
 	 * @return the encoded result
 	 */
 	public static String encodeURI(String fileURI) {
-		StringBuilder sb = new StringBuilder();
-		String uriDelimiter = "";
-		final String[] uriParts = fileURI.split("/");
-		for (String part : uriParts) {
-			sb.append(uriDelimiter);
-			sb.append(encodePartURI(part));
-			uriDelimiter = "/";
+		if (fileURI == null) {
+			return null;
 		}
-		return sb.toString();
-	}
-	
-	/**
-	 * This method encodes a partial URI to be compliant with the RFC 3986 (see DSS-1475 for details)
-	 * @param uriPart the partial uri to be encoded
-	 * @return the encoded result
-	 */
-	private static String encodePartURI(String uriPart) {
+
+        Matcher matcher = RFC3986_URI_PATTERN.matcher(fileURI);
+		if (!matcher.matches()) {
+			LOG.warn("URI does not match RFC 3986 pattern: {}. Original URI is returned.", fileURI);
+			return fileURI;
+		}
+
+		String scheme = matcher.group(2);
+		String authority = matcher.group(4);
+		String path = matcher.group(5);
+		String query = matcher.group(7);
+		String fragment = matcher.group(9);
 		try {
-			return URLEncoder.encode(uriPart, UTF8_ENCODING).replace("+", "%20");
-		} catch (Exception e) {
-			LOG.warn("Unable to encode uri '{}' : {}", uriPart, e.getMessage());
-			return uriPart;
+			URI safeUri = new URI(scheme, authority, path, query, fragment);
+			return safeUri.toString();
+		} catch (URISyntaxException e) {
+			String errorMessage = "URI does not match RFC 3986 pattern: {}. Reason {}. Original URI is returned.";
+			if (LOG.isDebugEnabled()) {
+				LOG.warn(errorMessage, fileURI, e.getMessage(), e);
+			} else {
+				LOG.warn(errorMessage, fileURI, e.getMessage());
+			}
+			return fileURI;
 		}
 	}
 	
@@ -1116,6 +1053,20 @@ public final class DSSUtils {
 	}
 
 	/**
+	 * Replaces all invalid XML characters in the {@code str} by the {@code replacement}
+	 *
+	 * @param str {@link String} to replace invalid XML characters in
+	 * @param replacement {@link String} to be used as a replacement
+	 * @return {@link String}
+	 */
+	public static String replaceInvalidXmlCharacters(String str, String replacement) {
+		if (str != null) {
+			return str.replaceAll("[^\\u0009\\u000A\\u000D\\u0020-\\uD7FF\\uE000-\\uFFFD\\x{10000}-\\x{10FFFF}]", replacement);
+		}
+		return null;
+	}
+
+	/**
 	 * Checks if the given id is a URN representation of OID according to IETF RFC 3061
 	 * 
 	 * @param id {@link String} to check
@@ -1155,9 +1106,9 @@ public final class DSSUtils {
 
 	/**
 	 * Returns a URN URI generated from the given OID:
-	 *
+	 * <p>
 	 * Ex.: OID = 1.2.4.5.6.8 becomes URI = urn:oid:1.2.4.5.6.8
-	 *
+	 * <p>
 	 * Note: see RFC 3061 "A URN Namespace of Object Identifiers"
 	 *
 	 * @param oid {@link String} to be converted to URN URI
@@ -1165,6 +1116,25 @@ public final class DSSUtils {
 	 */
 	public static String toUrnOid(String oid) {
 		return OID_NAMESPACE_PREFIX + oid;
+	}
+
+	/**
+	 * Returns URI if present, otherwise URN encoded OID (see RFC 3061)
+	 * Returns NULL if non of them is present
+	 *
+	 * @param objectIdentifier {@link ObjectIdentifier} used to build an object of 'oid' type
+	 * @return {@link String} URI
+	 */
+	public static String getUriOrUrnOid(ObjectIdentifier objectIdentifier) {
+		/*
+		 * TS 119 182-1 : 5.4.1 The oId data type
+		 * If both an OID and a URI exist identifying one object, the URI value should be used in the id member.
+		 */
+		String uri = objectIdentifier.getUri();
+		if (uri == null && objectIdentifier.getOid() != null) {
+			uri = DSSUtils.toUrnOid(objectIdentifier.getOid());
+		}
+		return uri;
 	}
 	
 	/**
@@ -1322,6 +1292,9 @@ public final class DSSUtils {
 	 */
 	public static SignatureValue convertECSignatureValue(SignatureAlgorithm expectedAlgorithm,
 														 SignatureValue signatureValue)   {
+		Objects.requireNonNull(expectedAlgorithm, "SignatureAlgorithm cannot be null");
+		Objects.requireNonNull(signatureValue, "SignatureValue cannot be null");
+
 		SignatureValue newSignatureValue = new SignatureValue();
 		newSignatureValue.setAlgorithm(expectedAlgorithm);
 
@@ -1409,6 +1382,99 @@ public final class DSSUtils {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Generates the 'kid' value as in IETF RFC 5035
+	 *
+	 * @param signingCertificate {@link CertificateToken} representing the singing
+	 *                           certificate
+	 * @return byte array 'kid' header value
+	 */
+	public static byte[] generateKid(CertificateToken signingCertificate) {
+		IssuerSerial issuerSerial = DSSASN1Utils.getIssuerSerial(signingCertificate);
+		return DSSASN1Utils.getDEREncoded(issuerSerial);
+	}
+
+	/**
+	 * This method cleans millis from the given time
+	 *
+	 * @param timeInMillis time with millis
+	 * @return time without millis
+	 */
+	public static long getTimeValueInSeconds(long timeInMillis) {
+		return timeInMillis / 1000L;
+	}
+
+	/**
+	 * This method adds millis to the given time in seconds
+	 *
+	 * @param timeWithoutMillis time without millis
+	 * @return time with millis
+	 */
+	public static long getTimeValueInMilliseconds(long timeWithoutMillis) {
+		return timeWithoutMillis * 1000L;
+	}
+
+	/**
+	 * This method adds millis to the given time in seconds
+	 *
+	 * @param timeWithoutMillis time without millis
+	 * @return time with millis
+	 */
+	public static long getTimeValueInMilliseconds(double timeWithoutMillis) {
+		return (long) (timeWithoutMillis * 1000);
+	}
+
+	/**
+	 * Creates a Date based from milliseconds (starting from 1970-01-01T00:00Z)
+	 *
+	 * @param dateTimeNumber {@link Number} milliseconds
+	 * @return {@link Date}
+	 */
+	public static Date getDateFromMilliseconds(Number dateTimeNumber) {
+		/*
+		 * A JSON numeric value representing the number of seconds from
+		 * 1970-01-01T00:00:00Z UTC until the specified UTC date/time,
+		 * ignoring leap seconds.  This is equivalent to the IEEE Std 1003.1,
+		 * 2013 Edition [POSIX.1] definition "Seconds Since the Epoch", in
+		 * which each day is accounted for by exactly 86400 seconds, other
+		 * than that non-integer values can be represented.  See RFC 3339
+		 * [RFC3339] for details regarding date/times in general and UTC in
+		 * particular.
+		 */
+		if (dateTimeNumber != null) {
+			return new Date(dateTimeNumber.longValue());
+		}
+		return null;
+	}
+
+	/**
+	 * Gets host name based on the given URL string.
+	 * E.g. for "ldap://ldap.infonotary.com/dc=identity-ca,dc=infonotary,dc=com" returns -> "ldap.infonotary.com"
+	 *
+	 * @param urlString {@link String}
+	 * @return {@link String} corresponding to a host name
+	 */
+	public static String getHost(String urlString) {
+		if (Utils.isStringEmpty(urlString)) {
+			return "";
+		}
+
+		int doubleslash = urlString.indexOf("//");
+		if (doubleslash == -1) {
+			doubleslash = 0;
+		} else {
+			doubleslash += 2;
+		}
+
+		int end = urlString.indexOf('/', doubleslash);
+		end = end >= 0 ? end : urlString.length();
+
+		int port = urlString.indexOf(':', doubleslash);
+		end = (port > 0 && port < end) ? port : end;
+
+		return urlString.substring(doubleslash, end);
 	}
 
 }

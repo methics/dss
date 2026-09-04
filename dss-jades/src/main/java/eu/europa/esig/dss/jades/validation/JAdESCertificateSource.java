@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -30,12 +30,14 @@ import eu.europa.esig.dss.model.Digest;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.spi.DSSASN1Utils;
 import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.spi.SignatureCertificateSource;
 import eu.europa.esig.dss.spi.x509.CandidatesForSigningCertificate;
 import eu.europa.esig.dss.spi.x509.CertificateRef;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.CertificateValidity;
+import eu.europa.esig.dss.spi.x509.KidCertificateSource;
+import eu.europa.esig.dss.spi.x509.X509URLCertificateSource;
 import eu.europa.esig.dss.utils.Utils;
-import eu.europa.esig.dss.spi.SignatureCertificateSource;
 import org.bouncycastle.asn1.x509.IssuerSerial;
 import org.jose4j.jwk.PublicJsonWebKey;
 import org.jose4j.jwx.HeaderParameterNames;
@@ -66,6 +68,9 @@ public class JAdESCertificateSource extends SignatureCertificateSource {
 	/** Represents the unsigned 'etsiU' header */
 	private final transient JAdESEtsiUHeader etsiUHeader;
 
+	/** Map of 'kid' certificates, when present */
+	private final Map<String, CertificateToken> kidMap = new HashMap<>();
+
 	/** Map of 'x5u' certificates, when present */
 	private final Map<String, Collection<CertificateToken>> x509UrlMap = new HashMap<>();
 
@@ -94,6 +99,8 @@ public class JAdESCertificateSource extends SignatureCertificateSource {
 		extractX5C();
 
 		// unsigned properties
+		extractUnprotectedX5C();
+
 		extractEtsiU();
 	}
 
@@ -161,10 +168,15 @@ public class JAdESCertificateSource extends SignatureCertificateSource {
 	}
 
 	private void extractKid() {
-		IssuerSerial kidIssuerSerial = getKidIssuerSerial();
-		if (kidIssuerSerial != null) {
+		String kid = jws.getKeyIdHeaderValue();
+		if (kid != null) {
 			CertificateRef certificateRef = new CertificateRef();
-			certificateRef.setCertificateIdentifier(DSSASN1Utils.toSignerIdentifier(kidIssuerSerial));
+			IssuerSerial issuerSerial = DSSJsonUtils.getIssuerSerial(kid);
+			if (issuerSerial != null) {
+				certificateRef.setCertificateIdentifier(DSSASN1Utils.toSignerIdentifier(issuerSerial));
+			} else {
+				certificateRef.setKid(kid);
+			}
 			addCertificateRef(certificateRef, CertificateRefOrigin.KEY_IDENTIFIER);
 		}
 	}
@@ -180,18 +192,30 @@ public class JAdESCertificateSource extends SignatureCertificateSource {
 
 	private void extractX5C() {
 		List<?> x509CertChain = jws.getProtectedHeaderValueAsList(HeaderParameterNames.X509_CERTIFICATE_CHAIN);
+		extractX5C(x509CertChain, CertificateOrigin.KEY_INFO);
+	}
+
+	private void extractX5C(List<?> x509CertChain, CertificateOrigin certificateOrigin) {
 		if (Utils.isCollectionNotEmpty(x509CertChain)) {
 			for (Object item : x509CertChain) {
 				String certificateBase64 = DSSJsonUtils.toString(item);
 				if (Utils.isStringNotEmpty(certificateBase64)) {
 					try {
 						CertificateToken certificate = DSSUtils.loadCertificateFromBase64EncodedString(certificateBase64);
-						addCertificate(certificate, CertificateOrigin.KEY_INFO);
+						addCertificate(certificate, certificateOrigin);
 					} catch (Exception e) {
 						LOG.warn("Unable to decode a certificate from '{}'! Reason : {}", certificateBase64, e.getMessage(), e);
 					}
 				}
 			}
+		}
+	}
+
+	private void extractUnprotectedX5C() {
+		Map<String, Object> unprotected = jws.getUnprotected();
+		if (Utils.isMapNotEmpty(unprotected)) {
+			Object x5c = unprotected.get(HeaderParameterNames.X509_CERTIFICATE_CHAIN);
+			extractX5C(DSSJsonUtils.toList(x5c), CertificateOrigin.UNPROTECTED_HEADER);
 		}
 	}
 
@@ -204,9 +228,12 @@ public class JAdESCertificateSource extends SignatureCertificateSource {
 			extractCertificateValues(attribute);
 			extractAttrAuthoritiesCertValues(attribute);
 			extractTimestampValidationData(attribute);
+			extractAnyValidationData(attribute);
 
 			extractCompleteCertificateRefs(attribute);
 			extractAttributeCertificateRefs(attribute);
+
+			extractEtsiUX5C(attribute);
 		}
 	}
 
@@ -225,11 +252,19 @@ public class JAdESCertificateSource extends SignatureCertificateSource {
 	}
 
 	private void extractTimestampValidationData(JAdESAttribute attribute) {
-		if (JAdESHeaderParameterNames.TST_VD.equals(attribute.getHeaderName())) {
-			Map<?,?> tstVd = DSSJsonUtils.toMap(attribute.getValue(), JAdESHeaderParameterNames.TST_VD);
+		extractValidationData(attribute, JAdESHeaderParameterNames.TST_VD, CertificateOrigin.TIMESTAMP_VALIDATION_DATA);
+	}
+
+	private void extractAnyValidationData(JAdESAttribute attribute) {
+		extractValidationData(attribute, JAdESHeaderParameterNames.ANY_VAL_DATA, CertificateOrigin.ANY_VALIDATION_DATA);
+	}
+
+	private void extractValidationData(JAdESAttribute attribute, String headerName, CertificateOrigin origin) {
+		if (headerName.equals(attribute.getHeaderName())) {
+			Map<?,?> tstVd = DSSJsonUtils.toMap(attribute.getValue(), headerName);
 			List<?> xVals = DSSJsonUtils.getAsList(tstVd, JAdESHeaderParameterNames.X_VALS);
 			if (Utils.isCollectionNotEmpty(xVals)) {
-				extractCertificateValues(xVals, CertificateOrigin.TIMESTAMP_VALIDATION_DATA);
+				extractCertificateValues(xVals, origin);
 			}
 		}
 	}
@@ -288,24 +323,45 @@ public class JAdESCertificateSource extends SignatureCertificateSource {
 		}
 	}
 
+	private void extractEtsiUX5C(JAdESAttribute attribute) {
+		if (HeaderParameterNames.X509_CERTIFICATE_CHAIN.equals(attribute.getHeaderName())) {
+			extractX5C(DSSJsonUtils.toList(attribute.getValue()), CertificateOrigin.UNPROTECTED_HEADER);
+		}
+	}
+
 	@Override
 	protected CandidatesForSigningCertificate extractCandidatesForSigningCertificate(
 			CertificateSource signingCertificateSource) {
 
-		CandidatesForSigningCertificate candidatesForSigningCertificate = new CandidatesForSigningCertificate();
+		CandidatesForSigningCertificate candidatesForSigningCertificate = initCandidatesList(signingCertificateSource);
+		if (!candidatesForSigningCertificate.isEmpty()) {
+			return candidatesForSigningCertificate;
+		}
 
 		for (final CertificateToken certificateToken : getKeyInfoCertificates()) {
 			candidatesForSigningCertificate.add(new CertificateValidity(certificateToken));
 		}
 
-		if (signingCertificateSource != null) {
-			resolveFromSource(signingCertificateSource, candidatesForSigningCertificate);
+		// if x5u does not contain certificates,
+		// check other certificates embedded into the signature
+		if (candidatesForSigningCertificate.isEmpty()) {
+
+			// From JWK (not JAdES)
+			PublicKey publicKey = extractPublicKey();
+			if (publicKey != null) {
+				candidatesForSigningCertificate.add(new CertificateValidity(publicKey));
+
+			} else {
+				// Add all found certificates
+				for (final CertificateToken certificateToken : getCertificates()) {
+					candidatesForSigningCertificate.add(new CertificateValidity(certificateToken));
+				}
+			}
+
 		}
 
-		// From JWK (not JAdES)
-		PublicKey publicKey = extractPublicKey();
-		if (publicKey != null) {
-			candidatesForSigningCertificate.add(new CertificateValidity(publicKey));
+		if (signingCertificateSource != null) {
+			resolveFromSource(signingCertificateSource, candidatesForSigningCertificate);
 		}
 
 		checkSigningCertificateRef(candidatesForSigningCertificate);
@@ -357,9 +413,13 @@ public class JAdESCertificateSource extends SignatureCertificateSource {
 		if (Utils.isStringNotEmpty(kidHeader)) {
 			if (signingCertificateSource instanceof KidCertificateSource) {
 				KidCertificateSource kidCertificateSource = (KidCertificateSource) signingCertificateSource;
-				return kidCertificateSource.getCertificateByKid(kidHeader);
+				CertificateToken certificateByKid = kidCertificateSource.getCertificateByKid(kidHeader);
+				if (certificateByKid != null) {
+					kidMap.put(kidHeader, certificateByKid);
+				}
+				return certificateByKid;
 			} else {
-				LOG.warn("JWS/JAdES contains a 'kid' header (provide a KidCertificateSource to resolve it)");
+				LOG.info("JWS/JAdES contains a 'kid' header (provide a KidCertificateSource to resolve it)");
 			}
 		}
 		return null;
@@ -376,7 +436,7 @@ public class JAdESCertificateSource extends SignatureCertificateSource {
 				}
 				return certificatesByUri;
 			} else {
-				LOG.warn("JWS/JAdES contains a 'x5u' header (provide a X509URLCertificateSource to resolve it)");
+				LOG.info("JWS/JAdES contains a 'x5u' header (provide a X509URLCertificateSource to resolve it)");
 			}
 		}
 		return Collections.emptyList();
@@ -451,10 +511,6 @@ public class JAdESCertificateSource extends SignatureCertificateSource {
 		return null;
 	}
 
-	private IssuerSerial getKidIssuerSerial() {
-		return DSSJsonUtils.getIssuerSerial(jws.getKeyIdHeaderValue());
-	}
-
 	@Override
 	public List<CertificateRef> getOrphanCertificateRefs() {
 		final List<CertificateRef> certRefs = super.getOrphanCertificateRefs();
@@ -472,6 +528,15 @@ public class JAdESCertificateSource extends SignatureCertificateSource {
 	@Override
 	public List<CertificateRef> getReferencesForCertificateToken(CertificateToken certificateToken) {
 		final List<CertificateRef> result = super.getReferencesForCertificateToken(certificateToken);
+		for (Map.Entry<String, CertificateToken> kidEntry : kidMap.entrySet()) {
+			if (kidEntry.getValue().equals(certificateToken)) {
+				for (CertificateRef certificateRef : getCertificateRefsByOrigin(CertificateRefOrigin.KEY_IDENTIFIER)) {
+					if (kidEntry.getKey().equals(certificateRef.getKid())) {
+						result.add(certificateRef);
+					}
+				}
+			}
+		}
 		for (Map.Entry<String, Collection<CertificateToken>> x5uEntry : x509UrlMap.entrySet()) {
 			if (x5uEntry.getValue().contains(certificateToken)) {
 				for (CertificateRef certificateRef : getCertificateRefsByOrigin(CertificateRefOrigin.X509_URL)) {
@@ -487,6 +552,12 @@ public class JAdESCertificateSource extends SignatureCertificateSource {
 	@Override
 	public Set<CertificateToken> findTokensFromCertRef(CertificateRef certificateRef) {
 		final Set<CertificateToken> certificates = super.findTokensFromCertRef(certificateRef);
+		if (Utils.isStringNotEmpty(certificateRef.getKid())) {
+			CertificateToken certificateTokenByKid = kidMap.get(certificateRef.getKid());
+			if (certificateTokenByKid != null) {
+				certificates.add(certificateTokenByKid);
+			}
+		}
 		if (Utils.isStringNotEmpty(certificateRef.getX509Url())) {
 			Collection<CertificateToken> x509UrlCertificates = x509UrlMap.get(certificateRef.getX509Url());
 			if (Utils.isCollectionNotEmpty(x509UrlCertificates)) {

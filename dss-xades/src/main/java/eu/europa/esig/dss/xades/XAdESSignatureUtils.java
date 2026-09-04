@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,16 +21,19 @@
 package eu.europa.esig.dss.xades;
 
 
-import eu.europa.esig.dss.xml.utils.DomUtils;
 import eu.europa.esig.dss.enumerations.DigestMatcherType;
 import eu.europa.esig.dss.enumerations.MimeTypeEnum;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.InMemoryDocument;
-import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.model.ReferenceValidation;
 import eu.europa.esig.dss.model.signature.SignatureCryptographicVerification;
+import eu.europa.esig.dss.utils.Utils;
+import eu.europa.esig.dss.xades.definition.xadesen.XAdESEvidencerecordNamespaceElement;
+import eu.europa.esig.dss.xades.validation.XAdESAttribute;
 import eu.europa.esig.dss.xades.validation.XAdESSignature;
+import eu.europa.esig.dss.xades.validation.XAdESUnsignedSigProperties;
+import eu.europa.esig.dss.xml.utils.DomUtils;
 import org.apache.xml.security.signature.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -177,6 +180,24 @@ public final class XAdESSignatureUtils {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Returns the latest "SealingEvidenceRecords" unsigned property, when present
+	 *
+	 * @param unsignedSigProperties {@link XAdESUnsignedSigProperties} to analyze
+	 * @return {@link XAdESAttribute} when a "SealingEvidenceRecords" unsigned property is present, NULL otherwise
+	 */
+	public static XAdESAttribute getLastSealingEvidenceRecordAttribute(XAdESUnsignedSigProperties unsignedSigProperties) {
+		// Execute in reverse order in order to change only last evidence-record, when applicable
+		List<XAdESAttribute> attributes = unsignedSigProperties.getAttributes();
+		for (int i = attributes.size() - 1; i >= 0; i--) {
+			XAdESAttribute attribute = attributes.get(i);
+			if (XAdESEvidencerecordNamespaceElement.SEALING_EVIDENCE_RECORDS.isSameTagName(attribute.getName())) {
+				return attribute;
+			}
+		}
+		return null;
 	}
 
 }

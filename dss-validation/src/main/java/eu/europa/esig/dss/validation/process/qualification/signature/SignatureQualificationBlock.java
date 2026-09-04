@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -63,19 +63,19 @@ import java.util.stream.Collectors;
 public class SignatureQualificationBlock extends Chain<XmlValidationSignatureQualification> {
 
 	/** The conclusion of signature validation as in EN 319 102-1 */
-	private final XmlConclusion etsi319102Conclusion;
+	protected final XmlConclusion etsi319102Conclusion;
 
 	/** The best-signature-time */
-	private final Date bestSignatureTime;
+	protected final Date bestSignatureTime;
 
 	/** The signing certificate */
-	private final CertificateWrapper signingCertificate;
+	protected final CertificateWrapper signingCertificate;
 
 	/** The analyses of all available LOTL/TLs */
-	private final List<XmlTLAnalysis> tlAnalysis;
+	protected final List<XmlTLAnalysis> tlAnalysis;
 
 	/** The list of related LOTL/TL analyses */
-	private final List<XmlTLAnalysis> relatedTLAnalyses = new ArrayList<>();
+	protected final List<XmlTLAnalysis> relatedTLAnalyses = new ArrayList<>();
 
 	/** The determined signing certificate qualification at its issuance time */
 	private CertificateQualification qualificationAtIssuanceTime;
@@ -167,15 +167,13 @@ public class SignatureQualificationBlock extends Chain<XmlValidationSignatureQua
 				// 1. filter by service for CAQC
 				TrustServiceFilter filter = TrustServicesFilterFactory.createFilterByUrls(acceptableTLUrls);
 				List<TrustServiceWrapper> acceptableServices = filter.filter(originalTSPs);
-	
-				CertQualificationAtTimeBlock certQualAtIssuanceBlock = new CertQualificationAtTimeBlock(i18nProvider, ValidationTime.CERTIFICATE_ISSUANCE_TIME,
-						signingCertificate, acceptableServices);
+
+				CertQualificationAtTimeBlock certQualAtIssuanceBlock = getCertQualificationAtIssuanceTimeBlock(acceptableServices);
 				XmlValidationCertificateQualification certQualAtIssuanceResult = certQualAtIssuanceBlock.execute();
 				result.getValidationCertificateQualification().add(certQualAtIssuanceResult);
 				qualificationAtIssuanceTime = certQualAtIssuanceResult.getCertificateQualification();
-	
-				CertQualificationAtTimeBlock certQualAtSigningTimeBlock = new CertQualificationAtTimeBlock(i18nProvider, ValidationTime.BEST_SIGNATURE_TIME, bestSignatureTime,
-						signingCertificate, acceptableServices);
+
+				CertQualificationAtTimeBlock certQualAtSigningTimeBlock = getCertQualificationAtSigningTimeBlock(acceptableServices, bestSignatureTime);
 				XmlValidationCertificateQualification certQualAtSigningTimeResult = certQualAtSigningTimeBlock.execute();
 				result.getValidationCertificateQualification().add(certQualAtSigningTimeResult);
 				qualificationAtSigningTime = certQualAtSigningTimeResult.getCertificateQualification();
@@ -219,6 +217,27 @@ public class SignatureQualificationBlock extends Chain<XmlValidationSignatureQua
 				
 			}
 		}
+	}
+
+	/**
+	 * Gets a certificate qualification determination process for validation at the certificate issuance time
+	 *
+	 * @param acceptableServices a list of {@link TrustServiceWrapper}s acceptable for the given certificate
+	 * @return {@link CertQualificationAtTimeBlock}
+	 */
+	protected CertQualificationAtTimeBlock getCertQualificationAtIssuanceTimeBlock(List<TrustServiceWrapper> acceptableServices) {
+		return new CertQualificationAtTimeBlock(i18nProvider, ValidationTime.CERTIFICATE_ISSUANCE_TIME, signingCertificate, acceptableServices);
+	}
+
+	/**
+	 * Gets a certificate qualification determination process for validation at the certificate signing time
+	 *
+	 * @param acceptableServices a list of {@link TrustServiceWrapper}s acceptable for the given certificate
+	 * @param signingTime {@link Date}
+	 * @return {@link CertQualificationAtTimeBlock}
+	 */
+	protected CertQualificationAtTimeBlock getCertQualificationAtSigningTimeBlock(List<TrustServiceWrapper> acceptableServices, Date signingTime) {
+		return new CertQualificationAtTimeBlock(i18nProvider, ValidationTime.BEST_SIGNATURE_TIME, signingTime, signingCertificate, acceptableServices);
 	}
 
 	private XmlTLAnalysis getTlAnalysis(String url) {
@@ -273,39 +292,39 @@ public class SignatureQualificationBlock extends Chain<XmlValidationSignatureQua
 	}
 
 	private ChainItem<XmlValidationSignatureQualification> isTrustedListReachedForCertificateChain(CertificateWrapper signingCertificate) {
-		return new TrustedListReachedForCertificateChainCheck<>(i18nProvider, result, signingCertificate, getFailLevelConstraint());
+		return new TrustedListReachedForCertificateChainCheck<>(i18nProvider, result, signingCertificate, getFailLevelRule());
 	}
 
 	private AcceptableListOfTrustedListsCheck<XmlValidationSignatureQualification> isAcceptableLOTL(XmlTLAnalysis xmlLOTLAnalysis) {
-		return new AcceptableListOfTrustedListsCheck<>(i18nProvider, result, xmlLOTLAnalysis, getWarnLevelConstraint());
+		return new AcceptableListOfTrustedListsCheck<>(i18nProvider, result, xmlLOTLAnalysis, getWarnLevelRule());
 	}
 
 	private AcceptableTrustedListCheck<XmlValidationSignatureQualification> isAcceptableTL(XmlTLAnalysis xmlTLAnalysis) {
-		return new AcceptableTrustedListCheck<>(i18nProvider, result, xmlTLAnalysis, getWarnLevelConstraint());
+		return new AcceptableTrustedListCheck<>(i18nProvider, result, xmlTLAnalysis, getWarnLevelRule());
 	}
 
 	private ChainItem<XmlValidationSignatureQualification> isAcceptableTLPresent(Set<String> acceptableUrls) {
-		return new AcceptableTrustedListPresenceCheck<>(i18nProvider, result, acceptableUrls, getFailLevelConstraint());
+		return new AcceptableTrustedListPresenceCheck<>(i18nProvider, result, acceptableUrls, getFailLevelRule());
 	}
 
 	private ChainItem<XmlValidationSignatureQualification> isAdES(XmlConclusion etsi319102Conclusion) {
-		return new AdESAcceptableCheck(i18nProvider, result, etsi319102Conclusion, getWarnLevelConstraint());
+		return new AdESAcceptableCheck(i18nProvider, result, etsi319102Conclusion, getWarnLevelRule());
 	}
 
 	private ChainItem<XmlValidationSignatureQualification> qualifiedCertificateAtSigningTime(CertificateQualification qualificationAtSigningTime) {
-		return new QualifiedCertificateAtSigningTimeCheck(i18nProvider, result, qualificationAtSigningTime, getWarnLevelConstraint());
+		return new QualifiedCertificateAtSigningTimeCheck(i18nProvider, result, qualificationAtSigningTime, getWarnLevelRule());
 	}
 
 	private ChainItem<XmlValidationSignatureQualification> certificateTypeAtSigningTime(CertificateQualification qualificationAtSigningTime) {
-		return new CertificateTypeAtSigningTimeCheck(i18nProvider, result, qualificationAtSigningTime, getWarnLevelConstraint());
+		return new CertificateTypeAtSigningTimeCheck(i18nProvider, result, qualificationAtSigningTime, getWarnLevelRule());
 	}
 
 	private ChainItem<XmlValidationSignatureQualification> qualifiedCertificateAtIssuance(CertificateQualification qualificationAtIssuance) {
-		return new QualifiedCertificateAtCertificateIssuanceCheck(i18nProvider, result, qualificationAtIssuance, getWarnLevelConstraint());
+		return new QualifiedCertificateAtCertificateIssuanceCheck(i18nProvider, result, qualificationAtIssuance, getWarnLevelRule());
 	}
 
 	private ChainItem<XmlValidationSignatureQualification> qscdAtSigningTime(CertificateQualification qualificationAtSigningTime) {
-		return new QSCDCertificateAtSigningTimeCheck(i18nProvider, result, qualificationAtSigningTime, getWarnLevelConstraint());
+		return new QSCDCertificateAtSigningTimeCheck(i18nProvider, result, qualificationAtSigningTime, getWarnLevelRule());
 	}
 
 }

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -279,7 +279,6 @@ public abstract class AbstractTestCRLUtils extends AbstractCRLParserTestUtils {
 		}
 	}
 
-	// @Ignore
 	@Test
 	public void testHugeCRL() throws Exception {
 		try (InputStream is = AbstractTestCRLUtils.class.getResourceAsStream("/esteid2011.crl");
@@ -519,6 +518,38 @@ public abstract class AbstractTestCRLUtils extends AbstractCRLParserTestUtils {
 			assertFalse(validity.isValid());
 
 			assertNull(CRLUtils.getRevocationInfo(validity, BigInteger.ZERO));
+		}
+	}
+
+	@Test
+	public void testCRLNumberExtraction() throws Exception {
+		try (InputStream is = AbstractTestCRLUtils.class.getResourceAsStream("/root_issued_CRL.crl");
+			 InputStream isCer = AbstractTestCRLUtils.class.getResourceAsStream("/root_CRL_issuer.pem")) {
+			CertificateToken certificateToken = loadCert(isCer);
+			CRLBinary crlBinary = CRLUtils.buildCRLBinary(toByteArray(is));
+			CRLValidity validCRL = CRLUtils.buildCRLValidity(crlBinary, certificateToken);
+			assertNotNull(validCRL);
+
+			// Test that CRL Number extraction works (may be null if extension not present)
+			// This is acceptable - the method should not throw an exception
+			BigInteger crlNumber = validCRL.getCRLNumber();
+			assertNotNull(crlNumber);
+			assertEquals(5, crlNumber.intValue());
+		}
+	}
+
+	@Test
+	public void testCRLNumberExtractionNull() throws Exception {
+		try (InputStream is = AbstractTestCRLUtils.class.getResourceAsStream("/belgium2.crl");
+				InputStream isCer = AbstractTestCRLUtils.class.getResourceAsStream("/belgiumrs2.crt")) {
+			CertificateToken certificateToken = loadCert(isCer);
+			CRLBinary crlBinary = CRLUtils.buildCRLBinary(toByteArray(is));
+			CRLValidity validCRL = CRLUtils.buildCRLValidity(crlBinary, certificateToken);
+			assertNotNull(validCRL);
+
+			// Test that getCrlNumber() method works on CRLValidity
+			BigInteger crlNumber = validCRL.getCRLNumber();
+			assertNull(crlNumber);
 		}
 	}
 

@@ -1,0 +1,54 @@
+/**
+ * DSS - Digital Signature Services
+ * Copyright (C) 2015 European Commission, provided under the CEF programme
+ * <p>
+ * This file is part of the "DSS - Digital Signature Services" project.
+ * <p>
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * <p>
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * <p>
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+package eu.europa.esig.dss.cbades.requirements;
+
+import eu.europa.esig.dss.cbades.COSEHeaderParameter;
+import eu.europa.esig.dss.cbades.cbor.CBORMap;
+import eu.europa.esig.dss.cbades.cbor.CBORObject;
+import eu.europa.esig.dss.cbades.signature.CBAdESSignatureParameters;
+import eu.europa.esig.dss.enumerations.COSEStructureType;
+import eu.europa.esig.dss.enumerations.SignatureLevel;
+
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+class CBAdESBaselineTCoseSign1Test extends AbstractCBAdESCoseSign1RequirementsCheck {
+
+    @Override
+    protected CBAdESSignatureParameters getSignatureParameters() {
+        CBAdESSignatureParameters signatureParameters = super.getSignatureParameters();
+        signatureParameters.setCoseStructureType(COSEStructureType.COSE_SIGN1);
+        signatureParameters.setSignatureLevel(SignatureLevel.CB_AdES_BASELINE_T);
+        return signatureParameters;
+    }
+
+    @Override
+    protected void checkValidationData(CBORMap unprotectedHeaderMap) {
+        CBORObject valData = getUHeadersElement(unprotectedHeaderMap, COSEHeaderParameter.VAL_DATA.cbor());
+        assertNull(valData);
+    }
+
+    @Override
+    protected void checkArchiveTimestamp(CBORMap unprotectedHeaderMap) {
+        CBORObject arcTst = getUHeadersElement(unprotectedHeaderMap, COSEHeaderParameter.ARC_TST.cbor());
+        assertNull(arcTst);
+    }
+
+}

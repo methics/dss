@@ -1,25 +1,30 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.validation.process.bbb.sav;
 
+import eu.europa.esig.dss.detailedreport.jaxb.XmlAOV;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlBasicBuildingBlocks;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlBlockType;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlConclusion;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlConstraint;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlSAV;
 import eu.europa.esig.dss.diagnostic.DiagnosticData;
 import eu.europa.esig.dss.diagnostic.SignatureWrapper;
@@ -28,11 +33,12 @@ import eu.europa.esig.dss.enumerations.Context;
 import eu.europa.esig.dss.enumerations.SignatureForm;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
-import eu.europa.esig.dss.policy.ValidationPolicy;
-import eu.europa.esig.dss.policy.jaxb.LevelConstraint;
-import eu.europa.esig.dss.policy.jaxb.MultiValuesConstraint;
-import eu.europa.esig.dss.policy.jaxb.ValueConstraint;
+import eu.europa.esig.dss.model.policy.LevelRule;
+import eu.europa.esig.dss.model.policy.MultiValuesRule;
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
+import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.validation.process.ChainItem;
+import eu.europa.esig.dss.validation.process.ValidationProcessUtils;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.ArchiveTimeStampCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.CertifiedRolesCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.ClaimedRolesCheck;
@@ -40,6 +46,7 @@ import eu.europa.esig.dss.validation.process.bbb.sav.checks.CommitmentTypeIndica
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.ContentHintsCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.ContentIdentifierCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.ContentTimeStampCheck;
+import eu.europa.esig.dss.validation.process.bbb.sav.checks.ContentTimestampBasicValidationCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.ContentTypeCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.CounterSignatureCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.DocumentTimeStampCheck;
@@ -47,14 +54,19 @@ import eu.europa.esig.dss.validation.process.bbb.sav.checks.KeyIdentifierMatchCh
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.KeyIdentifierPresentCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.MessageDigestOrSignedPropertiesCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.SignatureTimeStampCheck;
+import eu.europa.esig.dss.validation.process.bbb.sav.checks.SignatureTypeCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.SignerLocationCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.SigningTimeCheck;
+import eu.europa.esig.dss.validation.process.bbb.sav.checks.SigningTimeInCertificateValidityRangeCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.StructuralValidationCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.ValidationDataRefsOnlyTimeStampCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.ValidationDataTimeStampCheck;
+import eu.europa.esig.dss.validation.process.bbb.sav.checks.X509UrlMatchCheck;
+import eu.europa.esig.dss.validation.process.bbb.sav.checks.X509UrlPresentCheck;
 import eu.europa.esig.dss.validation.process.vpfltvd.checks.TimestampMessageImprintWithIdCheck;
 
 import java.util.Date;
+import java.util.Map;
 
 /**
  * 5.2.8 Signature acceptance validation (SAV) This building block covers any
@@ -66,6 +78,9 @@ public class SignatureAcceptanceValidation extends AbstractAcceptanceValidation<
 	/** The Diagnostic Data */
 	private final DiagnosticData diagnosticData;
 
+	/** A map of BasicBuildingBlocks */
+	private final Map<String, XmlBasicBuildingBlocks> bbbs;
+
 	/**
 	 * Default constructor
 	 *
@@ -74,12 +89,16 @@ public class SignatureAcceptanceValidation extends AbstractAcceptanceValidation<
 	 * @param currentTime {@link Date} validation time
 	 * @param signature {@link SignatureWrapper}
 	 * @param context {@link Context}
+	 * @param bbbs a map of {@link XmlBasicBuildingBlocks}
+	 * @param aov {@link XmlAOV}
 	 * @param validationPolicy {@link ValidationPolicy}
 	 */
 	public SignatureAcceptanceValidation(I18nProvider i18nProvider, DiagnosticData diagnosticData, Date currentTime,
-										 SignatureWrapper signature, Context context, ValidationPolicy validationPolicy) {
-		super(i18nProvider, signature, currentTime, context, validationPolicy);
+										 SignatureWrapper signature, Context context,
+										 Map<String, XmlBasicBuildingBlocks> bbbs, XmlAOV aov, ValidationPolicy validationPolicy) {
+		super(i18nProvider, signature, currentTime, context, aov, validationPolicy);
 		this.diagnosticData = diagnosticData;
+		this.bbbs = bbbs;
 	}
     
 	@Override
@@ -90,48 +109,68 @@ public class SignatureAcceptanceValidation extends AbstractAcceptanceValidation<
 	@Override
 	protected void initChain() {
 
+		SignatureForm signatureForm = token.getSignatureFormat().getSignatureForm();
+
 		ChainItem<XmlSAV> item = firstItem = structuralValidation();
 
-		item = item.setNextItem(signingCertificateAttributePresent());
+		if (token.getSigningCertificate() != null) {
 
-		if (token.isSigningCertificateReferencePresent()) {
-			/*
-			 * 5.2.8.4.2.1 Processing signing certificate reference constraint
-			 *
-			 * If the Signing Certificate Identifier attribute contains references to
-			 * other certificates in the path, the building block shall check each of
-			 * the certificates in the certification path against these references.
-			 *
-			 * When this property contains one or more references to certificates other than
-			 * those present in the certification path, the building block shall return
-			 * the indication INDETERMINATE with the sub-indication SIG_CONSTRAINTS_FAILURE.
-			 */
-			item = item.setNextItem(unicitySigningCertificateAttribute());
+			item = item.setNextItem(signingCertificateAttributePresent());
 
-			item = item.setNextItem(signingCertificateReferencesValidity());
+			if (token.isSigningCertificateReferencePresent()) {
+				/*
+				 * 5.2.8.4.2.1 Processing signing certificate reference constraint
+				 *
+				 * If the Signing Certificate Identifier attribute contains references to
+				 * other certificates in the path, the building block shall check each of
+				 * the certificates in the certification path against these references.
+				 *
+				 * When this property contains one or more references to certificates other than
+				 * those present in the certification path, the building block shall return
+				 * the indication INDETERMINATE with the sub-indication SIG_CONSTRAINTS_FAILURE.
+				 */
+				item = item.setNextItem(unicitySigningCertificateAttribute());
 
-			/*
-			 * When one or more certificates in the certification path are not referenced
-			 * by this property, and the signature policy mandates references to all
-			 * the certificates in the certification path to be present, the building block shall
-			 * return the indication INDETERMINATE with the sub-indication SIG_CONSTRAINTS_FAILURE.
-			 */
-			item = item.setNextItem(allCertificatesInPathReferenced());
-		}
+				item = item.setNextItem(signingCertificateReferencesValidity());
 
-		// 'kid' (key identifier) verification for JAdES
-		if (SignatureForm.JAdES.equals(token.getSignatureFormat().getSignatureForm())) {
+				/*
+				 * When one or more certificates in the certification path are not referenced
+				 * by this property, and the signature policy mandates references to all
+				 * the certificates in the certification path to be present, the building block shall
+				 * return the indication INDETERMINATE with the sub-indication SIG_CONSTRAINTS_FAILURE.
+				 */
+				item = item.setNextItem(allCertificatesInPathReferenced());
+			}
 
-			item = item.setNextItem(keyIdentifierPresent());
+			// verification for JAdES / CB-AdES
+			if (SignatureForm.JAdES.equals(signatureForm) || SignatureForm.CBAdES.equals(signatureForm)) {
 
-			if (token.getKeyIdentifierReference() != null) {
-				item = item.setNextItem(keyIdentifierMatch());
+				item = item.setNextItem(keyIdentifierPresent());
+
+				if (token.getKeyIdentifierReference() != null) {
+					item = item.setNextItem(keyIdentifierMatch());
+				}
+
+				item = item.setNextItem(x509UrlPresent());
+
+				if (Utils.isCollectionNotEmpty(token.getX509UrlReferences())) {
+					item = item.setNextItem(x509UrlMatch());
+				}
+
 			}
 
 		}
 
 		// signing-time
 		item = item.setNextItem(signingTime());
+
+		if (token.getClaimedSigningTime() != null && token.getSigningCertificate() != null) {
+			item = item.setNextItem(signingTimeInCertificateValidityRange());
+		}
+
+		if (SignatureForm.JAdES.equals(signatureForm)) {
+			item = item.setNextItem(signatureType());
+		}
 
 		// content-type
 		item = item.setNextItem(contentType());
@@ -140,7 +179,7 @@ public class SignatureAcceptanceValidation extends AbstractAcceptanceValidation<
 		item = item.setNextItem(contentHints());
 		
 		// message-digest for CAdES/PAdES and SignedProperties for XAdES are present
-		if (!SignatureForm.JAdES.equals(token.getSignatureFormat().getSignatureForm())) {
+		if (!SignatureForm.JAdES.equals(signatureForm) && !SignatureForm.CBAdES.equals(signatureForm)) {
 			item = item.setNextItem(messageDigestOrSignedProperties());
 		}
 
@@ -166,9 +205,17 @@ public class SignatureAcceptanceValidation extends AbstractAcceptanceValidation<
 		// content-timestamp
 		item = item.setNextItem(contentTimeStamp());
 
-		// content-timestamp message-imprint
+		// content-timestamp
 		for (TimestampWrapper contentTimestamp : token.getContentTimestamps()) {
+
+			XmlBasicBuildingBlocks contentTimestampBBB = bbbs.get(contentTimestamp.getId());
+			if (contentTimestampBBB != null) {
+				// NOTE: if TIMESTAMP validation level has been reached
+				item = item.setNextItem(contentTimestampBasicValidation(contentTimestamp, contentTimestampBBB.getConclusion()));
+			}
+
 			item = item.setNextItem(contentTimestampMessageImprint(contentTimestamp));
+
 		}
 
 		// counter-signature
@@ -187,115 +234,156 @@ public class SignatureAcceptanceValidation extends AbstractAcceptanceValidation<
 		item = item.setNextItem(archiveTimeStamp());
 
 		// document-time-stamp (PAdES only)
-		if (SignatureForm.PAdES.equals(token.getSignatureFormat().getSignatureForm())) {
+		if (SignatureForm.PAdES.equals(signatureForm)) {
 			item = item.setNextItem(documentTimeStamp());
 		}
 
 		// cryptographic check
 		item = cryptographic(item);
-
-		// cryptographic check on signed attributes
-		item = cryptographicSignedAttributes(item);
 	}
 
 	private ChainItem<XmlSAV> structuralValidation() {
-		LevelConstraint constraint = validationPolicy.getStructuralValidationConstraint(context);
+		LevelRule constraint = validationPolicy.getStructuralValidationConstraint(context);
 		return new StructuralValidationCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> keyIdentifierPresent() {
-		LevelConstraint constraint = validationPolicy.getKeyIdentifierPresent(context);
+		LevelRule constraint = validationPolicy.getKeyIdentifierPresent(context);
 		return new KeyIdentifierPresentCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> keyIdentifierMatch() {
-		LevelConstraint constraint = validationPolicy.getKeyIdentifierMatch(context);
+		LevelRule constraint = validationPolicy.getKeyIdentifierMatch(context);
 		return new KeyIdentifierMatchCheck(i18nProvider, result, token, constraint);
 	}
 
+	private ChainItem<XmlSAV> x509UrlPresent() {
+		LevelRule constraint = validationPolicy.getX509UrlPresent(context);
+		return new X509UrlPresentCheck(i18nProvider, result, token, constraint);
+	}
+
+	private ChainItem<XmlSAV> x509UrlMatch() {
+		LevelRule constraint = validationPolicy.getX509UrlMatch(context);
+		return new X509UrlMatchCheck(i18nProvider, result, token, constraint);
+	}
+
 	private ChainItem<XmlSAV> signingTime() {
-		LevelConstraint constraint = validationPolicy.getSigningTimeConstraint(context);
+		LevelRule constraint = validationPolicy.getSigningTimeConstraint(context);
 		return new SigningTimeCheck(i18nProvider, result, token, constraint);
 	}
 
+	private ChainItem<XmlSAV> signingTimeInCertificateValidityRange() {
+		LevelRule constraint = validationPolicy.getSigningTimeInCertRangeConstraint(context);
+		return new SigningTimeInCertificateValidityRangeCheck<>(i18nProvider, result, token, constraint);
+	}
+
+	private ChainItem<XmlSAV> signatureType() {
+		MultiValuesRule constraint = validationPolicy.getSignatureTypeConstraint(context);
+		return new SignatureTypeCheck(i18nProvider, result, token, constraint);
+	}
+
 	private ChainItem<XmlSAV> contentType() {
-		ValueConstraint constraint = validationPolicy.getContentTypeConstraint(context);
+		MultiValuesRule constraint = validationPolicy.getContentTypeConstraint(context);
 		return new ContentTypeCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> contentHints() {
-		ValueConstraint constraint = validationPolicy.getContentHintsConstraint(context);
+		MultiValuesRule constraint = validationPolicy.getContentHintsConstraint(context);
 		return new ContentHintsCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> contentIdentifier() {
-		ValueConstraint constraint = validationPolicy.getContentIdentifierConstraint(context);
+		MultiValuesRule constraint = validationPolicy.getContentIdentifierConstraint(context);
 		return new ContentIdentifierCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> messageDigestOrSignedProperties() {
-		LevelConstraint constraint = validationPolicy.getMessageDigestOrSignedPropertiesConstraint(context);
+		LevelRule constraint = validationPolicy.getMessageDigestOrSignedPropertiesConstraint(context);
 		return new MessageDigestOrSignedPropertiesCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> commitmentTypeIndications() {
-		MultiValuesConstraint constraint = validationPolicy.getCommitmentTypeIndicationConstraint(context);
+		MultiValuesRule constraint = validationPolicy.getCommitmentTypeIndicationConstraint(context);
 		return new CommitmentTypeIndicationsCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> signerLocation() {
-		LevelConstraint constraint = validationPolicy.getSignerLocationConstraint(context);
+		LevelRule constraint = validationPolicy.getSignerLocationConstraint(context);
 		return new SignerLocationCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> contentTimeStamp() {
-		LevelConstraint constraint = validationPolicy.getContentTimeStampConstraint(context);
+		LevelRule constraint = validationPolicy.getContentTimeStampConstraint(context);
 		return new ContentTimeStampCheck(i18nProvider, result, token, constraint);
 	}
 
+	private ChainItem<XmlSAV> contentTimestampBasicValidation(final TimestampWrapper timestamp, XmlConclusion xmlConclusion) {
+		return new ContentTimestampBasicValidationCheck(i18nProvider, result, timestamp, xmlConclusion,
+				getTimestampBasicValidationConstraintLevel());
+	}
+
 	private ChainItem<XmlSAV> contentTimestampMessageImprint(TimestampWrapper contentTimestamp) {
-		LevelConstraint constraint = validationPolicy.getContentTimeStampMessageImprintConstraint(context);
+		LevelRule constraint = validationPolicy.getContentTimeStampMessageImprintConstraint(context);
 		return new TimestampMessageImprintWithIdCheck<>(i18nProvider, result, contentTimestamp, constraint);
 	}
 
 	private ChainItem<XmlSAV> claimedRoles() {
-		MultiValuesConstraint constraint = validationPolicy.getClaimedRoleConstraint(context);
+		MultiValuesRule constraint = validationPolicy.getClaimedRoleConstraint(context);
 		return new ClaimedRolesCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> certifiedRoles() {
-		MultiValuesConstraint constraint = validationPolicy.getCertifiedRolesConstraint(context);
+		MultiValuesRule constraint = validationPolicy.getCertifiedRolesConstraint(context);
 		return new CertifiedRolesCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> counterSignature() {
-		LevelConstraint constraint = validationPolicy.getCounterSignatureConstraint(context);
+		LevelRule constraint = validationPolicy.getCounterSignatureConstraint(context);
 		return new CounterSignatureCheck(i18nProvider, result, diagnosticData, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> signatureTimeStamp() {
-		LevelConstraint constraint = validationPolicy.getSignatureTimeStampConstraint(context);
+		LevelRule constraint = validationPolicy.getSignatureTimeStampConstraint(context);
 		return new SignatureTimeStampCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> validationDataTimeStamp() {
-		LevelConstraint constraint = validationPolicy.getValidationDataTimeStampConstraint(context);
+		LevelRule constraint = validationPolicy.getValidationDataTimeStampConstraint(context);
 		return new ValidationDataTimeStampCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> validationDataRefsOnlyTimeStamp() {
-		LevelConstraint constraint = validationPolicy.getValidationDataRefsOnlyTimeStampConstraint(context);
+		LevelRule constraint = validationPolicy.getValidationDataRefsOnlyTimeStampConstraint(context);
 		return new ValidationDataRefsOnlyTimeStampCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> archiveTimeStamp() {
-		LevelConstraint constraint = validationPolicy.getArchiveTimeStampConstraint(context);
+		LevelRule constraint = validationPolicy.getArchiveTimeStampConstraint(context);
 		return new ArchiveTimeStampCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlSAV> documentTimeStamp() {
-		LevelConstraint constraint = validationPolicy.getDocumentTimeStampConstraint(context);
+		LevelRule constraint = validationPolicy.getDocumentTimeStampConstraint(context);
 		return new DocumentTimeStampCheck(i18nProvider, result, token, constraint);
+	}
+
+	private LevelRule getTimestampBasicValidationConstraintLevel() {
+		LevelRule constraint = validationPolicy.getTimestampValidConstraint();
+		// continue if LTA is present
+		if (constraint == null || ValidationProcessUtils.isLongTermAvailabilityAndIntegrityMaterialPresent(token)) {
+			constraint = getWarnLevelRule();
+		}
+		return constraint;
+	}
+
+	@Override
+	protected void collectMessages(XmlConclusion conclusion, XmlConstraint constraint) {
+		if (XmlBlockType.TST_BBB.equals(constraint.getBlockType()) &&
+				(validationPolicy.getTimestampValidConstraint() == null || ValidationProcessUtils.isLongTermAvailabilityAndIntegrityMaterialPresent(token))) {
+			// skip validation messages for content TSTs
+		} else {
+			super.collectMessages(conclusion, constraint);
+		}
 	}
 
 }

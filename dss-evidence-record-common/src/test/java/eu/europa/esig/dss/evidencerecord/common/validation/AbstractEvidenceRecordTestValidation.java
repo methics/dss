@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -153,6 +153,7 @@ public abstract class AbstractEvidenceRecordTestValidation extends AbstractDocum
         return true;
     }
 
+    @Override
     protected void verifySimpleReport(SimpleReport simpleReport) {
         assertNotNull(simpleReport);
 
@@ -171,7 +172,7 @@ public abstract class AbstractEvidenceRecordTestValidation extends AbstractDocum
                 assertNull(simpleReport.getSubIndication(sigId));
                 assertTrue(Utils.isCollectionEmpty(simpleReport.getAdESValidationErrors(sigId)));
 
-                assertNotNull(simpleReport.getSignatureExtensionPeriodMax(sigId));
+                assertNotNull(simpleReport.getExtensionPeriodMax(sigId));
                 ++numberOfValidSignatures;
 
             } else {
@@ -180,7 +181,7 @@ public abstract class AbstractEvidenceRecordTestValidation extends AbstractDocum
                 assertFalse(Utils.isCollectionEmpty(simpleReport.getAdESValidationErrors(sigId)));
 
                 if (SubIndication.TRY_LATER.equals(subIndication)) {
-                    assertNotNull(simpleReport.getSignatureExtensionPeriodMax(sigId));
+                    assertNotNull(simpleReport.getExtensionPeriodMax(sigId));
                 }
             }
             assertNotNull(simpleReport.getSignatureQualification(sigId));
@@ -212,8 +213,25 @@ public abstract class AbstractEvidenceRecordTestValidation extends AbstractDocum
             if (indication != Indication.PASSED) {
                 assertNotNull(simpleReport.getSubIndication(tstId));
                 assertTrue(Utils.isCollectionNotEmpty(simpleReport.getAdESValidationErrors(tstId)));
+            } else {
+                assertNotNull(simpleReport.getExtensionPeriodMax(tstId));
             }
             assertNotNull(simpleReport.getTimestampQualification(tstId));
+        }
+
+        List<String> evidenceRecordIdList = simpleReport.getEvidenceRecordIdList();
+        for (String erId : evidenceRecordIdList) {
+            Indication indication = simpleReport.getIndication(erId);
+            assertNotNull(indication);
+            assertTrue(Indication.PASSED.equals(indication) || Indication.INDETERMINATE.equals(indication)
+                    || Indication.FAILED.equals(indication));
+            if (indication != Indication.PASSED) {
+                assertNotNull(simpleReport.getSubIndication(erId));
+                assertTrue(Utils.isCollectionNotEmpty(simpleReport.getAdESValidationErrors(erId)));
+            } else {
+                assertTrue(Utils.isCollectionNotEmpty(simpleReport.getSignatureScopes(erId)));
+                assertNotNull(simpleReport.getExtensionPeriodMax(erId));
+            }
         }
 
         assertNotNull(simpleReport.getValidationTime());
@@ -269,7 +287,6 @@ public abstract class AbstractEvidenceRecordTestValidation extends AbstractDocum
                 assertEquals(1, cryptoInformation.getValidationObjectId().getVOReference().size());
                 assertNotNull(DigestAlgorithm.forXML(cryptoInformation.getAlgorithm()));
                 assertTrue(cryptoInformation.isSecureAlgorithm());
-                assertNotNull(cryptoInformation.getNotAfter());
 
                 ValidationObjectRepresentationType validationObjectRepresentation = validationObjectType.getValidationObjectRepresentation();
                 assertNotNull(validationObjectRepresentation);

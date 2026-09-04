@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -28,7 +28,7 @@ import eu.europa.esig.dss.enumerations.Indication;
 import eu.europa.esig.dss.enumerations.SubIndication;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
-import eu.europa.esig.dss.policy.jaxb.LevelConstraint;
+import eu.europa.esig.dss.model.policy.LevelRule;
 import eu.europa.esig.dss.validation.process.ChainItem;
 import eu.europa.esig.dss.validation.process.ValidationProcessUtils;
 
@@ -53,6 +53,11 @@ public class CertificateKnownToBeNotRevokedCheck<T extends XmlConstraintsConclus
     private final CertificateRevocationWrapper revocationData;
 
     /**
+     * Defines whether a revocation data issuer is trusted
+     */
+    private final boolean isRevocationDataIssuerTrusted;
+
+    /**
      * Validation time
      */
     private final Date currentTime;
@@ -69,23 +74,31 @@ public class CertificateKnownToBeNotRevokedCheck<T extends XmlConstraintsConclus
      * @param result {@link XmlConstraintsConclusion}
      * @param certificate {@link CertificateWrapper}
      * @param revocationData {@link CertificateRevocationWrapper}
+     * @param isRevocationDataIssuerTrusted whether the revocation issuer is trusted
      * @param currentTime {@link Date}
      * @param bsConclusion {@link XmlConclusion}
-     * @param constraint {@link LevelConstraint}
+     * @param constraint {@link LevelRule}
      */
     public CertificateKnownToBeNotRevokedCheck(I18nProvider i18nProvider, T result,
                                                CertificateWrapper certificate, CertificateRevocationWrapper revocationData,
-                                               Date currentTime, XmlConclusion bsConclusion, LevelConstraint constraint) {
-        super(i18nProvider, result, constraint, certificate.getId());
+                                               boolean isRevocationDataIssuerTrusted, Date currentTime, XmlConclusion bsConclusion,
+                                               LevelRule constraint) {
+        super(i18nProvider, result, constraint);
         this.certificate = certificate;
         this.revocationData = revocationData;
+        this.isRevocationDataIssuerTrusted = isRevocationDataIssuerTrusted;
         this.currentTime = currentTime;
         this.bsConclusion = bsConclusion;
     }
 
     @Override
     protected boolean process() {
-        return false;
+        return isKnownToBeNotRevoked();
+    }
+
+    private boolean isKnownToBeNotRevoked() {
+        return revocationData != null && !revocationData.isRevoked() && revocationData.getSigningCertificate() != null
+                && isRevocationIssuerValid(revocationData.getSigningCertificate());
     }
 
     private boolean isInValidityRange(CertificateWrapper certificateWrapper) {
@@ -95,14 +108,12 @@ public class CertificateKnownToBeNotRevokedCheck<T extends XmlConstraintsConclus
     }
 
     private boolean isRevocationIssuerValid(CertificateWrapper revocationDataIssuer) {
-        return revocationDataIssuer.isTrusted() ||
-                isInValidityRange(revocationData.getSigningCertificate());
+        return isRevocationDataIssuerTrusted || isInValidityRange(revocationDataIssuer);
     }
 
     @Override
     protected String buildAdditionalInfo() {
-        if (revocationData != null && !revocationData.isRevoked() && revocationData.getSigningCertificate() != null
-                    && !isRevocationIssuerValid(revocationData.getSigningCertificate())) {
+        if (revocationData != null && revocationData.getSigningCertificate() != null && !isKnownToBeNotRevoked()) {
             CertificateWrapper revocationIssuer = revocationData.getSigningCertificate();
             String notBeforeStr = revocationIssuer.getNotBefore() == null ? " ? " : ValidationProcessUtils.getFormattedDate(revocationIssuer.getNotBefore());
             String notAfterStr = revocationIssuer.getNotAfter() == null ? " ? " : ValidationProcessUtils.getFormattedDate(revocationIssuer.getNotAfter());
@@ -130,8 +141,7 @@ public class CertificateKnownToBeNotRevokedCheck<T extends XmlConstraintsConclus
 
     @Override
     protected MessageTag getErrorMessageTag() {
-        if (revocationData != null && !revocationData.isRevoked() && revocationData.getSigningCertificate() != null
-                && !isRevocationIssuerValid(revocationData.getSigningCertificate())) {
+        if (!isKnownToBeNotRevoked()) {
             return MessageTag.LTV_ISCKNR_ANS1;
         }
         return MessageTag.LTV_ISCKNR_ANS0;

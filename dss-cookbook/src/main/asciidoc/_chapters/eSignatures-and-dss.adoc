@@ -108,7 +108,7 @@ As mentioned before, in the present context, digital signatures are supported by
 
 The ITU-T X.509 Recommendation is a standard describing (among others) such a data structure, and public key certificates structured as per the specifications provided in that standard are commonly referred to as “X.509 public key certificates”.
 
-Furthermore, the IETF published the RFC 5280 (<<R24>>) which specifies a profile for X.509 public key certificates (and certificate revocation lists). For the remainder of this document, X.509 public key certificates are assumed to be profiled as per RFC 5280.
+Furthermore, the IETF published the RFC 5280 (<<R25>>) which specifies a profile for X.509 public key certificates (and certificate revocation lists). For the remainder of this document, X.509 public key certificates are assumed to be profiled as per RFC 5280.
 
 Certificates can be end-entity certificates or CA certificates:
 
@@ -132,11 +132,11 @@ A certificate contains among other things information on:
 ==== CRLs and OCSP
 As previously mentionned, a certificate can be revoked or suspended. This information is usually provided in the form of a Certificate Revocation List (CRL), or through the Online Certificate Status Protocol (OCSP).
 
-A CRL is a list of revoked (and/or suspended) certificates that is digitally signed and published by a CRL issuer. This issuer can be the CA having issued the certificates listed in the CRL, or it can be another CA in which case the CRL is called an “indirect CRL”. RFC 5280 (<<R24>>) provides a profile for X.509 CRLs.
+A CRL is a list of revoked (and/or suspended) certificates that is digitally signed and published by a CRL issuer. This issuer can be the CA having issued the certificates listed in the CRL, or it can be another CA in which case the CRL is called an “indirect CRL”. RFC 5280 (<<R25>>) provides a profile for X.509 CRLs.
 
-The OCSP is a protocol defined in RFC 6960 (<<R25>>) that enables the determination of the (revocation) status of a certificate without the use of a CRL. An OCSP request, containing (among other things) information on the certificate for which the (revocation) status is requested, is sent to a server and a response, containing information of that (revocation) status, is provided by an OCSP responder. OCSP responses are signed by the OCSP responder, and the OCSP responder can be the CA having issued the certificate or another CA in which case the OCSP responder is called a “delegated OCSP responder”.
+The OCSP is a protocol defined in RFC 6960 (<<R26>>) that enables the determination of the (revocation) status of a certificate without the use of a CRL. An OCSP request, containing (among other things) information on the certificate for which the (revocation) status is requested, is sent to a server and a response, containing information of that (revocation) status, is provided by an OCSP responder. OCSP responses are signed by the OCSP responder, and the OCSP responder can be the CA having issued the certificate or another CA in which case the OCSP responder is called a “delegated OCSP responder”.
 
-https://datatracker.ietf.org/doc/html/rfc5280#section-6.3[RFC 5280 section 6.3] describes an algorithm for the validation of CRLs, while Common PKI v2.0 part 5 section 2.3 (<<R26>>) describes an algorithm for checking the revocation status of a certificate using CRLs and OCSP responses.
+https://datatracker.ietf.org/doc/html/rfc5280#section-6.3[RFC 5280 section 6.3] describes an algorithm for the validation of CRLs, while Common PKI v2.0 part 5 section 2.3 (<<R27>>) describes an algorithm for checking the revocation status of a certificate using CRLs and OCSP responses.
 
 
 [[CA]]
@@ -181,13 +181,34 @@ A List of Trusted Lists (LOTL) is a list that contains:
 * links towards all the published EU MS Trusted Lists;
 * the certificates used to verify the signatures of these trusted lists.
 
-In the EU/EEA context, a LOTL is published by the European Commission at a secure location that is made publicly available on the https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=uriserv:OJ.C_.2019.276.01.0001.01.ENG[Official Journal of the European Commission (OJEU)]. It is available in an XML format which is suitable for automated processing. This format of the LOTL is digitally signed/sealed, which allows to assure authenticity and integrity of the LOTL. The signing certificates of the LOTL are also made publicly available in the OJEU.
+In the EU/EEA context, a LOTL is published by the European Commission at a secure location that is made publicly available on the https://eur-lex.europa.eu/eli/C/2026/1944/oj[Official Journal of the European Commission (OJEU)]. It is available in an XML format which is suitable for automated processing. This format of the LOTL is digitally signed/sealed, which allows to assure authenticity and integrity of the LOTL. The signing certificates of the LOTL are also made publicly available in the OJEU.
 
 The LOTL is used to authenticate EU MS Trusted Lists and to provide an easy and trustworthy way to access these TLs.
 
 image::LOTL-TLs.jpg[LOTL TLs, width="70%", height="70%", align="center"]
 
 When the LOTL-signing certificates or the location of the LOTL changes, the modification needs to be published by the Commission. The update is done in the form of a “pivot LOTL”, which is a specific instance of a LOTL. Each new modification will create a new pivot LOTL. The pivot LOTLs are grouped in the current LOTL itself, under the < SchemeInformationURI> field. Consulting all the pivot LOTL from the most recent to the oldest gives a trace of all the signing certificates and locations of the LOTL back to the initial ones.
+
+[[LoTE]]
+==== List of Trusted Entities
+
+The List of Trusted Entities (LoTE), as specified in ETSI TS 119 602 <<R33>>, is a standardized mechanism aiming to support the production of the EUDI Wallet lists published by the European Commission as required under Regulation (EU) 910/2014 <<R12>> and CIR 2024/2980 . Unlike <<EUTL>>, which are primarily focused on (qualified) trust service providers under the eIDAS framework, a LoTE provides a flexible and extensible data model that can be applied to a broad range of use cases, both inside and outside regulated environments.
+
+Technically, a LoTE may be represented as a digitally signed XML or JSON document whose structure and processing rules are defined by ETSI TS 119 602 <<R33>>.
+
+Typical use cases of a LoTE include the list of providers of person identity data, wallet
+providers, providers of wallet relying party access certificates, and public sector bodies issuing electronic attestations of attributes.
+
+Although both LoTEs and EU Trusted Lists provide authenticated trust information, they serve different purposes and exhibit several important differences:
+
+* LoTE is a generic data model and is not limited to (qualified) trust services or the legal framework established by eIDAS.
+* The semantics of the information published in a LoTE are defined by the framework using the list, allowing the same format to support multiple domains and trust models.
+* LoTE can describe many different categories of trusted entities, including services, organizations, issuers, or other entities relevant to a specific ecosystem.
+* Each listed entity may contain one or more digital identities, such as X.509 certificates, public keys, or other identifiers.
+* LoTE may include validity periods, status information, service metadata, and additional descriptive information that enables relying parties to make informed trust decisions based on current and historical information where supported by the framework.
+* LoTE is digitally signed by the list operator, using either ETSI EN 319 132-1 <<R01>> XAdES-BASELINE signature or ETSI TS 119 182-1 <<R05>> JAdES-BASELINE compact serialization signature.
+
+Similarly to a <<LOTL>>, a List of Lists of Trusted Entities (LoLoTE) may also take a place, providing pointers to a list of LoTEs. The validation mechanism of a LoLoTE and reference LoTEs is specified in ETSI TS 119 605 <<R39>>.
 
 [[CertificatePathValidation]]
 ==== Certificate Chain and Certification Path Validation
@@ -200,7 +221,7 @@ The certificate path validation is an algorithm that seeks to verify the binding
 . certificate n is the certificate to be validated (i.e., the target certificate); and
 . for all x in {1, ..., n}, the certificate was valid at the time in question.
 
-Although RFC 5280 states that procedures performed to obtain the sequence of certificate that is provided to the certification path validation is outside its scope, Common PKI v2.0 part 5 section 2.1 (<<R26>>) provides one such possible procedure.
+Although RFC 5280 states that procedures performed to obtain the sequence of certificate that is provided to the certification path validation is outside its scope, Common PKI v2.0 part 5 section 2.1 (<<R27>>) provides one such possible procedure.
 
 An intuitive approach to build a prospective certification path is to start by looking at the “Authority Information Access” (AIA) extension of the target certificate (see https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.2.1[RFC 5280 section 4.2.2.1]) which, if present, frequently includes information on how to retrieve the certificate of the issuer of that certificate. Repeating this action on the certificate retrieved can then allow to build a prospective certification path.
 
@@ -485,6 +506,7 @@ DSS implements the following ETSI standards for various signature forms:
 * CAdES digital signatures are compliant with ETSI EN 319 122 part 1-2 (<<R02>>);
 * PAdES digital signatures are compliant with ETSI EN 319 142 part 1-2 (<<R03>>);
 * JAdES digital signatures are compliant with ETSI TS 119 182 part 1 (<<R05>>);
+* CB-AdES digital signatures are compliant with ETSI TS 119 152 part 1 (<<R41>>);
 * ASiC signature containers are compliant with ETSI EN 319 162 part 1-2 (<<R04>>).
 
 but also claims:

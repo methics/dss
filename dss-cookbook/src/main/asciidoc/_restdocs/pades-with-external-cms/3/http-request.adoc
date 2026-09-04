@@ -4,7 +4,7 @@ POST /services/rest/signature/external-cms/signMessageDigest HTTP/1.1
 Accept: application/json, application/javascript, text/javascript, text/json
 Content-Type: application/json
 Host: localhost:8080
-Content-Length: 3668
+Content-Length: 3727
 
 {
   "parameters" : {
@@ -20,12 +20,16 @@ Content-Length: 3668
     "manifestSignature" : false,
     "jwsSerializationType" : null,
     "sigDMechanism" : null,
-    "base64UrlEncodedPayload" : true,
-    "base64UrlEncodedEtsiUComponents" : true,
-    "signatureAlgorithm" : null,
+    "base64UrlEncodedPayload" : null,
+    "base64UrlEncodedEtsiUComponents" : null,
+    "signatureType" : null,
+    "keyIdentifier" : null,
+    "x509Url" : null,
+    "coseStructureType" : null,
+    "tagged" : null,
+    "externallySuppliedData" : null,
     "digestAlgorithm" : "SHA256",
     "encryptionAlgorithm" : null,
-    "maskGenerationFunction" : null,
     "referenceDigestAlgorithm" : null,
     "contentTimestamps" : null,
     "contentTimestampParameters" : {
@@ -43,7 +47,6 @@ Content-Length: 3668
       "canonicalizationMethod" : "http://www.w3.org/2001/10/xml-exc-c14n#",
       "timestampContainerForm" : null
     },
-    "signWithExpiredCertificate" : false,
     "generateTBSWithoutCertificate" : false,
     "imageParameters" : null,
     "signatureIdToCounterSign" : null,
@@ -69,11 +72,11 @@ Content-Length: 3668
   },
   "signatureValue" : {
     "algorithm" : "RSA_SHA256",
-    "value" : "rf6z3GOBZZyweIj+l51FUjlxvFc/QV7z1iDSbdSMQpgYyk24WmnUVgRxNroq5KZ1keEupLmO5vmPKoMRSNFsZ4//ynVhAt8rLuNHO/z9ZqL45/WtAxDhQQRJxBfzeXqvnAJt3LjFFff9qalrb1gaQmQMcpZifNWVx6g1XoU6JAlv5DFM1NocnjsCjlkM2bez22rIIKNuEGEGPzyboWLntYMf31UtL825r3NqNU+/aIDJrIjQefkdCBRMKin0IvLl2qafYyedEH5GmpX3BVfTncA3RWcl5l/EtV4R5u3nKPNzkGVQ5Gw8h9BULWxaafWIiLFC8xqPfEQ8KCFn6ZqR4A=="
+    "value" : "Vnew/+Edw47fbtuXTiv09tIY6Jxx5jFI8QczOmG8pgVVO+5rwBppEaXdSGbnSOglfVkcGaGZDv6+Y8ZifWNj9TaRBTg22Pnv2ftbOFDeSTyDv7oNNyaq6RLHmfyvl2FI06W6HfsWECiqZDRxkIFb/VabcSa8U9g4Rlu+6TZSfBq3Z0ItC33qVkfYoJ24sUSEDFpdvDg3GnxPZ9XuznzBeJWEPWCnhJWOv5n+jNn6h3m787OC0M1p7r+ZXjorvjseoGeV6QOIgL2JltOZPT+evu5UrtAYZymmlY939qEpl5JcXHc7JYKBoHc8Ao/B+5cSq/XbaIgPraG8oDR2d10JMA=="
   },
   "messageDigest" : {
     "algorithm" : "SHA256",
-    "value" : "NG1EDrr2hbqtEgoqZCvxIgEsWJWyTGq7rwgVdk2UTew="
+    "value" : "XWNKqDJ/rfQMAbbnkro+MDlWBBKgaLdNmPqSx1dUZ34="
   }
 }
 ----

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -24,22 +24,24 @@ import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.signature.SignatureRequirementsChecker;
 import eu.europa.esig.dss.spi.DSSRevocationUtils;
-import eu.europa.esig.dss.spi.x509.ResponderId;
-import eu.europa.esig.dss.spi.x509.revocation.crl.CRLToken;
-import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPToken;
-import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.spi.signature.AdvancedSignature;
 import eu.europa.esig.dss.spi.validation.CertificateVerifier;
 import eu.europa.esig.dss.spi.validation.ValidationData;
 import eu.europa.esig.dss.spi.validation.ValidationDataContainer;
+import eu.europa.esig.dss.spi.x509.ResponderId;
+import eu.europa.esig.dss.spi.x509.revocation.crl.CRLToken;
+import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPToken;
+import eu.europa.esig.dss.utils.Utils;
+import eu.europa.esig.dss.xades.definition.xades141.XAdES141Element;
 import eu.europa.esig.dss.xades.validation.XAdESSignature;
 import eu.europa.esig.dss.xml.utils.DomUtils;
-import eu.europa.esig.dss.xades.definition.xades141.XAdES141Element;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.bouncycastle.cert.ocsp.BasicOCSPResp;
 import org.bouncycastle.cert.ocsp.RespID;
 import org.w3c.dom.Element;
 
 import javax.xml.datatype.XMLGregorianCalendar;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -162,9 +164,13 @@ public class XAdESLevelC extends XAdESLevelBaselineT {
 
 	private String removeOldCertificateRefs() {
 		String text = null;
-		final Element toRemove = xadesSignature.getCompleteCertificateRefs();
-		if (toRemove != null) {
-			text = removeNode(toRemove);
+		final Element certRefs = XPathUtils.getElement(xadesSignature.getSignatureElement(), xadesPath.getCompleteCertificateRefsPath());
+		final Element certRefsV2 = XPathUtils.getElement(xadesSignature.getSignatureElement(), xadesPath.getCompleteCertificateRefsV2Path());
+		if (certRefs != null || certRefsV2 != null) {
+			text = removeNode(certRefs);
+			if (text == null || certRefsV2 != null) {
+				text = removeNode(certRefsV2);
+			}
 			/* Because the element was removed, the certificate source needs to be reset */
 			xadesSignature.resetCertificateSource();
 		}
@@ -172,7 +178,7 @@ public class XAdESLevelC extends XAdESLevelBaselineT {
 	}
 
 	private void removeOldRevocationRefs() {
-		final Element toRemove = xadesSignature.getCompleteRevocationRefs();
+		final Element toRemove = XPathUtils.getElement(xadesSignature.getSignatureElement(), xadesPath.getCompleteRevocationRefsPath());
 		if (toRemove != null) {
 			removeNode(toRemove);
 			/* Because the element was removed, the revocation sources need to be reset */
@@ -287,7 +293,10 @@ public class XAdESLevelC extends XAdESLevelBaselineT {
 			final String thisUpdateAsXmlFormat = xmlGregorianCalendar.toXMLFormat();
 			DomUtils.addTextElement(documentDom, crlIdentifierDom, getXadesNamespace(),getCurrentXAdESElements().getElementIssueTime(), thisUpdateAsXmlFormat);
 
-			// DSSXMLUtils.addTextElement(documentDom, crlRefDom, XAdESNamespaces.XAdES, "xades:Number", ???);
+			BigInteger crlNumber = crlToken.getCRLNumber();
+			if (crlNumber != null) {
+				DomUtils.addTextElement(documentDom, crlIdentifierDom, getXadesNamespace(), getCurrentXAdESElements().getElementNumber(), crlNumber.toString());
+			}
 
 		}
 	}

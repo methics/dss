@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -23,7 +23,7 @@ package eu.europa.esig.dss.validation.executor;
 import eu.europa.esig.dss.enumerations.CertificateQualification;
 import eu.europa.esig.dss.enumerations.Indication;
 import eu.europa.esig.dss.enumerations.SubIndication;
-import eu.europa.esig.dss.policy.jaxb.Model;
+import eu.europa.esig.dss.enumerations.ValidationModel;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -103,7 +103,7 @@ public class ModelAbstractValidation {
 	 */
 	public static class TestCase {
 		private final TestData testData;
-		private final Model model;
+		private final ValidationModel model;
 		private final Date validationDate;
 		private final CertificateQualification qualification;
 		private final Map<String, Object> certResults;
@@ -122,7 +122,7 @@ public class ModelAbstractValidation {
 		 * @param expectedCertResults
 		 *            the expected Indication per involved certificate
 		 */
-		protected TestCase(final TestData testData, final Model model, final Date validationDate,
+		protected TestCase(final TestData testData, final ValidationModel model, final Date validationDate,
 				CertificateQualification qualification, final String... expectedCertResults) {
 			this.testData = testData;
 			this.model = model;
@@ -146,7 +146,7 @@ public class ModelAbstractValidation {
 			return validationDate;
 		}
 
-		public final Model getModel() {
+		public final ValidationModel getModel() {
 			return model;
 		}
 

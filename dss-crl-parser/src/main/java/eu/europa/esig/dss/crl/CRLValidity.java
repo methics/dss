@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -27,6 +27,7 @@ import org.bouncycastle.asn1.x509.ReasonFlags;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Objects;
@@ -89,6 +90,9 @@ public class CRLValidity implements Serializable {
 
 	/** The 'thisUpdate' date value */
 	private Date thisUpdate;
+
+	/** The CRL Number extension value */
+	private BigInteger crlNumber;
 	
 	/**
 	 * Default constructor
@@ -179,6 +183,24 @@ public class CRLValidity implements Serializable {
 	 */
 	public void setThisUpdate(Date thisUpdate) {
 		this.thisUpdate = thisUpdate;
+	}
+
+	/**
+	 * Gets the CRL Number extension value
+	 *
+	 * @return {@link BigInteger} CRL Number
+	 */
+	public BigInteger getCRLNumber() {
+		return crlNumber;
+	}
+
+	/**
+	 * Sets the CRL Number extension value
+	 *
+	 * @param crlNumber {@link BigInteger} CRL Number
+	 */
+	public void setCRLNumber(BigInteger crlNumber) {
+		this.crlNumber = crlNumber;
 	}
 
 	/**
@@ -444,7 +466,8 @@ public class CRLValidity implements Serializable {
 		if (!Objects.equals(expiredCertsOnCRL, that.expiredCertsOnCRL))
 			return false;
 		if (!Objects.equals(nextUpdate, that.nextUpdate)) return false;
-		return Objects.equals(thisUpdate, that.thisUpdate);
+		if (!Objects.equals(thisUpdate, that.thisUpdate)) return false;
+		return Objects.equals(crlNumber, that.crlNumber);
 	}
 
 	@Override
@@ -466,6 +489,7 @@ public class CRLValidity implements Serializable {
 		result = 31 * result + (expiredCertsOnCRL != null ? expiredCertsOnCRL.hashCode() : 0);
 		result = 31 * result + (nextUpdate != null ? nextUpdate.hashCode() : 0);
 		result = 31 * result + (thisUpdate != null ? thisUpdate.hashCode() : 0);
+		result = 31 * result + (crlNumber != null ? crlNumber.hashCode() : 0);
 		return result;
 	}
 

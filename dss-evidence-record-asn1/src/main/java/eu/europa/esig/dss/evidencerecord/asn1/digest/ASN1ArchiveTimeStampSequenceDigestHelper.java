@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -129,6 +129,19 @@ public class ASN1ArchiveTimeStampSequenceDigestHelper extends AbstractEvidenceRe
     public DSSMessageDigest computeChainAndDocumentHash(Digest archiveTimeStampChainHash,
                                                         DSSDocument document) {
         DigestAlgorithm digestAlgorithm = archiveTimeStampChainHash.getAlgorithm();
+        return computeChainAndDocumentHash(archiveTimeStampChainHash, document.getDigest(digestAlgorithm));
+    }
+
+    /**
+     * Computes a hash value for chain-hash and document-hash
+     *
+     * @param archiveTimeStampChainHash {@link Digest} hash of the previous ArchiveTimeStampChain
+     * @param documentDigest {@link Digest} of a detached document
+     * @return {@link DSSMessageDigest}
+     */
+    public DSSMessageDigest computeChainAndDocumentHash(Digest archiveTimeStampChainHash,
+                                                        Digest documentDigest) {
+        DigestAlgorithm digestAlgorithm = archiveTimeStampChainHash.getAlgorithm();
 
         /*
          * The algorithm by which a root hash value is generated from the
@@ -144,7 +157,7 @@ public class ASN1ArchiveTimeStampSequenceDigestHelper extends AbstractEvidenceRe
          */
 
         // 0. Compute hash of the document
-        byte[] documentMessageDigest = document.getDigestValue(digestAlgorithm);
+        byte[] documentMessageDigest = documentDigest.getValue();
 
         // 1. Group together items
         List<byte[]> hashValueList = new ArrayList<>();
@@ -176,7 +189,7 @@ public class ASN1ArchiveTimeStampSequenceDigestHelper extends AbstractEvidenceRe
             digestCalculator.update(hashValue);
         }
         // 4. Calculate hash value
-        return digestCalculator.getMessageDigest();
+        return digestCalculator.getMessageDigest(digestAlgorithm);
     }
 
 }

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -35,17 +35,19 @@ import eu.europa.esig.dss.spi.CertificateExtensionsUtils;
 import eu.europa.esig.dss.spi.DSSPKUtils;
 import eu.europa.esig.dss.spi.DSSRevocationUtils;
 import eu.europa.esig.dss.spi.OID;
-import eu.europa.esig.dss.spi.x509.CertificateSource;
+import eu.europa.esig.dss.spi.x509.CertificateReorderer;
 import eu.europa.esig.dss.spi.x509.revocation.RevocationToken;
 import eu.europa.esig.dss.utils.Utils;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
+import org.bouncycastle.asn1.x509.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -56,7 +58,7 @@ import java.util.stream.Collectors;
  * whether the revocation data has been extracted from a document or obtained from an online source.
  * The class verifies the consistency of the given revocation information and
  * applicability of the used cryptographic constraints used to create this token.
- *
+ * <p>
  * NOTE: It is not recommended to use a single instance of {@code RevocationDataVerifier}
  *       within different {@code CertificateVerifier}s, as it may lead to concurrency issues during the execution
  *       in multi-threaded environments.
@@ -84,7 +86,7 @@ public class RevocationDataVerifier {
                 DigestAlgorithm.SHA224, DigestAlgorithm.SHA256, DigestAlgorithm.SHA384, DigestAlgorithm.SHA512,
                 DigestAlgorithm.SHA3_256, DigestAlgorithm.SHA3_384, DigestAlgorithm.SHA3_512);
 
-        DEFAULT_ENCRYPTION_ALGORITHMS_KEY_LENGTH_MAP = new HashMap<>();
+        DEFAULT_ENCRYPTION_ALGORITHMS_KEY_LENGTH_MAP = new EnumMap<>(EncryptionAlgorithm.class);
         DEFAULT_ENCRYPTION_ALGORITHMS_KEY_LENGTH_MAP.put(EncryptionAlgorithm.DSA, 2048);
         DEFAULT_ENCRYPTION_ALGORITHMS_KEY_LENGTH_MAP.put(EncryptionAlgorithm.RSA, 1900);
         DEFAULT_ENCRYPTION_ALGORITHMS_KEY_LENGTH_MAP.put(EncryptionAlgorithm.RSASSA_PSS, 1900);
@@ -92,28 +94,43 @@ public class RevocationDataVerifier {
         DEFAULT_ENCRYPTION_ALGORITHMS_KEY_LENGTH_MAP.put(EncryptionAlgorithm.PLAIN_ECDSA, 256);
 
         DEFAULT_REVOCATION_SKIP_CERTIFICATE_EXTENSIONS = Arrays.asList(
-                OID.id_etsi_ext_valassured_ST_certs.getId(), OCSPObjectIdentifiers.id_pkix_ocsp_nocheck.getId());
+                OID.id_etsi_ext_valassured_ST_certs.getId(), OCSPObjectIdentifiers.id_pkix_ocsp_nocheck.getId(),
+                Extension.noRevAvail.getId()
+        );
     }
 
     /**
-     * The trusted certificate source is used to accept trusted revocation data issuer certificates
-     */
-    private CertificateSource trustedCertificateSource;
-
-    /**
      * A collection of Digest Algorithms to accept from CRL/OCSP responders.
-     * Note : revocation tokens created with digest algorithms other than listed in this collection will be skipped.
+     * Note : Since DSS 6.4, it is possible to define accepted algorithms either as a collection of
+     *        {@code eu.europa.esig.dss.enumerations.SignatureAlgorithm}s, using the {@code #setAcceptableSignatureAlgorithmKeyLength},
+     *        or as a combination of {@code eu.europa.esig.dss.enumerations.EncryptionAlgorithm}s and {@code eu.europa.esig.dss.enumerations.DigestAlgorithm}s.
+     *        Both definition will be used to validate the retrieved signature algorithm.
+     *        Other than those algorithms will be skipped.
      * Default : collection of algorithms is synchronized with ETSI 119 312 V1.4.2
      */
     private Collection<DigestAlgorithm> acceptableDigestAlgorithms;
 
     /**
-     * Map of acceptable Encryption Algorithms with a corresponding minimal acceptable key length for each algorithm.
-     * Note : revocation tokens created with encryption algorithms other than listed in this map or
-     *        with a key size smaller than defined in the map will be skipped.
+     * Map of acceptable Signature Algorithms with a corresponding minimal acceptable key length for each algorithm.
+     * Note : Since DSS 6.4, it is possible to define accepted algorithms either as a collection of
+     *        {@code eu.europa.esig.dss.enumerations.SignatureAlgorithm}s, using the {@code #setAcceptableSignatureAlgorithmKeyLength},
+     *        or as a combination of {@code eu.europa.esig.dss.enumerations.EncryptionAlgorithm}s and {@code eu.europa.esig.dss.enumerations.DigestAlgorithm}s.
+     *        Both definition will be used to validate the retrieved signature algorithm.
+     *        Other than those algorithms will be skipped.
      * Default : collection of algorithms is synchronized with ETSI 119 312 V1.4.2
      */
     private Map<EncryptionAlgorithm, Integer> acceptableEncryptionAlgorithmKeyLength;
+
+    /**
+     * Map of acceptable Signature Algorithms with a corresponding minimal acceptable key length for each algorithm.
+     * Note : Since DSS 6.4, it is possible to define accepted algorithms either as a collection of
+     *        {@code eu.europa.esig.dss.enumerations.SignatureAlgorithm}s, using the {@code #setAcceptableSignatureAlgorithmKeyLength},
+     *        or as a combination of {@code eu.europa.esig.dss.enumerations.EncryptionAlgorithm}s and {@code eu.europa.esig.dss.enumerations.DigestAlgorithm}s.
+     *        Both definition will be used to validate the retrieved signature algorithm.
+     *        Other than those algorithms will be skipped.
+     * Default : collection of algorithms is synchronized with ETSI 119 312 V1.4.2
+     */
+    private Map<SignatureAlgorithm, Integer> acceptableSignatureAlgorithmKeyLength;
 
     /**
      * Collection of certificate extension identifiers indicating the revocation check is not required for those certificates
@@ -154,6 +171,26 @@ public class RevocationDataVerifier {
     private boolean checkRevocationFreshnessNextUpdate;
 
     /**
+     * This variable indicates whether timestamp certificates without revocation data should be accepted
+     */
+    private boolean acceptTimestampCertificatesWithoutRevocation;
+
+    /**
+     * This variable indicates whether revocation certificates without revocation data should be accepted
+     */
+    private boolean acceptRevocationCertificatesWithoutRevocation;
+
+    /**
+     * Verifies whether a given certificate token is a trust anchor at the control time
+     */
+    private TrustAnchorVerifier trustAnchorVerifier;
+
+    /**
+     * Signature validation context
+     */
+    private ValidationContext validationContext;
+
+    /**
      * Default constructor
      */
     protected RevocationDataVerifier() {
@@ -187,6 +224,7 @@ public class RevocationDataVerifier {
             revocationDataVerifier.setTimestampMaximumRevocationFreshness(DEFAULT_MAXIMUM_REVOCATION_FRESHNESS);
             revocationDataVerifier.setRevocationMaximumRevocationFreshness(DEFAULT_MAXIMUM_REVOCATION_FRESHNESS);
             // #checkRevocationFreshnessNextUpdate is false
+            // #acceptRevocationIssuersWithoutRevocation is false
             return revocationDataVerifier;
         } catch (Exception e) {
             throw new DSSException(String.format(
@@ -195,29 +233,12 @@ public class RevocationDataVerifier {
     }
 
     /**
-     * Gets trusted certificate source, when present
-     *
-     * @return {@link CertificateSource}
-     */
-    public CertificateSource getTrustedCertificateSource() {
-        return trustedCertificateSource;
-    }
-
-    /**
-     * Sets a trusted certificate source in order to accept trusted revocation data issuer certificates.
-     * Note : This method is used internally during a {@code eu.europa.esig.dss.validation.SignatureValidationContext}
-     *        initialization, in order to provide the same trusted source as the one used within
-     *        a {@code eu.europa.esig.dss.validation.CertificateVerifier}.
-     *
-     * @param trustedCertificateSource {@link CertificateSource}
-     */
-    protected void setTrustedCertificateSource(CertificateSource trustedCertificateSource) {
-        this.trustedCertificateSource = trustedCertificateSource;
-    }
-
-    /**
      * Sets a collection of Digest Algorithms for acceptance.
-     * If a revocation token is signed with an algorithm other than listed in the collection, the token will be skipped.
+     * Note : Since DSS 6.4, it is possible to define accepted algorithms either as a collection of
+     *        {@code eu.europa.esig.dss.enumerations.SignatureAlgorithm}s, using the {@code #setAcceptableSignatureAlgorithmKeyLength},
+     *        or as a combination of {@code eu.europa.esig.dss.enumerations.EncryptionAlgorithm}s and {@code eu.europa.esig.dss.enumerations.DigestAlgorithm}s.
+     *        Both definition will be used to validate the retrieved signature algorithm.
+     *        Other than those algorithms will be skipped.
      * Default : collection of algorithms is synchronized with ETSI 119 312 V1.4.2
      *
      * @param acceptableDigestAlgorithms a collection if {@link DigestAlgorithm}s
@@ -231,6 +252,11 @@ public class RevocationDataVerifier {
      * Sets a map of acceptable Encryption Algorithms and their corresponding minimal key length values.
      * If a revocation token is signed with an algorithm other than listed in the collection or with a smaller key size,
      * than the token will be skipped.
+     * Note : Since DSS 6.4, it is possible to define accepted algorithms either as a collection of
+     *        {@code eu.europa.esig.dss.enumerations.SignatureAlgorithm}s, using the {@code #setAcceptableSignatureAlgorithmKeyLength},
+     *        or as a combination of {@code eu.europa.esig.dss.enumerations.EncryptionAlgorithm}s and {@code eu.europa.esig.dss.enumerations.DigestAlgorithm}s.
+     *        Both definition will be used to validate the retrieved signature algorithm.
+     *        Other than those algorithms will be skipped.
      * Default : collection of algorithms is synchronized with ETSI 119 312 V1.4.2
      *
      * @param acceptableEncryptionAlgorithmKeyLength a map of {@link EncryptionAlgorithm}s and
@@ -239,6 +265,25 @@ public class RevocationDataVerifier {
     public void setAcceptableEncryptionAlgorithmKeyLength(Map<EncryptionAlgorithm, Integer> acceptableEncryptionAlgorithmKeyLength) {
         Objects.requireNonNull(acceptableEncryptionAlgorithmKeyLength, "Map of Encryption Algorithms for acceptance cannot be null!");
         this.acceptableEncryptionAlgorithmKeyLength = acceptableEncryptionAlgorithmKeyLength;
+    }
+
+    /**
+     * Sets a map of acceptable Signature Algorithms and their corresponding minimal key length values.
+     * If a revocation token is signed with an algorithm other than listed in the collection or with a smaller key size,
+     * than the token will be skipped.
+     * Note : Since DSS 6.4, it is possible to define accepted algorithms either as a collection of
+     *        {@code eu.europa.esig.dss.enumerations.SignatureAlgorithm}s, using the {@code #setAcceptableSignatureAlgorithmKeyLength},
+     *        or as a combination of {@code eu.europa.esig.dss.enumerations.EncryptionAlgorithm}s and {@code eu.europa.esig.dss.enumerations.DigestAlgorithm}s.
+     *        Both definition will be used to validate the retrieved signature algorithm.
+     *        Other than those algorithms will be skipped.
+     * Default : collection of algorithms is synchronized with ETSI 119 312 V1.4.2
+     *
+     * @param acceptableSignatureAlgorithmKeyLength a map of {@link SignatureAlgorithm}s and
+     *                                              their corresponding minimal supported key lengths
+     */
+    public void setAcceptableSignatureAlgorithmKeyLength(Map<SignatureAlgorithm, Integer> acceptableSignatureAlgorithmKeyLength) {
+        Objects.requireNonNull(acceptableSignatureAlgorithmKeyLength, "Map of Signature Algorithms for acceptance cannot be null!");
+        this.acceptableSignatureAlgorithmKeyLength = acceptableSignatureAlgorithmKeyLength;
     }
 
     /**
@@ -268,7 +313,7 @@ public class RevocationDataVerifier {
      * NULL value is used to disable the check.
      * Default : 0 (revocation data shall be issued after the best-signature-time)
      *
-     * @param signatureMaximumRevocationFreshness {@link Long} in milliseconds to evaluate revocation freshness,
+     * @param signatureMaximumRevocationFreshness {@link Long} in milliseconds
      */
     public void setSignatureMaximumRevocationFreshness(Long signatureMaximumRevocationFreshness) {
         this.signatureMaximumRevocationFreshness = signatureMaximumRevocationFreshness;
@@ -313,28 +358,138 @@ public class RevocationDataVerifier {
     }
 
     /**
-     * This method verifies the validity of the given {@code RevocationToken} using the embedded issuer certificate token
+     * This method sets whether a timestamp certificate without a valid revocation data should be accepted by the verifier
+     *
+     * @param acceptTimestampCertificatesWithoutRevocation whether a timestamp certificate without revocation data should be accepted
+     */
+    public void setAcceptTimestampCertificatesWithoutRevocation(boolean acceptTimestampCertificatesWithoutRevocation) {
+        this.acceptTimestampCertificatesWithoutRevocation = acceptTimestampCertificatesWithoutRevocation;
+    }
+
+    /**
+     * This method sets whether a revocation certificate without a valid revocation data should be accepted by the verifier
+     *
+     * @param acceptRevocationCertificatesWithoutRevocation whether a revocation certificate without revocation data should be accepted
+     */
+    public void setAcceptRevocationCertificatesWithoutRevocation(boolean acceptRevocationCertificatesWithoutRevocation) {
+        this.acceptRevocationCertificatesWithoutRevocation = acceptRevocationCertificatesWithoutRevocation;
+    }
+
+    /**
+     * Gets a trust anchor verifier. This method is used internally within {@code eu.europa.esig.dss.validation.SignatureValidationContext}
+     * to identify whether the configuration is already present and a {@code trustAnchorVerifier} should be set.
+     *
+     * @return {@link TrustAnchorVerifier}
+     */
+    public TrustAnchorVerifier getTrustAnchorVerifier() {
+        return trustAnchorVerifier;
+    }
+
+    /**
+     * Sets whether a certificate token can be considered as a trust anchor at the given control time
+     * Note : This method is used internally during a {@code eu.europa.esig.dss.validation.SignatureValidationContext}
+     *        initialization, when not defined explicitly, in order to provide the same configuration as the one used within
+     *        a {@code eu.europa.esig.dss.validation.CertificateVerifier}.
+     *
+     * @param trustAnchorVerifier {@link TrustAnchorVerifier}
+     */
+    public void setTrustAnchorVerifier(TrustAnchorVerifier trustAnchorVerifier) {
+        this.trustAnchorVerifier = trustAnchorVerifier;
+    }
+
+    /**
+     * Sets validation context for certificates validation
+     *
+     * @param validationContext {@link ValidationContext}
+     */
+    protected void setValidationContext(ValidationContext validationContext) {
+        this.validationContext = validationContext;
+    }
+
+    /**
+     * This method verifies the validity of the given {@code RevocationToken} using the embedded
+     * issuer certificate token at the current time
      *
      * @param revocationToken {@link RevocationToken}
      * @return TRUE if the revocation data is acceptable to continue the validation process, FALSE otherwise
      */
     public boolean isAcceptable(RevocationToken<?> revocationToken) {
-        return isAcceptable(revocationToken, revocationToken.getIssuerCertificateToken());
+        return isAcceptable(revocationToken, new Date());
     }
 
     /**
-     * This method verifies the validity of the given {@code RevocationToken}
+     * This method verifies the validity of the given {@code RevocationToken} at the given {@code controlTime}
+     * using the embedded issuer certificate token
+     *
+     * @param revocationToken {@link RevocationToken}
+     * @param controlTime {@link Date}
+     * @return TRUE if the revocation data is acceptable to continue the validation process, FALSE otherwise
+     */
+    public boolean isAcceptable(RevocationToken<?> revocationToken, Date controlTime) {
+        return isAcceptable(revocationToken, revocationToken.getIssuerCertificateToken(), controlTime);
+    }
+
+    /**
+     * This method verifies the validity of the given {@code RevocationToken} at the current time
      *
      * @param revocationToken {@link RevocationToken}
      * @param issuerCertificateToken {@link CertificateToken} issued the current revocation
      * @return TRUE if the revocation data is acceptable to continue the validation process, FALSE otherwise
      */
     public boolean isAcceptable(RevocationToken<?> revocationToken, CertificateToken issuerCertificateToken) {
-        return isRevocationDataComplete(revocationToken) && isGoodIssuer(revocationToken, issuerCertificateToken) &&
-                isConsistent(revocationToken) && isAcceptableSignatureAlgorithm(revocationToken, issuerCertificateToken);
+        return isAcceptable(revocationToken, issuerCertificateToken, new Date());
     }
 
-    private boolean isRevocationDataComplete(RevocationToken<?> revocationToken) {
+    /**
+     * This method verifies the validity of the given {@code RevocationToken} at {@code controlTime}
+     *
+     * @param revocationToken {@link RevocationToken}
+     * @param issuerCertificateToken {@link CertificateToken} issued the current revocation
+     * @param controlTime {@link Date}
+     * @return TRUE if the revocation data is acceptable to continue the validation process, FALSE otherwise
+     */
+    public boolean isAcceptable(RevocationToken<?> revocationToken, CertificateToken issuerCertificateToken, Date controlTime) {
+        return isAcceptable(revocationToken, issuerCertificateToken, Collections.emptyList(), controlTime);
+    }
+
+    /**
+     * This method verifies the validity of the given {@code RevocationToken} at {@code controlTime}
+     *
+     * @param revocationToken {@link RevocationToken}
+     * @param issuerCertificateToken {@link CertificateToken} issued the current revocation
+     * @param certificateChain a list of {@link CertificateToken}s, representing a certificate chain of the issuer
+     * @param controlTime {@link Date}
+     * @return TRUE if the revocation data is acceptable to continue the validation process, FALSE otherwise
+     */
+    public boolean isAcceptable(RevocationToken<?> revocationToken, CertificateToken issuerCertificateToken,
+                                List<CertificateToken> certificateChain, Date controlTime) {
+        return isRevocationTokenValid(revocationToken) && isRevocationDataComplete(revocationToken)
+                && isGoodIssuer(revocationToken, issuerCertificateToken, controlTime)
+                && isCertificateChainValid(certificateChain, controlTime, Context.REVOCATION) && isConsistent(revocationToken)
+                && isAcceptableSignatureAlgorithm(revocationToken, issuerCertificateToken);
+    }
+
+    /**
+     * Verifies whether the revocation token is cryptographically valid
+     *
+     * @param revocationToken {@link RevocationToken} to be verified
+     * @return TRUE if the revocation token is valid, FALSE otherwise
+     */
+    protected boolean isRevocationTokenValid(RevocationToken<?> revocationToken) {
+        if (!revocationToken.isValid()) {
+            LOG.warn("The revocation token '{}' is not valid : {}!", revocationToken.getDSSIdAsString(), revocationToken.getInvalidityReason());
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Verifies whether the revocation token contains all required data
+     *
+     * @param revocationToken {@link RevocationToken} to be verifies
+     * @return TRUE if the revocation token is complete, FALSE otherwise
+     */
+    protected boolean isRevocationDataComplete(RevocationToken<?> revocationToken) {
         if (revocationToken.getRelatedCertificate() == null) {
             LOG.warn("The revocation '{}' does not have a related certificate!", revocationToken.getDSSIdAsString());
             return false;
@@ -350,16 +505,17 @@ public class RevocationDataVerifier {
         return true;
     }
 
-    private boolean isGoodIssuer(RevocationToken<?> revocationToken, CertificateToken issuerCertificateToken) {
+    /**
+     * Verifies validity if the {@code issuerCertificateToken} of {@code revocationToken}
+     *
+     * @param revocationToken {@link RevocationToken} concerned revocation token
+     * @param issuerCertificateToken {@link CertificateToken} issued the revocation token
+     * @param controlTime {@link Date} validation time
+     * @return TRUE if the issuer certificate token is valid at the control time, FALSE otherwise
+     */
+    protected boolean isGoodIssuer(RevocationToken<?> revocationToken, CertificateToken issuerCertificateToken, Date controlTime) {
         if (issuerCertificateToken == null) {
             LOG.warn("The issuer certificate is not found for the obtained revocation '{}'!", revocationToken.getDSSIdAsString());
-            return false;
-        }
-        if (RevocationType.OCSP.equals(revocationToken.getRevocationType()) &&
-                doesRequireRevocation(issuerCertificateToken) && !hasRevocationAccessPoints(issuerCertificateToken)) {
-            LOG.warn("The issuer certificate '{}' of the obtained OCSPToken '{}' requires a revocation data, "
-                    + "which is not acceptable due its configuration (no revocation access location points)!",
-                    issuerCertificateToken.getDSSIdAsString(), revocationToken.getDSSIdAsString());
             return false;
         }
         if (RevocationType.OCSP.equals(revocationToken.getRevocationType()) &&
@@ -368,32 +524,19 @@ public class RevocationDataVerifier {
                     revocationToken.getDSSIdAsString());
             return false;
         }
-        return true;
-    }
-
-    private boolean doesRequireRevocation(final CertificateToken certificateToken) {
-        if (certificateToken.isSelfSigned()) {
-            return false;
-        }
-        if (isTrusted(certificateToken)) {
-            return false;
-        }
-        if (CertificateExtensionsUtils.hasOcspNoCheckExtension(certificateToken)) {
+        if (!isCertificateValid(issuerCertificateToken, revocationToken.getCertificates(), controlTime)) {
             return false;
         }
         return true;
     }
 
-    private boolean isTrusted(CertificateToken certificateToken) {
-        return trustedCertificateSource != null && trustedCertificateSource.isTrusted(certificateToken);
-    }
-
-    private boolean hasRevocationAccessPoints(final CertificateToken certificateToken) {
-        return Utils.isCollectionNotEmpty(CertificateExtensionsUtils.getCRLAccessUrls(certificateToken)) ||
-                Utils.isCollectionNotEmpty(CertificateExtensionsUtils.getOCSPAccessUrls(certificateToken));
-    }
-
-    private boolean isConsistent(RevocationToken<?> revocation) {
+    /**
+     * Verifies whether the revocation token is consistent
+     *
+     * @param revocation {@link RevocationToken} to be verified
+     * @return TRUE if the revocation token is consistent, FALSE otherwise
+     */
+    protected boolean isConsistent(RevocationToken<?> revocation) {
         final CertificateToken certToken = revocation.getRelatedCertificate();
 
         if (!isRevocationIssuedAfterCertificateNotBefore(revocation, certToken)) {
@@ -419,8 +562,7 @@ public class RevocationDataVerifier {
         return revocationInformationAssured(revocationToken, certificateToken) || certHashMatch(revocationToken);
     }
 
-    private boolean revocationInformationAssured(RevocationToken<?> revocationToken,
-                                                  CertificateToken certificateToken) {
+    private boolean revocationInformationAssured(RevocationToken<?> revocationToken, CertificateToken certificateToken) {
         Date notAfterRevoc = revocationToken.getThisUpdate();
         Date certNotAfter = certificateToken.getNotAfter();
 
@@ -441,21 +583,52 @@ public class RevocationDataVerifier {
         return revocationToken.isCertHashPresent() && revocationToken.isCertHashMatch();
     }
 
-    private boolean isAcceptableSignatureAlgorithm(RevocationToken<?> revocationToken, CertificateToken issuerCertificateToken) {
-        if (Utils.isCollectionEmpty(acceptableDigestAlgorithms)) {
-            LOG.info("No acceptable digest algorithms defined!");
-            return false;
-        }
-        if (Utils.isMapEmpty(acceptableEncryptionAlgorithmKeyLength)) {
-            LOG.info("No acceptable encryption algorithms defined!");
-            return false;
-        }
+    /**
+     * Verifies validity of the used signature algorithm on revocation data creation is still valid according
+     * to the specified cryptographic constraints.
+     *
+     * @param revocationToken {@link RevocationToken} to be verified
+     * @param issuerCertificateToken {@link CertificateToken} issued the revocation token
+     * @return TRUE if the signature algorithm used on revocation token creation, FALSE otherwise
+     */
+    protected boolean isAcceptableSignatureAlgorithm(RevocationToken<?> revocationToken, CertificateToken issuerCertificateToken) {
+        /*
+         * Code supports validation against both, explicit signature algorithm definition and
+         * a digest + encryption algorithm pairs
+         */
         SignatureAlgorithm signatureAlgorithm = revocationToken.getSignatureAlgorithm();
         if (signatureAlgorithm == null) {
             LOG.warn("Signature algorithm was not identified for an obtained revocation token '{}'!",
                     revocationToken.getDSSIdAsString());
             return false;
         }
+        if (issuerCertificateToken == null) {
+            LOG.warn("The issuer certificate token was not identified for revocation data with Id '{}'!",
+                    revocationToken.getDSSIdAsString());
+            return false;
+        }
+
+        if (Utils.isMapNotEmpty(acceptableSignatureAlgorithmKeyLength) ) {
+            Integer signatureAlgorithmMinKeySize = acceptableSignatureAlgorithmKeyLength.get(signatureAlgorithm);
+            if (signatureAlgorithmMinKeySize != null && isPublicKeySizeSupported(signatureAlgorithmMinKeySize, issuerCertificateToken)) {
+                return true;
+            }
+            // continue with Digest+Encryption algorithm pairs
+        }
+
+        if (Utils.isCollectionEmpty(acceptableDigestAlgorithms)) {
+            if (Utils.isMapEmpty(acceptableSignatureAlgorithmKeyLength)) {
+                LOG.info("No acceptable digest or signature algorithms defined!");
+            }
+            return false;
+
+        } else if (Utils.isMapEmpty(acceptableEncryptionAlgorithmKeyLength)) {
+            if (Utils.isMapEmpty(acceptableSignatureAlgorithmKeyLength)) {
+                LOG.info("No acceptable encryption or signature algorithms defined!");
+            }
+            return false;
+        }
+
         if (!acceptableDigestAlgorithms.contains(signatureAlgorithm.getDigestAlgorithm())) {
             LOG.warn("The used DigestAlgorithm {} is not acceptable for revocation token '{}'!",
                     signatureAlgorithm.getDigestAlgorithm(), revocationToken.getDSSIdAsString());
@@ -467,28 +640,42 @@ public class RevocationDataVerifier {
                     signatureAlgorithm.getEncryptionAlgorithm(), revocationToken.getDSSIdAsString());
             return false;
         }
-        int publicKeySize = issuerCertificateToken != null ? DSSPKUtils.getPublicKeySize(issuerCertificateToken.getPublicKey()) : -1;
+        return isPublicKeySizeSupported(encryptionAlgorithmMinKeySize, issuerCertificateToken);
+    }
+
+    private boolean isPublicKeySizeSupported(Integer minKeySize, CertificateToken certificateToken) {
+        int publicKeySize = DSSPKUtils.getPublicKeySize(certificateToken.getPublicKey());
         if (publicKeySize <= 0) {
-            LOG.warn("Key size used to sign revocation token '{}' cannot be identified!",
-                    revocationToken.getDSSIdAsString());
+            LOG.warn("Key size of the certificate token with Id '{}' cannot be identified!", certificateToken.getDSSIdAsString());
             return false;
         }
-        if (publicKeySize < encryptionAlgorithmMinKeySize) {
-            LOG.warn("The key size '{}' used to sign revocation token '{}' is smaller than minimal acceptable value '{}'!",
-                    publicKeySize, revocationToken.getDSSIdAsString(), encryptionAlgorithmMinKeySize);
+        if (publicKeySize < minKeySize) {
+            LOG.warn("The key size '{}' of the certificate token with Id '{}' is smaller than minimal acceptable value '{}'!",
+                    publicKeySize, certificateToken.getDSSIdAsString(), minKeySize);
             return false;
         }
         return true;
     }
 
     /**
-     * Checks and returns whether the revocation check shall be skipped for the given certificate
+     * Checks and returns whether the revocation check shall be skipped for the given certificate at the current time
      *
      * @param certificateToken {@link CertificateToken} to check
      * @return TRUE if the revocation check shall be skipped, FALSE otherwise
      */
     public boolean isRevocationDataSkip(CertificateToken certificateToken) {
-        if (trustedCertificateSource != null && trustedCertificateSource.isTrusted(certificateToken)) {
+        return isRevocationDataSkip(certificateToken, new Date());
+    }
+
+    /**
+     * Checks and returns whether the revocation check shall be skipped for the given certificate at the {@code controlTime}
+     *
+     * @param certificateToken {@link CertificateToken} to check
+     * @param controlTime {@link Date} the validation time
+     * @return TRUE if the revocation check shall be skipped, FALSE otherwise
+     */
+    public boolean isRevocationDataSkip(CertificateToken certificateToken, Date controlTime) {
+        if (isTrustedAtTime(certificateToken, controlTime)) {
             return true;
         }
         if (certificateToken.isSelfSigned()) {
@@ -510,10 +697,26 @@ public class RevocationDataVerifier {
         CertificatePolicies certificatePolicies = certificateExtensions.getCertificatePolicies();
         if (certificatePolicies != null && Utils.isCollectionNotEmpty(certificatePolicies.getPolicyList()) &&
                 Utils.containsAny(certificatePolicies.getPolicyList().stream().map(CertificatePolicy::getOid).collect(Collectors.toSet()),
-                revocationSkipCertificatePolicies)) {
+                        revocationSkipCertificatePolicies)) {
             return true;
         }
         return false;
+    }
+
+    /**
+     * This method verifies whether the {@code certificateToken} is trusted at {@code controlTime}
+     *
+     * @param certificateToken {@link CertificateToken} to check
+     * @param controlTime {@link Date} the validation time
+     * @return TRUE if the certificate is trusted at the given time, FALSE otherwise
+     */
+    protected boolean isTrustedAtTime(CertificateToken certificateToken, Date controlTime) {
+        final TrustAnchorVerifier currentTrustAnchorVerifier = getTrustAnchorVerifier();
+        if (currentTrustAnchorVerifier == null) {
+            LOG.warn("TrustAnchorVerifier is not defined! None of the certificates will be considered as a trust anchor.");
+            return false;
+        }
+        return currentTrustAnchorVerifier.isTrustedAtTime(certificateToken, controlTime, Context.REVOCATION);
     }
 
     /**
@@ -588,6 +791,7 @@ public class RevocationDataVerifier {
         switch (context) {
             case SIGNATURE:
             case COUNTER_SIGNATURE:
+            case KEY_BINDING_SIGNATURE:
             case CERTIFICATE:
                 return signatureMaximumRevocationFreshness;
             case TIMESTAMP:
@@ -602,20 +806,164 @@ public class RevocationDataVerifier {
     }
 
     /**
-     * This method verifies if the revocation data is after the last usage of the certificate.
-     * The method is used to ensure the new revocation data has been successfully issued after creation
-     * of the last time-stamp with the given certificate
+     * This method verifies whether a certificate was not revoked at {@code controlTime}
      *
-     * @param revocationToken {@link RevocationToken} to be validated
-     * @param lastCertificateUsage {@link Date} the last confirmed usage date of the corresponding certificate
-     * @return TRUE if the revocation data has been issued after the last certificate usage, FALSE otherwise
+     * @param revocationToken {@link RevocationToken} to check
+     * @param controlTime {@link Date} time to check at
+     * @return TRUE if the certificate was not revoked at control time, FALSE otherwise
      */
-    public boolean isRevocationDataAfterLastCertificateUsage(RevocationToken<?> revocationToken, Date lastCertificateUsage) {
-        if (lastCertificateUsage == null) {
-            // no check to be performed
+    public boolean checkCertificateNotRevoked(RevocationToken<?> revocationToken, Date controlTime) {
+        return revocationToken.getStatus().isKnown() &&
+                (!revocationToken.getStatus().isRevoked() || controlTime.before(revocationToken.getRevocationDate()));
+    }
+
+    /**
+     * Verifies whether the {@code controlTime} is within revocation data's thisUpdate and nextUpdate times
+     *
+     * @param revocationToken {@link RevocationToken} to validate
+     * @param date {@link Date} validation time
+     * @return TRUE if the control time is within thisUpdate and nextUpdate times, FALSE otherwise
+     */
+    public boolean isAfterThisUpdateAndBeforeNextUpdate(RevocationToken<?> revocationToken, Date date) {
+        Date thisUpdate = revocationToken.getThisUpdate();
+        Date nextUpdate = revocationToken.getNextUpdate();
+        return thisUpdate != null && date.compareTo(thisUpdate) >= 0 && (nextUpdate == null || date.compareTo(nextUpdate) <= 0);
+    }
+
+    /**
+     * This method verifies whether the certificate chain is valid at control time
+     *
+     * @param certificateTokenChain a list of {@link CertificateToken}s
+     * @param controlTime {@link Date} validation time
+     * @param context {@link Context} validation context
+     * @return TRUE if the certificate chain is valid at control time, FALSE otherwise
+     */
+    public boolean isCertificateChainValid(List<CertificateToken> certificateTokenChain, Date controlTime, Context context) {
+        if (isAcceptCertificatesWithoutRevocation(context)) {
             return true;
         }
-        return isRevocationThisUpdateAfterValidationTime(revocationToken, lastCertificateUsage, 0);
+        for (CertificateToken certificateToken : certificateTokenChain) {
+            if (certificateToken.isSelfSigned() || isTrustedAtTime(certificateToken, controlTime)) {
+                break;
+            }
+            if (!certificateToken.isValid()) {
+                LOG.warn("The certificate '{}' is cryptographically invalid!", certificateToken.getDSSIdAsString());
+                return false;
+            }
+            if (!isCertificateValid(certificateToken, certificateTokenChain, controlTime)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isAcceptCertificatesWithoutRevocation(Context context) {
+        return (Context.TIMESTAMP == context && acceptTimestampCertificatesWithoutRevocation) ||
+                (Context.REVOCATION == context && acceptRevocationCertificatesWithoutRevocation);
+    }
+
+    /**
+     * Verifies if the certificate is valid
+     *
+     * @param certificateToken {@link CertificateToken}
+     * @param certificateChain collection of {@link CertificateToken}s
+     * @param controlTime {@link Date}
+     * @return TRUE if the certificate token is valid, FALSE otherwise
+     */
+    protected boolean isCertificateValid(CertificateToken certificateToken, Collection<CertificateToken> certificateChain, Date controlTime) {
+        if (!isRevocationDataSkip(certificateToken, controlTime)) {
+            if (!hasRevocationAccessPoints(certificateToken)) {
+                LOG.warn("The certificate '{}' requires a revocation data, " +
+                                "which is not acceptable due its configuration (no revocation access location points)!",
+                        certificateToken.getDSSIdAsString());
+                return false;
+            }
+            if (!isCertificateNotRevoked(certificateToken, certificateChain, controlTime)) {
+                LOG.warn("The certificate '{}' does not contain a valid revocation data information!",
+                        certificateToken.getDSSIdAsString());
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean hasRevocationAccessPoints(final CertificateToken certificateToken) {
+        return Utils.isCollectionNotEmpty(CertificateExtensionsUtils.getCRLAccessUrls(certificateToken)) ||
+                Utils.isCollectionNotEmpty(CertificateExtensionsUtils.getOCSPAccessUrls(certificateToken));
+    }
+
+    /**
+     * This method verifies whether a certificate token is not revoked at control time
+     *
+     * @param certificateToken {@link CertificateToken} to validated
+     * @param certificateChain collection of {@link CertificateToken}s
+     * @param controlTime {@link Date} validation time
+     * @return TRUE if the certificate token is valid at control time, FALSE otherwise
+     */
+    protected boolean isCertificateNotRevoked(CertificateToken certificateToken, Collection<CertificateToken> certificateChain, Date controlTime) {
+        populateValidationContext(certificateChain);
+
+        List<RevocationToken<?>> revocationData = getRelatedRevocationTokens(certificateToken);
+        if (Utils.isCollectionNotEmpty(revocationData)) {
+            for (RevocationToken<?> revocationToken : revocationData) {
+                if (!isSelfIssuedRevocation(certificateToken, revocationToken) && isAcceptable(revocationToken, controlTime)
+                        && checkCertificateNotRevoked(revocationToken, controlTime)) {
+                    return true;
+                }
+            }
+        }
+        LOG.warn("The certificate '{}' is not known to be not revoked!", certificateToken.getDSSIdAsString());
+        return false;
+    }
+
+    /**
+     * Verifies whether the verified certificate does not occur in the revocation's issuer certificate chain
+     *
+     * @param certificateToken {@link CertificateToken} to be verified
+     * @param revocationData {@link RevocationToken}
+     * @return TRUE if the certificate occurs in the revocation's certificate chain, FALSE otherwise
+     */
+    protected boolean isSelfIssuedRevocation(CertificateToken certificateToken, RevocationToken<?> revocationData) {
+        if (certificateToken.equals(revocationData.getIssuerCertificateToken())) {
+            LOG.warn("Revocation data '{}' has been issued by the concerned certificate '{}'!",
+                    revocationData.getDSSIdAsString(), certificateToken.getDSSIdAsString());
+            return true;
+        }
+
+        // verify certificate occurrence within the chain
+        if (Utils.isCollectionNotEmpty(revocationData.getCertificates())) {
+            List<CertificateToken> certificateChain = new CertificateReorderer(
+                    revocationData.getIssuerCertificateToken(), revocationData.getCertificates()).getOrderedCertificates();
+            if (certificateChain.contains(certificateToken)) {
+                LOG.warn("The concerned certificate '{}' found at the revocation '{}' certificate chain!",
+                        certificateToken.getDSSIdAsString(), revocationData.getDSSIdAsString());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void populateValidationContext(Collection<CertificateToken> certificateChain) {
+        if (validationContext != null) {
+            for (CertificateToken certificateToken : certificateChain) {
+                validationContext.addCertificateTokenForVerification(certificateToken);
+            }
+        }
+    }
+
+    private List<RevocationToken<?>> getRelatedRevocationTokens(CertificateToken certificateToken) {
+        if (validationContext == null) {
+            LOG.warn("ValidationContext is not defined! Unable to retrieve revocation data for certificate.");
+            return Collections.emptyList();
+        }
+
+        List<RevocationToken<?>> revocationData = validationContext.getRevocationData(certificateToken);
+        if (Utils.isCollectionEmpty(revocationData)) {
+            return Collections.emptyList();
+        }
+        return revocationData.stream()
+                .filter(r -> Utils.areStringsEqual(certificateToken.getDSSIdAsString(), r.getRelatedCertificateId()))
+                .collect(Collectors.toList());
     }
 
 }

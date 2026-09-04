@@ -1,39 +1,25 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.xades.extension;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import eu.europa.esig.dss.xml.utils.DomUtils;
-import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigPath;
 import eu.europa.esig.dss.diagnostic.CertificateRefWrapper;
 import eu.europa.esig.dss.diagnostic.DiagnosticData;
 import eu.europa.esig.dss.diagnostic.RelatedCertificateWrapper;
@@ -56,6 +42,20 @@ import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.definition.XAdESPath;
 import eu.europa.esig.dss.xades.definition.xades132.XAdES132Path;
 import eu.europa.esig.dss.xades.signature.XAdESService;
+import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigPath;
+import eu.europa.esig.dss.xml.utils.DomUtils;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
+import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import java.util.List;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ExtendWithLastTimestampValidationDataTest extends PKIFactoryAccess {
 
@@ -89,15 +89,15 @@ class ExtendWithLastTimestampValidationDataTest extends PKIFactoryAccess {
 		XAdESPath xadesPaths = new XAdES132Path();
 
 		Document extendedDocDom = DomUtils.buildDOM(doubleExtendedDocument);
-		NodeList signatures = DomUtils.getNodeList(extendedDocDom, XMLDSigPath.ALL_SIGNATURES_PATH);
+		NodeList signatures = XPathUtils.getNodeList(extendedDocDom, XMLDSigPath.ALL_SIGNATURES_PATH);
 		assertEquals(1, signatures.getLength());
 		Node signatureElement = signatures.item(0);
-		Node unsignedSignatureProperties = DomUtils.getNode(signatureElement, xadesPaths.getUnsignedSignaturePropertiesPath());
+		Node unsignedSignatureProperties = XPathUtils.getNode(signatureElement, xadesPaths.getUnsignedSignaturePropertiesPath());
 		Node lastArchveTST = unsignedSignatureProperties.getLastChild();
 		unsignedSignatureProperties.removeChild(lastArchveTST);
-		
-		NodeList timestampValidationData = DomUtils.getNodeList(extendedDocDom, "//xades141:TimeStampValidationData");
-		assertEquals(1, timestampValidationData.getLength());
+
+		NodeList timestampValidationData = XPathUtils.getNodeList(signatureElement, xadesPaths.getTimestampValidationDataPath());
+		assertEquals(2, timestampValidationData.getLength());
 		
 		DSSDocument ltaWithTSValidationData = DomUtils.createDssDocumentFromDomDocument(extendedDocDom, "LTAWithTimeStampValidationData.xml");
 		// ltaWithTSValidationData.save("target/" + ltaWithTSValidationData.getName());
@@ -163,8 +163,12 @@ class ExtendWithLastTimestampValidationDataTest extends PKIFactoryAccess {
 		assertEquals(1, ocspCounter);
 
 		Document newExtendedDocDom = DomUtils.buildDOM(newExtendedDocument);
-		timestampValidationData = DomUtils.getNodeList(newExtendedDocDom, "//xades141:TimeStampValidationData");
-		assertEquals(1, timestampValidationData.getLength());
+		signatures = XPathUtils.getNodeList(newExtendedDocDom, XMLDSigPath.ALL_SIGNATURES_PATH);
+		assertEquals(1, signatures.getLength());
+		signatureElement = signatures.item(0);
+		assertNotNull(signatureElement);
+		timestampValidationData = XPathUtils.getNodeList(signatureElement, xadesPaths.getTimestampValidationDataPath());
+		assertEquals(2, timestampValidationData.getLength());
 		
 	}
 

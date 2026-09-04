@@ -1,0 +1,10 @@
+[source,xml]
+----
+<xades:UnsignedSignatureProperties>
+	<xades:SignatureTimeStamp Id="time-stamp-b16a2552-b218-4231-8982-40057525fbb5">
+		<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+		<xades:EncapsulatedTimeStamp Id="time-stamp-token-39fbf78c-9cec-4cc1-ac21-a467d2238405"> 			MIAGCSqGSIb3DQEHAq...
+		</xades:EncapsulatedTimeStamp>
+	</xades:SignatureTimeStamp>
+</xades:UnsignedSignatureProperties>
+----

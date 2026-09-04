@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -22,10 +22,11 @@ package eu.europa.esig.dss.validation.process.bbb;
 
 import eu.europa.esig.dss.detailedreport.jaxb.XmlConstraintsConclusion;
 import eu.europa.esig.dss.i18n.I18nProvider;
-import eu.europa.esig.dss.policy.jaxb.MultiValuesConstraint;
+import eu.europa.esig.dss.model.policy.MultiValuesRule;
 import eu.europa.esig.dss.validation.process.ChainItem;
 import eu.europa.esig.dss.validation.process.ValidationProcessUtils;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -36,16 +37,16 @@ import java.util.List;
 public abstract class AbstractMultiValuesCheckItem<T extends XmlConstraintsConclusion> extends ChainItem<T> {
 
 	/** The constraint value */
-	private final MultiValuesConstraint constraint;
+	private final MultiValuesRule constraint;
 
 	/**
 	 * Default constructor
 	 *
 	 * @param i18nProvider {@link I18nProvider}
 	 * @param result the result
-	 * @param constraint {@link MultiValuesConstraint}
+	 * @param constraint {@link MultiValuesRule}
 	 */
-	protected AbstractMultiValuesCheckItem(I18nProvider i18nProvider, T result, MultiValuesConstraint constraint) {
+	protected AbstractMultiValuesCheckItem(I18nProvider i18nProvider, T result, MultiValuesRule constraint) {
 		super(i18nProvider, result, constraint);
 		this.constraint = constraint;
 	}
@@ -57,7 +58,7 @@ public abstract class AbstractMultiValuesCheckItem<T extends XmlConstraintsConcl
 	 * @return TRUE if the value is allowed by the constraint, FALSE otherwise
 	 */
 	protected boolean processValueCheck(String value) {
-		return ValidationProcessUtils.processValueCheck(value, constraint.getId());
+		return ValidationProcessUtils.processValueCheck(value, constraint.getValues());
 	}
 
 	/**
@@ -66,8 +67,37 @@ public abstract class AbstractMultiValuesCheckItem<T extends XmlConstraintsConcl
 	 * @param values {@link String} to check
 	 * @return TRUE if the values are allowed by the constraint, FALSE otherwise
 	 */
-	protected boolean processValuesCheck(List<String> values) {
-		return ValidationProcessUtils.processValuesCheck(values, constraint.getId());
+	protected boolean processValuesCheck(Collection<String> values) {
+		return ValidationProcessUtils.processValuesCheck(values, constraint.getValues());
+	}
+
+    /**
+     * Checks the values
+	 *
+     * @param values {@link String} to check
+     * @return TRUE if all the values are allowed by the constraint, FALSE otherwise
+     */
+    protected boolean processAllValuesCheck(Collection<String> values) {
+        return ValidationProcessUtils.processAllValuesCheck(values, constraint.getValues());
+    }
+
+	/**
+	 * Checks whether {@code values} contain all the expected values specified in the policy constraint
+	 *
+	 * @param values {@link String} to check
+	 * @return TRUE if all the values are allowed by the constraint, FALSE otherwise
+	 */
+	protected boolean processValuesForEachExpectedCheck(Collection<String> values) {
+		return ValidationProcessUtils.processValuesForEachExpectedCheck(values, constraint.getValues());
+	}
+
+	/**
+	 * Gets a list of expected values as specified within the policy constraint
+	 *
+	 * @return a list of {@link String}s
+	 */
+	protected List<String> getValues() {
+		return constraint.getValues();
 	}
 
 }

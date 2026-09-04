@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<pki xmlns="http://pki-factory.nowina.lu/pki-factory" name="eaa">
+
+    <!-- National RootCA certificate-->
+    <certificate>
+        <serialNumber>100000</serialNumber>
+        <subject>Test-RootCA</subject>
+        <organization>Test Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100000">Test-RootCA</issuer>
+        <notBefore year="-10"/>
+        <notAfter year="10"/>
+        <keyAlgo encryption="RSA" length="4096"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>crlSign</keyUsage>
+            <keyUsage>keyCertSign</keyUsage>
+        </keyUsages>
+        <ca/>
+    </certificate>
+
+    <!-- CA/QC -->
+    <certificate>
+        <serialNumber>100010</serialNumber>
+        <subject>Test-CAQC</subject>
+        <organization>Test Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100000">Test-RootCA</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="4096"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>crlSign</keyUsage>
+            <keyUsage>keyCertSign</keyUsage>
+        </keyUsages>
+        <ca/>
+        <crl>Test-RootCA</crl>
+        <caIssuers>Test-RootCA</caIssuers>
+        <trustAnchor/>
+    </certificate>
+
+    <!-- CA for QEAA -->
+    <certificate>
+        <serialNumber>100100</serialNumber>
+        <subject>Test-CA-QEAA</subject>
+        <organization>Test Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100010">Test-RootCA</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="4096"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>crlSign</keyUsage>
+            <keyUsage>keyCertSign</keyUsage>
+        </keyUsages>
+        <ca/>
+        <crl>Test-CAQC</crl>
+        <caIssuers>Test-CAQC</caIssuers>
+        <trustAnchor/>
+    </certificate>
+
+    <!-- QEAA certificate-->
+    <certificate>
+        <serialNumber>100101</serialNumber>
+        <subject>Test-QEAA-CERT</subject>
+        <organization>Test Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100100">Test-CAQC</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="2048"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>digitalSignature</keyUsage>
+            <keyUsage>nonRepudiation</keyUsage>
+        </keyUsages>
+        <qcStatementIds>
+            <qcStatement>0.4.0.1862.1.1</qcStatement>
+            <qcStatement>0.4.0.1862.1.4</qcStatement>
+        </qcStatementIds>
+        <qcTypes>
+            <qcType>0.4.0.1862.1.6.1</qcType>
+        </qcTypes>
+        <crl>Test-CA-QEAA</crl>
+        <ocsp>Test-CA-QEAA</ocsp>
+        <caIssuers>Test-CA-QEAA</caIssuers>
+    </certificate>
+
+    <!-- CA for PubEAA -->
+    <certificate>
+        <serialNumber>100200</serialNumber>
+        <subject>Test-CA-PubEAA</subject>
+        <organization>Test Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100010">Test-RootCA</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="4096"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>crlSign</keyUsage>
+            <keyUsage>keyCertSign</keyUsage>
+        </keyUsages>
+        <ca/>
+        <crl>Test-CAQC</crl>
+        <caIssuers>Test-CAQC</caIssuers>
+        <trustAnchor/>
+    </certificate>
+
+    <!-- PubEAA certificate-->
+    <certificate>
+        <serialNumber>100201</serialNumber>
+        <subject>Test-PubEAA-CERT</subject>
+        <organization>Test Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100200">Test-CAQC</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="2048"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>digitalSignature</keyUsage>
+            <keyUsage>nonRepudiation</keyUsage>
+        </keyUsages>
+        <qcStatementIds>
+            <qcStatement>0.4.0.1862.1.1</qcStatement>
+            <qcStatement>0.4.0.1862.1.4</qcStatement>
+        </qcStatementIds>
+        <qcTypes>
+            <qcType>0.4.0.1862.1.6.1</qcType>
+        </qcTypes>
+        <qcPSB>
+            <countryName>EU</countryName>
+            <authSourceIdentification>NTP-12345</authSourceIdentification>
+            <legislationIdentification>eIDAS</legislationIdentification>
+        </qcPSB>
+        <crl>Test-CA-PubEAA</crl>
+        <ocsp>Test-CA-PubEAA</ocsp>
+        <caIssuers>Test-CA-PubEAA</caIssuers>
+    </certificate>
+
+    <!-- CA for EAA -->
+    <certificate>
+        <serialNumber>100300</serialNumber>
+        <subject>Test-CA-EAA</subject>
+        <organization>Test Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100010">Test-RootCA</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="4096"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>crlSign</keyUsage>
+            <keyUsage>keyCertSign</keyUsage>
+        </keyUsages>
+        <ca/>
+        <crl>Test-CAQC</crl>
+        <caIssuers>Test-CAQC</caIssuers>
+        <trustAnchor/>
+    </certificate>
+
+    <!-- EAA certificate-->
+    <certificate>
+        <serialNumber>100301</serialNumber>
+        <subject>Test-EAA-CERT</subject>
+        <organization>Test Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100300">Test-CAQC</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="2048"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>digitalSignature</keyUsage>
+            <keyUsage>nonRepudiation</keyUsage>
+        </keyUsages>
+        <crl>Test-CA-EAA</crl>
+        <ocsp>Test-CA-EAA</ocsp>
+        <caIssuers>Test-CA-EAA</caIssuers>
+    </certificate>
+
+    <!-- Invalid test cases -->
+
+    <!-- PKC CA -->
+    <certificate>
+        <serialNumber>100020</serialNumber>
+        <subject>Test-PKC</subject>
+        <organization>Test Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100000">Test-RootCA</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="4096"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>crlSign</keyUsage>
+            <keyUsage>keyCertSign</keyUsage>
+        </keyUsages>
+        <ca/>
+        <crl>Test-RootCA</crl>
+        <caIssuers>Test-RootCA</caIssuers>
+        <trustAnchor/>
+    </certificate>
+
+    <!-- PKC for QEAA -->
+    <certificate>
+        <serialNumber>100120</serialNumber>
+        <subject>Test-PKC-QEAA</subject>
+        <organization>Test Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100020">Test-RootCA</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="4096"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>crlSign</keyUsage>
+            <keyUsage>keyCertSign</keyUsage>
+        </keyUsages>
+        <ca/>
+        <crl>Test-PKC</crl>
+        <caIssuers>Test-PKC</caIssuers>
+        <trustAnchor/>
+    </certificate>
+
+    <!-- PKC QEAA certificate-->
+    <certificate>
+        <serialNumber>100121</serialNumber>
+        <subject>Test-PKC-QEAA-CERT</subject>
+        <organization>Test Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100120">Test-PKC</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="2048"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>digitalSignature</keyUsage>
+            <keyUsage>nonRepudiation</keyUsage>
+        </keyUsages>
+        <qcStatementIds>
+            <qcStatement>0.4.0.1862.1.1</qcStatement>
+            <qcStatement>0.4.0.1862.1.4</qcStatement>
+        </qcStatementIds>
+        <qcTypes>
+            <qcType>0.4.0.1862.1.6.1</qcType>
+        </qcTypes>
+        <crl>Test-PKC-QEAA</crl>
+        <ocsp>Test-PKC-QEAA</ocsp>
+        <caIssuers>Test-PKC-QEAA</caIssuers>
+    </certificate>
+
+    <!-- Not trusted -->
+
+    <!-- Not-trusted CA -->
+    <certificate>
+        <serialNumber>200010</serialNumber>
+        <subject>Test-not-trusted</subject>
+        <organization>Test Not Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100000">Test-RootCA</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="4096"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>crlSign</keyUsage>
+            <keyUsage>keyCertSign</keyUsage>
+        </keyUsages>
+        <ca/>
+        <crl>Test-RootCA</crl>
+        <caIssuers>Test-RootCA</caIssuers>
+    </certificate>
+
+    <!-- Not-trusted CA for EAA -->
+    <certificate>
+        <serialNumber>200100</serialNumber>
+        <subject>Test-not-trusted-EAA</subject>
+        <organization>Test Not Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="200010">Test-RootCA</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="4096"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>crlSign</keyUsage>
+            <keyUsage>keyCertSign</keyUsage>
+        </keyUsages>
+        <ca/>
+        <crl>Test-PKC</crl>
+        <caIssuers>Test-PKC</caIssuers>
+    </certificate>
+
+    <!-- PKC QEAA certificate-->
+    <certificate>
+        <serialNumber>200101</serialNumber>
+        <subject>Test-not-trusted-EAA-CERT</subject>
+        <organization>Test Not Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="200100">Test-not-trusted</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="2048"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>digitalSignature</keyUsage>
+            <keyUsage>nonRepudiation</keyUsage>
+        </keyUsages>
+        <qcStatementIds>
+            <qcStatement>0.4.0.1862.1.1</qcStatement>
+            <qcStatement>0.4.0.1862.1.4</qcStatement>
+        </qcStatementIds>
+        <qcTypes>
+            <qcType>0.4.0.1862.1.6.1</qcType>
+        </qcTypes>
+        <crl>Test-not-trusted-EAA</crl>
+        <ocsp>Test-not-trusted-EAA</ocsp>
+        <caIssuers>Test-not-trusted-EAA</caIssuers>
+    </certificate>
+
+</pki>

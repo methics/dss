@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -37,12 +37,13 @@ import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.model.x509.Token;
 import eu.europa.esig.dss.simplereport.SimpleReport;
 import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.spi.validation.CertificateVerifier;
+import eu.europa.esig.dss.spi.validation.RevocationDataVerifier;
+import eu.europa.esig.dss.spi.validation.status.RevocationFreshnessStatus;
 import eu.europa.esig.dss.test.PKIFactoryAccess;
 import eu.europa.esig.dss.utils.Utils;
-import eu.europa.esig.dss.spi.validation.CertificateVerifier;
 import eu.europa.esig.dss.validation.SignedDocumentValidator;
 import eu.europa.esig.dss.validation.reports.Reports;
-import eu.europa.esig.dss.spi.validation.status.RevocationFreshnessStatus;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.signature.XAdESService;
 import org.junit.jupiter.api.AfterEach;
@@ -58,6 +59,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -110,6 +112,24 @@ class XAdESExtensionRevocationFreshnessTest extends PKIFactoryAccess {
 		
 		validate(extendedDocument);
 	}
+
+	@Test
+	void skipCheckTest() {
+		signatureParameters.setSignatureLevel(SignatureLevel.XAdES_BASELINE_B);
+
+		certificateVerifier.setAlertOnNoRevocationAfterBestSignatureTime(null);
+		certificateVerifier.setAlertOnUncoveredPOE(null);
+
+		XAdESService service = new XAdESService(certificateVerifier);
+		service.setTspSource(getAlternateGoodTsa());
+
+		DSSDocument signedDocument = sign(service, documentToSign);
+
+		signatureParameters.setSignatureLevel(SignatureLevel.XAdES_BASELINE_LT);
+		DSSDocument extendedDocument = service.extendDocument(signedDocument, signatureParameters);
+
+		validate(extendedDocument);
+	}
 	
 	@Test
 	void throwExceptionOnNoRevocationAfterBestSignatureTimeTest() {
@@ -132,6 +152,20 @@ class XAdESExtensionRevocationFreshnessTest extends PKIFactoryAccess {
 		assertTrue(exception.getMessage().contains("Fresh revocation data is missing for one or more certificate(s)."));
 		assertTrue(exception.getMessage().contains(getSigningCert().getDSSIdAsString()));
 		assertTrue(exception.getMessage().contains("No revocation data found after the best signature time"));
+
+		RevocationDataVerifier revocationDataVerifier = RevocationDataVerifier.createDefaultRevocationDataVerifier();
+		certificateVerifier.setRevocationDataVerifier(revocationDataVerifier);
+
+		exception = assertThrows(AlertException.class, () ->
+				service.extendDocument(signedDocument, signatureParameters));
+		assertTrue(exception.getMessage().contains("Fresh revocation data is missing for one or more certificate(s)."));
+		assertTrue(exception.getMessage().contains(getSigningCert().getDSSIdAsString()));
+		assertTrue(exception.getMessage().contains("No revocation data found after the best signature time"));
+
+		revocationDataVerifier.setSignatureMaximumRevocationFreshness(7889400L * 1000); // 3 months
+		DSSDocument extendedDocument = service.extendDocument(signedDocument, signatureParameters);
+
+		validate(extendedDocument);
 	}
 
 	@Test
@@ -200,7 +234,7 @@ class XAdESExtensionRevocationFreshnessTest extends PKIFactoryAccess {
 		Status statusCallback = callback.status;
 		assertNotNull(statusCallback);
 
-		assertTrue(statusCallback instanceof RevocationFreshnessStatus);
+        assertInstanceOf(RevocationFreshnessStatus.class, statusCallback);
 		RevocationFreshnessStatus revocationFreshnessStatus = (RevocationFreshnessStatus) statusCallback;
 
 		String message = revocationFreshnessStatus.getMessage();
@@ -221,7 +255,7 @@ class XAdESExtensionRevocationFreshnessTest extends PKIFactoryAccess {
 		assertEquals(new HashSet<>(relatedObjectIds), relatedTokens.stream().map(Token::getDSSIdAsString).collect(Collectors.toSet()));
 
 		Token token = relatedTokens.iterator().next();
-		assertTrue(token instanceof CertificateToken);
+        assertInstanceOf(CertificateToken.class, token);
 
 		String tokenErrorMessage = revocationFreshnessStatus.getMessageForToken(token);
 		assertTrue(Utils.isStringNotEmpty(tokenErrorMessage));
@@ -258,7 +292,7 @@ class XAdESExtensionRevocationFreshnessTest extends PKIFactoryAccess {
 		Status statusCallback = callback.status;
 		assertNotNull(statusCallback);
 
-		assertTrue(statusCallback instanceof RevocationFreshnessStatus);
+        assertInstanceOf(RevocationFreshnessStatus.class, statusCallback);
 		RevocationFreshnessStatus revocationFreshnessStatus = (RevocationFreshnessStatus) statusCallback;
 
 		String message = revocationFreshnessStatus.getMessage();

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -157,26 +157,25 @@ public class TimestampQualificationAtTimeBlock extends Chain<XmlValidationTimest
 
     @Override
     protected void addAdditionalInfo() {
-        //setIndication();
         result.setTimestampQualification(tstQualif);
         result.setValidationTime(validationTime);
         result.setDateTime(date);
     }
 
     private ChainItem<XmlValidationTimestampQualificationAtTime> hasMraEnactedTrustService(List<TrustServiceWrapper> services) {
-        return new RelatedToMraEnactedTrustServiceCheck<>(i18nProvider, result, services, getFailLevelConstraint());
+        return new RelatedToMraEnactedTrustServiceCheck<>(i18nProvider, result, services, getFailLevelRule());
     }
 
     private ChainItem<XmlValidationTimestampQualificationAtTime> hasQTST(List<TrustServiceWrapper> services) {
-        return new QTSTCheck<>(i18nProvider, result, services, getFailLevelConstraint());
+        return new QTSTCheck<>(i18nProvider, result, services, getFailLevelRule());
     }
 
     private ChainItem<XmlValidationTimestampQualificationAtTime> hasGrantedStatus(List<TrustServiceWrapper> services) {
-        return new GrantedStatusCheck<>(i18nProvider, result, services, getFailLevelConstraint());
+        return new GrantedStatusCheck<>(i18nProvider, result, services, getFailLevelRule());
     }
 
     private ChainItem<XmlValidationTimestampQualificationAtTime> hasGrantedStatusAtDate(List<TrustServiceWrapper> services) {
-        return new GrantedStatusAtTimeCheck<>(i18nProvider, result, services, validationTime, getFailLevelConstraint());
+        return new GrantedStatusAtTimeCheck<>(i18nProvider, result, services, validationTime, getFailLevelRule());
     }
 
     private boolean isMRAEnactedForTrustedList(List<TrustServiceWrapper> trustServices) {

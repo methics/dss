@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -37,7 +37,7 @@ import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSMessageDigest;
 import eu.europa.esig.dss.model.TimestampBinary;
 import eu.europa.esig.dss.signature.SignatureRequirementsChecker;
-import eu.europa.esig.dss.signature.SigningOperation;
+import eu.europa.esig.dss.enumerations.SigningOperation;
 import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.spi.signature.AdvancedSignature;
@@ -67,9 +67,9 @@ public class JAdESLevelBaselineT extends JAdESExtensionBuilder implements JAdESL
 	protected TSPSource tspSource;
 
 	/**
-	 * The cached instance of a document validator
+	 * The cached instance of a document analyzer
 	 */
-	protected AbstractJWSDocumentAnalyzer documentValidator;
+	protected AbstractJWSDocumentAnalyzer documentAnalyzer;
 
 	/**
 	 * Internal variable: defines the current signing procedure (used in signature creation/extension)
@@ -104,18 +104,18 @@ public class JAdESLevelBaselineT extends JAdESExtensionBuilder implements JAdESL
 		Objects.requireNonNull(document, "The document cannot be null");
 		Objects.requireNonNull(tspSource, "The TSPSource cannot be null");
 
-		JWSDocumentAnalyzerFactory documentValidatorFactory = new JWSDocumentAnalyzerFactory();
-		documentValidator = documentValidatorFactory.create(document);
-		documentValidator.setCertificateVerifier(certificateVerifier);
-		documentValidator.setDetachedContents(params.getDetachedContents());
-		documentValidator.setValidationContextExecutor(CompleteValidationContextExecutor.INSTANCE);
+		JWSDocumentAnalyzerFactory documentAnalyzerFactory = new JWSDocumentAnalyzerFactory();
+		documentAnalyzer = documentAnalyzerFactory.create(document);
+		documentAnalyzer.setCertificateVerifier(certificateVerifier);
+		documentAnalyzer.setDetachedContents(params.getDetachedContents());
+		documentAnalyzer.setValidationContextExecutor(CompleteValidationContextExecutor.INSTANCE);
 
-		JWSJsonSerializationObject jwsJsonSerializationObject = documentValidator.getJwsJsonSerializationObject();
+		JWSJsonSerializationObject jwsJsonSerializationObject = documentAnalyzer.getJwsJsonSerializationObject();
 		assertJWSJsonSerializationObjectValid(jwsJsonSerializationObject);
 
-		List<AdvancedSignature> signatures = documentValidator.getSignatures();
+		List<AdvancedSignature> signatures = documentAnalyzer.getSignatures();
 		if (Utils.isCollectionEmpty(signatures)) {
-			throw new IllegalInputException("There is no signature to extend!");
+			throw new IllegalInputException("No signatures found to be extended!");
 		}
 
 		List<AdvancedSignature> signaturesToExtend = signatures;
@@ -152,7 +152,7 @@ public class JAdESLevelBaselineT extends JAdESExtensionBuilder implements JAdESL
 		for (AdvancedSignature signature : signaturesToExtend) {
 			JAdESSignature jadesSignature = (JAdESSignature) signature;
 
-			assertEtsiUComponentsConsistent(jadesSignature.getJws(), params.isBase64UrlEncodedEtsiUComponents());
+			assertEtsiUComponentsConsistent(jadesSignature.getJws(), params);
 
 			JAdESTimestampParameters signatureTimestampParameters = params.getSignatureTimestampParameters();
 			DigestAlgorithm timestampDigestAlgorithm = signatureTimestampParameters.getDigestAlgorithm();
@@ -165,7 +165,7 @@ public class JAdESLevelBaselineT extends JAdESExtensionBuilder implements JAdESL
 
 			JAdESEtsiUHeader etsiUHeader = jadesSignature.getEtsiUHeader();
 			etsiUHeader.addComponent(JAdESHeaderParameterNames.SIG_TST, tstContainer,
-					params.isBase64UrlEncodedEtsiUComponents());
+					Utils.isTrue(params.isBase64UrlEncodedEtsiUComponents()));
 		}
 	}
 

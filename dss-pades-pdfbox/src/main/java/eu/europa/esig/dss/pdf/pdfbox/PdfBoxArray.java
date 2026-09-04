@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -57,7 +57,6 @@ class PdfBoxArray implements PdfArray {
 
 	/**
 	 * The document
-	 *
 	 * NOTE for developers: Retain this reference ! PDDocument must not be garbage collected
 	 */
 	private final PDDocument document;
@@ -73,7 +72,6 @@ class PdfBoxArray implements PdfArray {
 	public PdfBoxArray(final PDDocument document) {
 		this(new COSArray(), document);
 	}
-
 
 	/**
 	 * Default constructor
@@ -116,18 +114,14 @@ class PdfBoxArray implements PdfArray {
 
 	@Override
 	public byte[] getStreamBytes(int i) throws IOException {
-		COSBase val = wrapped.get(i);
+		COSBase val = wrapped.getObject(i);
 		return toBytes(val);
 	}
 
 	private byte[] toBytes(COSBase val) throws IOException {
 		COSStream cosStream = null;
-		if (val instanceof COSObject) {
-			COSObject o = (COSObject) val;
-			final COSBase object = o.getObject();
-			if (object instanceof COSStream) {
-				cosStream = (COSStream) object;
-			}
+		if (val instanceof COSStream) {
+			cosStream = (COSStream) val;
 		}
 		if (cosStream == null) {
 			throw new DSSException("Cannot find value for " + val + " of class " + val.getClass());
@@ -138,41 +132,40 @@ class PdfBoxArray implements PdfArray {
 	}
 
 	@Override
-	public Long getObjectNumber(int i) {
+	public PdfBoxObjectKey getObjectKey(int i) {
 		COSBase val = wrapped.get(i);
 		if (val instanceof COSObject) {
-			return ((COSObject) val).getObjectNumber();
+			return new PdfBoxObjectKey(val.getKey());
 		}
 		return null;
 	}
 
 	@Override
 	public Number getNumber(int i) {
-		COSBase val = wrapped.get(i);
-		if (val != null) {
-			if (val instanceof COSInteger) {
-				return ((COSInteger) val).longValue();
-			} else if (val instanceof COSNumber) {
-				return ((COSNumber) val).floatValue();
-			}
+		COSBase val = wrapped.getObject(i);
+		if (val instanceof COSInteger) {
+			return ((COSInteger) val).longValue();
+		} else if (val instanceof COSNumber) {
+			return ((COSNumber) val).floatValue();
 		}
 		return null;
 	}
 
 	@Override
 	public String getString(int i) {
-		return wrapped.getString(i);
+		COSBase val = wrapped.getObject(i);
+		if (val instanceof COSString) {
+			return ((COSString) val).getString();
+		}
+		return null;
 	}
 
 	@Override
 	public PdfDict getAsDict(int i) {
 		COSDictionary cosDictionary = null;
-		COSBase cosBaseObject = wrapped.get(i);
+		COSBase cosBaseObject = wrapped.getObject(i);
 		if (cosBaseObject instanceof COSDictionary) {
 			cosDictionary = (COSDictionary) cosBaseObject;
-		} else if (cosBaseObject instanceof COSObject) {
-			COSObject cosObject = (COSObject) cosBaseObject;
-			cosDictionary = (COSDictionary) cosObject.getObject();
 		}
 		if (cosDictionary != null) {
 			return new PdfBoxDict(cosDictionary, document, this);

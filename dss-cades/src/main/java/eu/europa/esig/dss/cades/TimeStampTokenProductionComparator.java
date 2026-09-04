@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -26,14 +26,16 @@ import org.bouncycastle.tsp.TimeStampToken;
 
 import java.io.Serializable;
 import java.util.Comparator;
+import java.util.Date;
+import java.util.Objects;
 
 /**
  * The class used to compare production time of {@code TimeStampToken}s
  * Class checks the production time of timestamps and their covered data
- * 
+ * <p>
  * The method compare() returns 
  *     -1 if the {@code timeStampTokenOne} was created before {@code timeStampTokenTwo}
- *     0 if TimeStampTokens were created in the same
+ *     0 if TimeStampTokens were created at the same time
  *     1 if the {@code timeStampTokenOne} was created after {@code timeStampTokenTwo}
  *     
  */
@@ -68,12 +70,16 @@ public class TimeStampTokenProductionComparator implements Comparator<TimeStampT
 	}
 	
 	private int compareByGenerationTime(TimeStampToken tst1, TimeStampToken tst2) {
-		return DSSASN1Utils.getTimeStampTokenGenerationTime(tst1).compareTo(DSSASN1Utils.getTimeStampTokenGenerationTime(tst2));
+		Date timeStampTokenOneGenerationTime = DSSASN1Utils.getTimeStampTokenGenerationTime(tst1);
+		Date timeStampTokenTwoGenerationTime = DSSASN1Utils.getTimeStampTokenGenerationTime(tst2);
+		Objects.requireNonNull(timeStampTokenOneGenerationTime, "No generation time found for the timestamp token!");
+		Objects.requireNonNull(timeStampTokenTwoGenerationTime, "No generation time found for the timestamp token!");
+		return timeStampTokenOneGenerationTime.compareTo(timeStampTokenTwoGenerationTime);
 	}
 
 	private int compareByHashTableSize(TimeStampToken tst1, TimeStampToken tst2) {
-		ASN1Sequence atsHashIndexOne = CMSUtils.getAtsHashIndex(tst1.getUnsignedAttributes());
-		ASN1Sequence atsHashIndexTwo = CMSUtils.getAtsHashIndex(tst2.getUnsignedAttributes());
+		ASN1Sequence atsHashIndexOne = CAdESUtils.getAtsHashIndex(tst1.getUnsignedAttributes());
+		ASN1Sequence atsHashIndexTwo = CAdESUtils.getAtsHashIndex(tst2.getUnsignedAttributes());
 
 		if (atsHashIndexOne != null && atsHashIndexTwo != null) {
 			int hashTableSizeOne = getHashTableSize(atsHashIndexOne);

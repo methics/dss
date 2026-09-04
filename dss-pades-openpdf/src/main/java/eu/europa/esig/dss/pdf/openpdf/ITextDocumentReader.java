@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -33,14 +33,19 @@ import com.lowagie.text.pdf.PdfName;
 import com.lowagie.text.pdf.PdfNumber;
 import com.lowagie.text.pdf.PdfObject;
 import com.lowagie.text.pdf.PdfReader;
+import com.lowagie.text.pdf.PdfStream;
 import com.lowagie.text.pdf.PdfString;
 import com.lowagie.text.pdf.PdfWriter;
+import com.lowagie.text.pdf.RandomAccessFileOrArray;
 import eu.europa.esig.dss.enumerations.CertificationPermission;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
+import eu.europa.esig.dss.model.FileDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.pades.PAdESCommonParameters;
+import eu.europa.esig.dss.pades.PAdESUtils;
 import eu.europa.esig.dss.pades.exception.InvalidPasswordException;
+import eu.europa.esig.dss.pades.validation.PdfObjectKey;
 import eu.europa.esig.dss.pades.validation.PdfSignatureDictionary;
 import eu.europa.esig.dss.pades.validation.PdfSignatureField;
 import eu.europa.esig.dss.pdf.AnnotationBox;
@@ -48,7 +53,9 @@ import eu.europa.esig.dss.pdf.PdfAnnotation;
 import eu.europa.esig.dss.pdf.PdfDict;
 import eu.europa.esig.dss.pdf.PdfDocumentReader;
 import eu.europa.esig.dss.pdf.PdfDssDict;
+import eu.europa.esig.dss.pdf.PdfMemoryUsageSetting;
 import eu.europa.esig.dss.pdf.PdfSigDictWrapper;
+import eu.europa.esig.dss.pdf.PdfSigDictWrapperFactory;
 import eu.europa.esig.dss.pdf.SingleDssDict;
 import eu.europa.esig.dss.pdf.visible.ImageRotationUtils;
 import eu.europa.esig.dss.spi.DSSUtils;
@@ -65,6 +72,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * The IText (OpenPdf) implementation of {@code PdfDocumentReader}
@@ -80,8 +88,8 @@ public class ITextDocumentReader implements PdfDocumentReader {
 	/** The original PDF document */
 	private DSSDocument dssDocument;
 
-	/** The map of signature dictionaries and corresponding signature fields */
-	private Map<PdfSignatureDictionary, List<PdfSignatureField>> signatureDictionaryMap;
+	/** The list of signature dictionaries */
+	private List<PdfSignatureDictionary> signatureDictionaries;
 
 	/**
 	 * Default constructor of the OpenPDF implementation of the Reader
@@ -95,20 +103,64 @@ public class ITextDocumentReader implements PdfDocumentReader {
 	}
 
 	/**
-	 * The OpenPDF implementation of the Reader
-	 * 
+	 * The OpenPDF implementation of the Reader to read a password-protected document
+	 *
 	 * @param dssDocument {@link DSSDocument} to read
 	 * @param passwordProtection binaries of a password to open a protected document
 	 * @throws IOException if an exception occurs
 	 * @throws InvalidPasswordException if the password is not provided or invalid for a protected document
 	 */
 	public ITextDocumentReader(DSSDocument dssDocument, byte[] passwordProtection) throws IOException, InvalidPasswordException {
+		this(dssDocument, passwordProtection, PAdESUtils.DEFAULT_PDF_MEMORY_USAGE_SETTING);
+	}
+
+	/**
+	 * The OpenPDF implementation of the Reader
+	 * 
+	 * @param dssDocument {@link DSSDocument} to read
+	 * @param passwordProtection binaries of a password to open a protected document
+	 * @param pdfMemoryUsageSetting {@link PdfMemoryUsageSetting}
+	 * @throws IOException if an exception occurs
+	 * @throws InvalidPasswordException if the password is not provided or invalid for a protected document
+	 */
+	public ITextDocumentReader(DSSDocument dssDocument, byte[] passwordProtection, PdfMemoryUsageSetting pdfMemoryUsageSetting)
+			throws IOException, InvalidPasswordException {
 		Objects.requireNonNull(dssDocument, "The document must be defined!");
+		Objects.requireNonNull(pdfMemoryUsageSetting, "PdfMemoryUsageSetting must be defined!");
 		this.dssDocument = dssDocument;
-		try (InputStream is = dssDocument.openStream()) {
-			this.pdfReader = new PdfReader(is, passwordProtection);
+		try {
+			if (PdfMemoryUsageSetting.Mode.MEMORY_FULL != pdfMemoryUsageSetting.getMode() && dssDocument instanceof FileDocument) {
+				FileDocument fileDocument = (FileDocument) dssDocument;
+				this.pdfReader = getFileDocumentPdfReader(fileDocument, passwordProtection, pdfMemoryUsageSetting);
+
+			} else if (dssDocument instanceof InMemoryDocument) {
+				InMemoryDocument inMemoryDocument = (InMemoryDocument) dssDocument;
+				this.pdfReader = new PdfReader(inMemoryDocument.getBytes(), passwordProtection);
+
+			} else {
+				try (InputStream is = dssDocument.openStream()) {
+					this.pdfReader = new PdfReader(is, passwordProtection);
+				}
+			}
+
 		} catch (BadPasswordException e) {
-            throw new InvalidPasswordException(String.format("Encrypted document : %s", e.getMessage()));
+			throw new InvalidPasswordException(String.format("Encrypted document : %s", e.getMessage()));
+		}
+	}
+
+	private PdfReader getFileDocumentPdfReader(FileDocument fileDocument, byte[] passwordProtection,
+											   PdfMemoryUsageSetting pdfMemoryUsageSetting) throws IOException {
+		String filenameSource = fileDocument.getFile().getAbsolutePath();
+		switch (pdfMemoryUsageSetting.getMode()) {
+			case MEMORY_BUFFERED:
+				// This condition uses a MappedByteBuffer to process the file in memory
+				return new PdfReader(filenameSource, passwordProtection);
+			case FILE:
+				// NOTE: RandomAccessFileOrArray is closed on PdfReader.close()
+				return new PdfReader(new RandomAccessFileOrArray(filenameSource, false, true), passwordProtection);
+			default:
+				throw new IllegalArgumentException(String.format("The PdfMemoryUsageSetting mode '%s' is not " +
+						"supported in dss-pades-openpdf implementation!", pdfMemoryUsageSetting.getMode()));
 		}
 	}
 
@@ -156,10 +208,12 @@ public class ITextDocumentReader implements PdfDocumentReader {
 	}
 
 	@Override
-	public Map<PdfSignatureDictionary, List<PdfSignatureField>> extractSigDictionaries() {
-		if (signatureDictionaryMap == null) {
-			signatureDictionaryMap = new LinkedHashMap<>();
-			Map<Integer, PdfSigDictWrapper> pdfObjectDictMap = new LinkedHashMap<>();
+	public List<PdfSignatureDictionary> extractSigDictionaries() {
+		if (signatureDictionaries == null) {
+			signatureDictionaries = new ArrayList<>();
+
+			final Map<Integer, List<PdfSignatureField>> pdfSigFieldMap = new LinkedHashMap<>();
+			final Map<Integer, PdfDictionary> pdfDictMap = new LinkedHashMap<>();
 			
 			AcroFields acroFields = pdfReader.getAcroFields();
 			Map<String, Item> allFields = acroFields.getAllFields();
@@ -167,7 +221,7 @@ public class ITextDocumentReader implements PdfDocumentReader {
 			LOG.debug("{} signature field(s) found", names.size());
 			
 			for (String name : names) {
-				PdfDictionary pdfField = allFields.get(name).getMerged(0);
+				PdfDictionary pdfField = allFields.get(name).getValue(0);
 				final ITextPdfDict fieldDict = new ITextPdfDict(pdfField);
 				final PdfSignatureField pdfSignatureField = new PdfSignatureField(fieldDict);
 
@@ -176,30 +230,34 @@ public class ITextDocumentReader implements PdfDocumentReader {
 				if (indirectObject != null) {
 					refNumber = indirectObject.getNumber();
 				}
-				PdfSigDictWrapper signature = pdfObjectDictMap.get(refNumber);
-				if (signature == null) {
-					try {
-						PdfDict dictionary = new ITextPdfDict(pdfField.getAsDict(PdfName.V));
-						signature = new PdfSigDictWrapper(dictionary);
-					} catch (Exception e) {
-						LOG.warn("Unable to create a PdfSignatureDictionary for field with name '{}'", name, e);
-						continue;
-					}
 
-					List<PdfSignatureField> fieldList = new ArrayList<>();
-					fieldList.add(pdfSignatureField);
-					signatureDictionaryMap.put(signature, fieldList);
-					pdfObjectDictMap.put(refNumber, signature);
+				PdfDictionary sigDictionary = pdfField.getAsDict(PdfName.V);
+				pdfDictMap.put(refNumber, sigDictionary);
 
-				} else {
-					List<PdfSignatureField> fieldList = signatureDictionaryMap.get(signature);
-					fieldList.add(pdfSignatureField);
-					LOG.warn("More than one field refers to the same signature dictionary: {}!", fieldList);
+				List<PdfSignatureField> pdfSignatureFields = pdfSigFieldMap.computeIfAbsent(refNumber, k -> new ArrayList<>());
+				pdfSignatureFields.add(pdfSignatureField);
+			}
 
+			for (Map.Entry<Integer, PdfDictionary> signatureDictionaryEntry : pdfDictMap.entrySet()) {
+				Integer sigDictNumber = signatureDictionaryEntry.getKey();
+				PdfDictionary sigDictionary = signatureDictionaryEntry.getValue();
+				List<PdfSignatureField> pdfSignatureFields = pdfSigFieldMap.get(sigDictNumber);
+
+				if (Utils.collectionSize(pdfSignatureFields) > 1) {
+					LOG.warn("More than one field refers to the same signature dictionary: {}!", pdfSignatureFields);
+				}
+				try {
+					PdfDict dictionary = new ITextPdfDict(sigDictionary);
+					PdfSigDictWrapper pdfSigDictWrapper = new PdfSigDictWrapperFactory(dictionary, pdfSignatureFields).create();
+					signatureDictionaries.add(pdfSigDictWrapper);
+
+				} catch (Exception e) {
+					LOG.warn("Unable to create a PdfSignatureDictionary for field(s) {}",
+							pdfSignatureFields.stream().map(PdfSignatureField::getFieldName).collect(Collectors.toList()), e);
 				}
 			}
 		}
-		return signatureDictionaryMap;
+		return signatureDictionaries;
 	}
 
 	@Override
@@ -210,7 +268,7 @@ public class ITextDocumentReader implements PdfDocumentReader {
 	@Override
 	public boolean isSignatureCoversWholeDocument(PdfSignatureDictionary signatureDictionary) {
 		AcroFields acroFields = pdfReader.getAcroFields();
-		List<PdfSignatureField> fields = signatureDictionaryMap.get(signatureDictionary);
+		List<PdfSignatureField> fields = signatureDictionary.getSignatureFields();
 		if (Utils.isCollectionNotEmpty(fields)) {
 			return acroFields.signatureCoversWholeDocument(fields.get(0).getFieldName());
 		}
@@ -323,6 +381,30 @@ public class ITextDocumentReader implements PdfDocumentReader {
 
 	private boolean isSignedField(PdfDictionary annotDictionary) {
 		return annotDictionary.getAsDict(PdfName.V) != null;
+	}
+
+	/**
+	 * Gets {@code PdfObject} from the PDF by the given {@code objectKey}
+	 *
+	 * @param objectKey {@link PdfObjectKey} to get object for
+	 * @return {@link PdfObject} when the object corresponding to the defined key found, NULL otherwise
+	 */
+	public PdfObject getObjectByKey(PdfObjectKey objectKey) {
+		if (objectKey instanceof ITextObjectKey) {
+			ITextObjectKey iTextObjectKey = (ITextObjectKey) objectKey;
+			return pdfReader.getPdfObject(iTextObjectKey.getValue().getNumber());
+		}
+		throw new IllegalStateException("objectKey shall be of type 'ITextObjectKey'!");
+	}
+
+	/**
+	 * Creates a {@code PdfStream} with given {@code binaries}
+	 *
+	 * @param binaries binary array to be included to the stream
+	 * @return {@link PdfStream}
+	 */
+	public PdfStream createPdfStream(byte[] binaries) {
+		return new PdfStream(binaries);
 	}
 
 	@Override
@@ -462,7 +544,7 @@ public class ITextDocumentReader implements PdfDocumentReader {
 		float numVersion = 1 + Character.getNumericValue(pdfVersionLastChar) / 10f; // transform to "1 + 0.x = 1.x"
 		if (numVersion == 1) {
 			// OpenPdf returns 0 for PDF 2.0
-			++numVersion; // TODO : improve
+			numVersion += 1; // TODO : improve
 		}
 		return numVersion;
 	}

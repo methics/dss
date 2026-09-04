@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -66,18 +66,18 @@ class DSS1809Test extends AbstractASiCWithCAdESTestValidation {
 		List<XmlDigestMatcher> digestMatchers = signature.getDigestMatchers();
 		assertEquals(2, digestMatchers.size());
 		
-		boolean ASiCManifestSigned = false;
+		boolean asicManifestSigned = false;
 		boolean entryFound = false;
 		for (XmlDigestMatcher digestMatcher : digestMatchers) {
 			assertNotNull(digestMatcher.getDocumentName());
 			if ("META-INF/ASiCManifest.xml".equals(digestMatcher.getDocumentName())) {
 				assertEquals(DigestMatcherType.MESSAGE_DIGEST, digestMatcher.getType());
-				ASiCManifestSigned = true;
+				asicManifestSigned = true;
 			} else if (DigestMatcherType.MANIFEST_ENTRY.equals(digestMatcher.getType())) {
 				entryFound = true;
 			}
 		}
-		assertTrue(ASiCManifestSigned);
+		assertTrue(asicManifestSigned);
 		assertTrue(entryFound);
 	}
 	
@@ -157,7 +157,7 @@ class DSS1809Test extends AbstractASiCWithCAdESTestValidation {
 	}
 
 	private void assertCertificateChainWithinFoundCertificates(List<CertificateWrapper> certChain, FoundCertificatesProxy foundCertificates) {
-		Set<String> certIds = foundCertificates.getRelatedCertificates().stream().map(c -> c.getId()).collect(Collectors.toSet());
+		Set<String> certIds = foundCertificates.getRelatedCertificates().stream().map(CertificateWrapper::getId).collect(Collectors.toSet());
 		for (CertificateWrapper certificateWrapper : certChain) {
 			if (certificateWrapper.isTrusted()) {
 				break;

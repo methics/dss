@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -28,16 +28,17 @@ import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.enumerations.SignaturePackaging;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.spi.validation.CertificateVerifier;
 import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
 import eu.europa.esig.dss.utils.Utils;
-import eu.europa.esig.dss.spi.validation.CertificateVerifier;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.signature.XAdESService;
 import eu.europa.esig.dss.xml.common.definition.DSSNamespace;
-import eu.europa.esig.dss.xml.utils.DomUtils;
 import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigElement;
 import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigNamespace;
 import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigPath;
+import eu.europa.esig.dss.xml.utils.DomUtils;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -53,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class XmlNonAdESExtensionTToLTAWithExpiredUserTest extends AbstractXAdESTestExtension {
 
-    private final DSSNamespace xmldsigNamespace = XMLDSigNamespace.NS;
+    private static final DSSNamespace xmldsigNamespace = XMLDSigNamespace.NS;
 
     private CertificateVerifier certificateVerifier;
     private XAdESService service;
@@ -96,10 +97,10 @@ class XmlNonAdESExtensionTToLTAWithExpiredUserTest extends AbstractXAdESTestExte
     protected DSSDocument getSignedDocument(DSSDocument doc) {
         DSSDocument signedDocument = super.getSignedDocument(doc);
         Document docDom = DomUtils.buildDOM(signedDocument);
-        NodeList signatures = DomUtils.getNodeList(docDom, XMLDSigPath.ALL_SIGNATURES_PATH);
+        NodeList signatures = XPathUtils.getNodeList(docDom, XMLDSigPath.ALL_SIGNATURES_PATH);
         assertEquals(1, signatures.getLength());
         Node signatureElement = signatures.item(0);
-        Node signatureValueNode = DomUtils.getElement(signatureElement, XMLDSigPath.SIGNATURE_VALUE_PATH);
+        Node signatureValueNode = XPathUtils.getElement(signatureElement, XMLDSigPath.SIGNATURE_VALUE_PATH);
         final Element keyInfoDom = DomUtils.createElementNS(docDom, xmldsigNamespace, XMLDSigElement.KEY_INFO);
         signatureValueNode.getParentNode().insertBefore(keyInfoDom, signatureValueNode.getNextSibling());
         for (CertificateToken token : getCertificateChain()) {

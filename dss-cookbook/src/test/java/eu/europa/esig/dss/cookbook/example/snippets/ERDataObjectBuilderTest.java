@@ -1,26 +1,26 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.cookbook.example.snippets;
 
-import eu.europa.esig.dss.cades.validation.evidencerecord.CAdESEvidenceRecordDigestBuilder;
+import eu.europa.esig.dss.cades.evidencerecord.CAdESEvidenceRecordDigestBuilder;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.evidencerecord.asn1.digest.ASN1EvidenceRecordDataObjectDigestBuilder;
 import eu.europa.esig.dss.evidencerecord.asn1.digest.ASN1EvidenceRecordRenewalDigestBuilder;
@@ -36,6 +36,8 @@ import org.junit.jupiter.api.Test;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class ERDataObjectBuilderTest {
 
@@ -67,6 +69,8 @@ class ERDataObjectBuilderTest {
         // Extract hash value to be included within a preservation system / evidence record
         byte[] value = digest.getValue();
         // end::xml-er[]
+
+        assertNotNull(value);
 
         // tag::asn1-er[]
         // import eu.europa.esig.dss.evidencerecord.asn1.digest.ASN1EvidenceRecordDataObjectDigestBuilder;
@@ -139,6 +143,15 @@ class ERDataObjectBuilderTest {
         // Default : FALSE (computes digest on the whole signature)
         cadesEvidenceRecordDigestBuilder.setParallelEvidenceRecord(true);
 
+        // Optional : Define whether the CMS shall be forced DER-encoded,
+        // as required by ETSI TS 119 122-3 v1.1.1.
+        // The requirement is not present in RFC 4998, thus both implementation may exist.
+        // When TRUE : DER-encodes the CMS signature before computing hash
+        // (aligned with ETSI TS 119 122-3 v1.1.1).
+        // When FALSE : computes hash on the original coding of CMS (aligned with RFC 4998).
+        // Default : FALSE (computes digest on the existing coding of CMS)
+        cadesEvidenceRecordDigestBuilder.setDEREncoded(true);
+
         // Use method #build to build signature digest for internal-evidence-record
         // incorporation
         Digest signatureDigest = cadesEvidenceRecordDigestBuilder.build();
@@ -148,6 +161,8 @@ class ERDataObjectBuilderTest {
         // the first position, and digest of the detached document at the second
         List<Digest> digests = cadesEvidenceRecordDigestBuilder.buildExternalEvidenceRecordDigest();
         // end::cades-er[]
+
+        assertNotNull(signatureDigest);
 
         // tag::xmlers-renewal-er[]
         // import eu.europa.esig.dss.enumerations.DigestAlgorithm;
@@ -191,6 +206,8 @@ class ERDataObjectBuilderTest {
         List<Digest> digestGroup = xmlEvidenceRecordRenewalDigestBuilder.buildHashTreeRenewalDigestGroup();
         // end::xmlers-renewal-er[]
 
+        assertNotNull(tstRenewalDigest);
+
         // tag::ers-renewal-er[]
         // import eu.europa.esig.dss.enumerations.DigestAlgorithm;
         // import eu.europa.esig.dss.evidencerecord.asn1.digest.ASN1EvidenceRecordRenewalDigestBuilder;
@@ -227,6 +244,8 @@ class ERDataObjectBuilderTest {
         // ArchiveTimeStampSequence attribute and provided detached content documents
         List<Digest> ersDigestGroup = asn1EvidenceRecordRenewalDigestBuilder.buildHashTreeRenewalDigestGroup();
         // end::ers-renewal-er[]
+
+        assertNotNull(ersTstRenewalDigest);
 
     }
 

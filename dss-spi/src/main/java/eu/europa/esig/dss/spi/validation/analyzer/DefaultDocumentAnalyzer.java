@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -58,7 +58,6 @@ import eu.europa.esig.dss.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -76,7 +75,7 @@ public abstract class DefaultDocumentAnalyzer implements DocumentAnalyzer {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultDocumentAnalyzer.class);
 
     static {
-        Security.addProvider(DSSSecurityProvider.getSecurityProvider());
+        DSSSecurityProvider.initSystemProviders();
     }
 
     /**
@@ -138,6 +137,11 @@ public abstract class DefaultDocumentAnalyzer implements DocumentAnalyzer {
      * Provides methods to extract a policy content by its identifier
      */
     private SignaturePolicyProvider signaturePolicyProvider;
+
+    /**
+     * Loads a {@code SignaturePolicyValidator} to perform a signature policy validation
+     */
+    private SignaturePolicyValidatorLoader signaturePolicyValidatorLoader;
 
     /**
      * Cached list of signatures extracted from the document
@@ -302,6 +306,11 @@ public abstract class DefaultDocumentAnalyzer implements DocumentAnalyzer {
     }
 
     @Override
+    public void setSignaturePolicyValidatorLoader(SignaturePolicyValidatorLoader signaturePolicyValidatorLoader) {
+        this.signaturePolicyValidatorLoader = signaturePolicyValidatorLoader;
+    }
+
+    @Override
     public ValidationContext validate() {
         Objects.requireNonNull(certificateVerifier, "CertificateVerifier is not defined");
         Objects.requireNonNull(document, "Document is not provided to the validator");
@@ -378,6 +387,10 @@ public abstract class DefaultDocumentAnalyzer implements DocumentAnalyzer {
             for (AdvancedSignature counterSignature : signature.getCounterSignatures()) {
                 ValidationData counterSignatureValidationData = validationContext.getValidationData(counterSignature);
                 validationDataContainer.addValidationData(counterSignature, counterSignatureValidationData);
+                for (TimestampToken timestampToken : counterSignature.getAllTimestamps()) {
+                    ValidationData timestampValidationData = validationContext.getValidationData(timestampToken);
+                    validationDataContainer.addValidationData(timestampToken, timestampValidationData);
+                }
             }
         }
         for (TimestampToken detachedTimestamp : detachedTimestamps) {
@@ -494,7 +507,21 @@ public abstract class DefaultDocumentAnalyzer implements DocumentAnalyzer {
      * @return {@link SignaturePolicyValidatorLoader}
      */
     public SignaturePolicyValidatorLoader getSignaturePolicyValidatorLoader() {
-        return new DefaultSignaturePolicyValidatorLoader();
+        if (signaturePolicyValidatorLoader == null) {
+            signaturePolicyValidatorLoader = DefaultSignaturePolicyValidatorLoader
+                    .defaultUnlessSpecifiedSignaturePolicyValidatorLoader(getDefaultSignaturePolicyValidator());
+        }
+        return signaturePolicyValidatorLoader;
+    }
+
+    /**
+     * Gets a signature format dependent {@code SignaturePolicyValidator}, based on the specification.
+     * E.g. {@code XMLSignaturePolicyValidator} for XAdES, etc.
+     *
+     * @return {@link SignaturePolicyValidator}
+     */
+    protected SignaturePolicyValidator getDefaultSignaturePolicyValidator() {
+        return null;
     }
 
     /**
@@ -592,7 +619,6 @@ public abstract class DefaultDocumentAnalyzer implements DocumentAnalyzer {
         if (signatures == null) {
             signatures = buildSignatures();
         }
-        // delegated in CommonSignatureValidator
         return signatures;
     }
 
@@ -627,7 +653,9 @@ public abstract class DefaultDocumentAnalyzer implements DocumentAnalyzer {
      * Returns a list of timestamp validators for timestamps embedded into the container
      *
      * @return a list of {@link TimestampAnalyzer}s
+     * @deprecated since DSS 6.5. To be removed.
      */
+    @Deprecated
     protected List<TimestampAnalyzer> getTimestampReaders() {
         // nothing by default
         return Collections.emptyList();
@@ -693,13 +721,13 @@ public abstract class DefaultDocumentAnalyzer implements DocumentAnalyzer {
     }
 
     /**
-     * Gets an evidence record from a {@code evidenceRecordReader}
+     * Gets an evidence record from a {@code evidenceRecordAnalyzer}
      *
-     * @param evidenceRecordReader {@link EvidenceRecordAnalyzer}
+     * @param evidenceRecordAnalyzer {@link EvidenceRecordAnalyzer}
      * @return {@link EvidenceRecord}
      */
-    protected EvidenceRecord getEvidenceRecord(EvidenceRecordAnalyzer evidenceRecordReader) {
-        EvidenceRecord evidenceRecord = evidenceRecordReader.getEvidenceRecord();
+    protected EvidenceRecord getEvidenceRecord(EvidenceRecordAnalyzer evidenceRecordAnalyzer) {
+        EvidenceRecord evidenceRecord = evidenceRecordAnalyzer.getEvidenceRecord();
         if (evidenceRecord != null) {
             List<SignatureScope> evidenceRecordScopes = getEvidenceRecordScopes(evidenceRecord);
             evidenceRecord.setEvidenceRecordScopes(evidenceRecordScopes);
@@ -727,6 +755,18 @@ public abstract class DefaultDocumentAnalyzer implements DocumentAnalyzer {
      */
     protected <T extends AdvancedSignature> void processSignaturesValidation(Collection<T> allSignatureList) {
         for (final AdvancedSignature signature : allSignatureList) {
+            processSignatureValidation(signature);
+        }
+    }
+
+    /**
+     * Performs cryptographic validation of the signature
+     *
+     * @param signature {@link AdvancedSignature}
+     * @param <T> {@link AdvancedSignature}
+     */
+    protected <T extends AdvancedSignature> void processSignatureValidation(T signature) {
+        if (signature != null) {
             signature.checkSignatureIntegrity();
         }
     }

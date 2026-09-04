@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -30,16 +30,20 @@ import eu.europa.esig.dss.evidencerecord.xml.definition.XMLERSPath;
 import eu.europa.esig.dss.evidencerecord.xml.validation.XmlArchiveTimeStampChainObject;
 import eu.europa.esig.dss.evidencerecord.xml.validation.XmlArchiveTimeStampObject;
 import eu.europa.esig.dss.evidencerecord.xml.validation.XmlEvidenceRecord;
+import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.DSSMessageDigest;
 import eu.europa.esig.dss.model.Digest;
-import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.spi.DSSMessageDigestCalculator;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.xml.utils.DomUtils;
 import eu.europa.esig.dss.xml.utils.XMLCanonicalizer;
-import org.w3c.dom.Document;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * This class contains supporting method for XMLERS evidence record renewal
@@ -73,10 +77,8 @@ public class XMLEvidenceRecordRenewalDigestBuilderHelper extends AbstractEvidenc
     public DSSMessageDigest buildTimeStampRenewalDigest(ArchiveTimeStampObject archiveTimeStamp, DigestAlgorithm digestAlgorithm, String canonicalizationMethod) {
         XmlArchiveTimeStampObject xmlArchiveTimeStampObject = (XmlArchiveTimeStampObject) archiveTimeStamp;
         Element archiveTimeStampElement = xmlArchiveTimeStampObject.getElement();
-        Element timeStampElement = DomUtils.getElement(archiveTimeStampElement, XMLERSPath.TIME_STAMP_PATH);
-        byte[] canonicalizedSubtree = XMLCanonicalizer.createInstance(canonicalizationMethod).canonicalize(timeStampElement);
-        byte[] digestValue = DSSUtils.digest(digestAlgorithm, canonicalizedSubtree);
-        return new DSSMessageDigest(digestAlgorithm, digestValue);
+        Element timeStampElement = XPathUtils.getElement(archiveTimeStampElement, XMLERSPath.TIME_STAMP_PATH);
+        return getDigestOnCanonicalizedNode(timeStampElement, digestAlgorithm, canonicalizationMethod);
     }
 
     @Override
@@ -96,8 +98,8 @@ public class XMLEvidenceRecordRenewalDigestBuilderHelper extends AbstractEvidenc
      */
     public DSSMessageDigest buildArchiveTimeStampSequenceDigest(DigestAlgorithm digestAlgorithm, String canonicalizationMethod,
                                                                 int archiveTimeStampChainOrder) {
-        Document documentCopy = createDocumentCopy();
-        Element archiveTimeStampSequence = DomUtils.getElement(documentCopy.getDocumentElement(), XMLERSPath.ARCHIVE_TIME_STAMP_SEQUENCE_PATH);
+        Element evidenceRecordElementCopy = createEvidenceRecordElementCopy();
+        Element archiveTimeStampSequence = XPathUtils.getElement(evidenceRecordElementCopy, XMLERSPath.ARCHIVE_TIME_STAMP_SEQUENCE_PATH);
         NodeList childNodes = archiveTimeStampSequence.getChildNodes();
         for (int i = 0; i < childNodes.getLength(); i++) {
             Node node = childNodes.item(i);
@@ -113,23 +115,26 @@ public class XMLEvidenceRecordRenewalDigestBuilderHelper extends AbstractEvidenc
                 }
             }
         }
-
-        byte[] canonicalizedSubtree = XMLCanonicalizer.createInstance(canonicalizationMethod)
-                .canonicalize(archiveTimeStampSequence);
-        byte[] digestValue = DSSUtils.digest(digestAlgorithm, canonicalizedSubtree);
-
-        return new DSSMessageDigest(digestAlgorithm, digestValue);
+        return getDigestOnCanonicalizedNode(archiveTimeStampSequence, digestAlgorithm, canonicalizationMethod);
     }
 
-    private Document createDocumentCopy() {
+    private DSSMessageDigest getDigestOnCanonicalizedNode(Node node, DigestAlgorithm digestAlgorithm, String canonicalizationAlgorithm) {
+        if (node != null) {
+            final DSSMessageDigestCalculator messageDigestCalculator = new DSSMessageDigestCalculator(digestAlgorithm);
+            try (OutputStream os = messageDigestCalculator.getOutputStream()) {
+                XMLCanonicalizer.createInstance(canonicalizationAlgorithm).canonicalize(node, os);
+                return messageDigestCalculator.getMessageDigest(digestAlgorithm);
+            } catch (IOException e) {
+                throw new DSSException("Unable to compute canonicalize a node", e);
+            }
+        }
+        return null;
+    }
+
+    private Element createEvidenceRecordElementCopy() {
         XmlEvidenceRecord xmlEvidenceRecord = (XmlEvidenceRecord) evidenceRecord;
         Element evidenceRecordElement = xmlEvidenceRecord.getEvidenceRecordElement();
-        Node originalRoot = evidenceRecordElement.getOwnerDocument().getDocumentElement();
-
-        Document documentCopy = DomUtils.buildDOM();
-        Node copiedRoot = documentCopy.importNode(originalRoot, true);
-        documentCopy.appendChild(copiedRoot);
-        return documentCopy;
+        return DomUtils.createDeepCopy(evidenceRecordElement);
     }
 
 }

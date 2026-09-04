@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -23,11 +23,13 @@ package eu.europa.esig.dss.jades;
 import eu.europa.esig.dss.jades.validation.JWS;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
+import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.spi.DSSUtils;
 import org.jose4j.jwx.CompactSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -51,12 +53,21 @@ public class JWSCompactSerializationParser {
 	private final DSSDocument document;
 
 	/**
-	 * The default constructor
+	 * The constructor to parse a {@code DSSDocument}
 	 *
 	 * @param document {@link DSSDocument} to parse
 	 */
 	public JWSCompactSerializationParser(DSSDocument document) {
 		this.document = document;
+	}
+
+	/**
+	 * The constructor to parse a byte array
+	 *
+	 * @param binaries {@link DSSDocument} to parse
+	 */
+	public JWSCompactSerializationParser(byte[] binaries) {
+		this.document = new InMemoryDocument(binaries);
 	}
 
 	/**
@@ -84,9 +95,11 @@ public class JWSCompactSerializationParser {
 
 		int separatorCounter = 0;
 		boolean ending = false; // used to detect and "trim" line breaks in the end of JWS string
-		try (InputStream is = document.openStream()) {
+		try (InputStream is = document.openStream();
+		     BufferedInputStream bis = new BufferedInputStream(is)) {
+
 			int b;
-			while ((b = is.read()) != -1) {
+			while ((b = bis.read()) != -1) {
 				byte currentByte = (byte) b;
 				
 				if (DSSUtils.isLineBreakByte(currentByte)) {

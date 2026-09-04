@@ -267,12 +267,12 @@
             <Constraint>
                 <Name Key="BBB_CV_IRDOF">Has the reference data object been found?</Name>
                 <Status>OK</Status>
-                <AdditionalInfo>Reference : JWS_SIGNING_INPUT_DIGEST</AdditionalInfo>
+                <AdditionalInfo>Reference : JWS_SIGNING_INPUT</AdditionalInfo>
             </Constraint>
             <Constraint>
                 <Name Key="BBB_CV_IRDOI">Is the reference data object intact?</Name>
                 <Status>OK</Status>
-                <AdditionalInfo>Reference : JWS_SIGNING_INPUT_DIGEST</AdditionalInfo>
+                <AdditionalInfo>Reference : JWS_SIGNING_INPUT</AdditionalInfo>
             </Constraint>
             <Constraint>
                 <Name Key="BBB_CV_ISI">Is the signature intact?</Name>
@@ -308,6 +308,16 @@
                 <Status>OK</Status>
                 <AdditionalInfo>Signature algorithm RSA with SHA256 with key size 2048 at validation time : 2021-07-09 10:04</AdditionalInfo>
             </Constraint>
+            <Conclusion>
+                <Indication>PASSED</Indication>
+            </Conclusion>
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2021-07-09T10:04:33Z">
+            <Constraint>
+                <Name Key="ACCM">Are cryptographic constraints met for the signature creation?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Signature algorithm RSA with SHA256 with key size 2048 at validation time : 2021-07-09 10:04</AdditionalInfo>
+            </Constraint>
             <Constraint>
                 <Name Key="ACCM">Are cryptographic constraints met for the jws signing input?</Name>
                 <Status>OK</Status>
@@ -316,17 +326,18 @@
             <Conclusion>
                 <Indication>PASSED</Indication>
             </Conclusion>
-            <CryptographicValidation secure="true">
+            <SignatureCryptographicValidation TokenId="S-EC1FD6906412EED291F00796F969D1D86786EFDFFF0E3700CF74BA65567B4B28">
                 <Algorithm>
                     <Name>RSA with SHA256</Name>
                     <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</Uri>
                     <KeyLength>2048</KeyLength>
                 </Algorithm>
                 <NotAfter>2022-12-31T23:00:00Z</NotAfter>
-                <ValidationTime>2021-07-09T10:04:33Z</ValidationTime>
-                <ConcernedMaterial>S-EC1FD6906412EED291F00796F969D1D86786EFDFFF0E3700CF74BA65567B4B28</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="C-CF2E8D7B9B949524B8CE689CFCF337A48BAE0C0D5FA5F8C894FC1D69227B1014">
                 <Source>SIGNATURE</Source>

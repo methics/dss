@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -30,8 +30,8 @@ import eu.europa.esig.dss.enumerations.CertificateSourceType;
 import eu.europa.esig.dss.enumerations.Context;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
-import eu.europa.esig.dss.policy.ValidationPolicy;
-import eu.europa.esig.dss.policy.jaxb.LevelConstraint;
+import eu.europa.esig.dss.model.policy.LevelRule;
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
 import eu.europa.esig.dss.validation.process.Chain;
 import eu.europa.esig.dss.validation.process.ChainItem;
 import eu.europa.esig.dss.validation.process.bbb.isc.checks.DigestValueMatchCheck;
@@ -90,7 +90,7 @@ public class IdentificationOfTheSigningCertificate extends Chain<XmlISC> {
 		 */
 		ChainItem<XmlISC> item = firstItem = signingCertificateRecognition();
 
-		boolean isSignature = Context.SIGNATURE.equals(context) || Context.COUNTER_SIGNATURE.equals(context);
+		boolean isSignature = Context.SIGNATURE.equals(context) || Context.COUNTER_SIGNATURE.equals(context) || Context.KEY_BINDING_SIGNATURE.equals(context);
 		boolean isTimestamp = Context.TIMESTAMP.equals(context);
 
 		if (isSignature || isTimestamp) {
@@ -102,7 +102,7 @@ public class IdentificationOfTheSigningCertificate extends Chain<XmlISC> {
 			 * step 2.
 			 */
 
-			if (!token.isSigningCertificateReferencePresent()) {
+			if (!token.isSigningCertificateReferencePresent() || token.getSigningCertificate() == null) {
 				return;
 			}
 			
@@ -155,22 +155,22 @@ public class IdentificationOfTheSigningCertificate extends Chain<XmlISC> {
 	}
 
 	private ChainItem<XmlISC> signingCertificateRecognition() {
-		LevelConstraint constraint = validationPolicy.getSigningCertificateRecognitionConstraint(context);
+		LevelRule constraint = validationPolicy.getSigningCertificateRecognitionConstraint(context);
 		return new SigningCertificateRecognitionCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlISC> digestValuePresent() {
-		LevelConstraint constraint = validationPolicy.getSigningCertificateDigestValuePresentConstraint(context);
+		LevelRule constraint = validationPolicy.getSigningCertificateDigestValuePresentConstraint(context);
 		return new DigestValuePresentCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlISC> digestValueMatch() {
-		LevelConstraint constraint = validationPolicy.getSigningCertificateDigestValueMatchConstraint(context);
+		LevelRule constraint = validationPolicy.getSigningCertificateDigestValueMatchConstraint(context);
 		return new DigestValueMatchCheck(i18nProvider, result, token, constraint);
 	}
 
 	private ChainItem<XmlISC> issuerSerialMatch() {
-		LevelConstraint constraint = validationPolicy.getSigningCertificateIssuerSerialMatchConstraint(context);
+		LevelRule constraint = validationPolicy.getSigningCertificateIssuerSerialMatchConstraint(context);
 		return new IssuerSerialMatchCheck(i18nProvider, result, token, constraint);
 	}
 

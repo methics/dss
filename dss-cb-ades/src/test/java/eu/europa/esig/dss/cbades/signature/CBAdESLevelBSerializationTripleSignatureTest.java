@@ -1,0 +1,124 @@
+/**
+ * DSS - Digital Signature Services
+ * Copyright (C) 2015 European Commission, provided under the CEF programme
+ * <p>
+ * This file is part of the "DSS - Digital Signature Services" project.
+ * <p>
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * <p>
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * <p>
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+package eu.europa.esig.dss.cbades.signature;
+
+import eu.europa.esig.dss.diagnostic.DiagnosticData;
+import eu.europa.esig.dss.enumerations.COSEStructureType;
+import eu.europa.esig.dss.enumerations.SignatureLevel;
+import eu.europa.esig.dss.enumerations.SignaturePackaging;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.signature.DocumentSignatureService;
+import eu.europa.esig.dss.spi.signature.AdvancedSignature;
+import org.junit.jupiter.api.BeforeEach;
+
+import java.util.Calendar;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
+class CBAdESLevelBSerializationTripleSignatureTest extends AbstractCBAdESTestSignature {
+
+    private DocumentSignatureService<CBAdESSignatureParameters, CBAdESTimestampParameters> service;
+    private DSSDocument originalDocument;
+    private CBAdESSignatureParameters signatureParameters;
+
+    private DSSDocument documentToSign;
+
+    @BeforeEach
+    void init() throws Exception {
+        service = new CBAdESService(getCompleteCertificateVerifier());
+        originalDocument = new InMemoryDocument("Hello World!".getBytes(), "doc.txt");
+        signatureParameters = new CBAdESSignatureParameters();
+        signatureParameters.setSigningCertificate(getSigningCert());
+        signatureParameters.setCertificateChain(getCertificateChain());
+        signatureParameters.setSignaturePackaging(SignaturePackaging.ENVELOPING);
+        signatureParameters.setSignatureLevel(SignatureLevel.CB_AdES_BASELINE_B);
+
+        signatureParameters.setCoseStructureType(COSEStructureType.COSE_SIGN);
+    }
+
+    @Override
+    protected DSSDocument sign() {
+        Calendar calendar = Calendar.getInstance();
+        signatureParameters.bLevel().setSigningDate(calendar.getTime());
+
+        documentToSign = originalDocument;
+        DSSDocument signedDocument = super.sign();
+
+        calendar.add(Calendar.SECOND, 1);
+        signatureParameters.bLevel().setSigningDate(calendar.getTime());
+
+        documentToSign = signedDocument;
+        DSSDocument doubleSignedDocument = super.sign();
+
+        calendar.add(Calendar.SECOND, 1);
+        signatureParameters.bLevel().setSigningDate(calendar.getTime());
+
+        documentToSign = doubleSignedDocument;
+        DSSDocument tripleSignedDocument = super.sign();
+        documentToSign = originalDocument;
+
+        return tripleSignedDocument;
+    }
+
+    @Override
+    protected void checkAdvancedSignatures(List<AdvancedSignature> signatures) {
+        super.checkAdvancedSignatures(signatures);
+        assertEquals(3, signatures.size());
+
+        assertNotEquals(signatures.get(0).getId(), signatures.get(1).getId());
+        assertNotEquals(signatures.get(1).getId(), signatures.get(2).getId());
+        assertNotEquals(signatures.get(0).getId(), signatures.get(2).getId());
+    }
+
+    @Override
+    protected void checkNumberOfSignatures(DiagnosticData diagnosticData) {
+        assertEquals(3, diagnosticData.getSignatures().size());
+    }
+
+    @Override
+    protected void checkSigningDate(DiagnosticData diagnosticData) {
+        // skip
+    }
+
+    @Override
+    protected DSSDocument getDocumentToSign() {
+        return documentToSign;
+    }
+
+    @Override
+    protected DocumentSignatureService<CBAdESSignatureParameters, CBAdESTimestampParameters> getService() {
+        return service;
+    }
+
+    @Override
+    protected CBAdESSignatureParameters getSignatureParameters() {
+        return signatureParameters;
+    }
+
+    @Override
+    protected String getSigningAlias() {
+        return GOOD_USER;
+    }
+
+}

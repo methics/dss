@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -29,7 +29,9 @@ import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.model.x509.Token;
 import eu.europa.esig.dss.model.x509.revocation.Revocation;
 
+import java.math.BigInteger;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -80,6 +82,11 @@ public abstract class RevocationToken<R extends Revocation> extends Token {
 	 * revoked)
 	 */
 	protected Date revocationDate;
+
+	/**
+	 * Sequential number of revocation token (applicable for CRLs only)
+	 */
+	protected BigInteger crlNumber;
 
 	/**
 	 * expired-certs-on-crl time extension
@@ -218,6 +225,15 @@ public abstract class RevocationToken<R extends Revocation> extends Token {
 	}
 
 	/**
+	 * Gets sequential number of the revocation token, when present (CRL only)
+	 *
+	 * @return {@link BigInteger}
+	 */
+	public BigInteger getCRLNumber() {
+		return crlNumber;
+	}
+
+	/**
 	 * Returns the expiredCertsOnCRL date (from CRL)
 	 * 
 	 * @return the expiredCertsOnCRL date value from a CRL or null
@@ -266,6 +282,14 @@ public abstract class RevocationToken<R extends Revocation> extends Token {
 	 * @return {@link RevocationCertificateSource}
 	 */
 	public abstract RevocationCertificateSource getCertificateSource();
+
+	/**
+	 * Returns a collection of embedded certificates.
+	 * NOTE: returns empty collection for CRL.
+	 *
+	 * @return a list of {@code CertificateToken}s
+	 */
+	public abstract List<CertificateToken> getCertificates();
 
 	/**
 	 * Sets the external origin

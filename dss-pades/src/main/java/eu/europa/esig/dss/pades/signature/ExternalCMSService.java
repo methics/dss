@@ -1,46 +1,50 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.pades.signature;
 
-import eu.europa.esig.dss.signature.AbstractSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESLevelBaselineT;
-import eu.europa.esig.dss.cades.signature.CMSSignedDocument;
-import eu.europa.esig.dss.cades.signature.CustomContentSigner;
+import eu.europa.esig.dss.cades.signature.CMSForCAdESBuilderHelper;
+import eu.europa.esig.dss.cms.CMS;
+import eu.europa.esig.dss.cms.CMSUtils;
+import eu.europa.esig.dss.cms.operator.CustomContentSigner;
+import eu.europa.esig.dss.cms.operator.CustomContentSignerBuilder;
 import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
+import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSMessageDigest;
 import eu.europa.esig.dss.model.DigestDocument;
-import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
+import eu.europa.esig.dss.pades.PAdESUtils;
+import eu.europa.esig.dss.signature.AbstractSignatureParameters;
 import eu.europa.esig.dss.signature.SignatureRequirementsChecker;
 import eu.europa.esig.dss.signature.SignatureValueChecker;
 import eu.europa.esig.dss.spi.DSSUtils;
-import eu.europa.esig.dss.spi.x509.CMSSignedDataBuilder;
-import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
+import eu.europa.esig.dss.spi.signature.resources.DSSResourcesHandlerBuilder;
 import eu.europa.esig.dss.spi.validation.CertificateVerifier;
+import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
 import org.bouncycastle.cms.CMSSignedData;
-import org.bouncycastle.cms.SignerInfoGenerator;
+import org.bouncycastle.operator.ContentSigner;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -72,6 +76,9 @@ public class ExternalCMSService {
     /** The TSPSource to use for timestamp requests */
     private TSPSource tspSource;
 
+    /** This object is used to write a created CMS into a defined implementation of an OutputStream or a DSSDocument */
+    protected DSSResourcesHandlerBuilder resourcesHandlerBuilder = PAdESUtils.DEFAULT_RESOURCES_HANDLER_BUILDER;
+
     /**
      * This is the default constructor for {@code PAdESCMSGeneratorService}.
      *
@@ -91,6 +98,17 @@ public class ExternalCMSService {
      */
     public void setTspSource(final TSPSource tspSource) {
         this.tspSource = tspSource;
+    }
+
+    /**
+     * This method sets a {@code DSSResourcesHandlerBuilder} to be used for operating with CMS object output containers
+     * during the signature creation procedure.
+     * NOTE: The {@code DSSResourcesHandlerBuilder} is supported only within the 'dss-cms-stream' module!
+     *
+     * @param resourcesHandlerBuilder {@link DSSResourcesHandlerBuilder}
+     */
+    public void setResourcesHandlerBuilder(DSSResourcesHandlerBuilder resourcesHandlerBuilder) {
+        this.resourcesHandlerBuilder = CMSUtils.getDSSResourcesHandlerBuilder(resourcesHandlerBuilder);
     }
 
     /**
@@ -122,20 +140,17 @@ public class ExternalCMSService {
      */
     protected ToBeSigned buildToBeSignedData(DSSMessageDigest messageDigest, PAdESSignatureParameters parameters) {
         final SignatureAlgorithm signatureAlgorithm = parameters.getSignatureAlgorithm();
-        final CustomContentSigner customContentSigner = new CustomContentSigner(signatureAlgorithm.getJCEId());
+        final CustomContentSigner customContentSigner = new CustomContentSignerBuilder().build(signatureAlgorithm);
 
-        final SignerInfoGenerator signerInfoGenerator = new PAdESSignerInfoGeneratorBuilder(messageDigest)
-                .build(parameters, customContentSigner);
-
-        final CMSSignedDataBuilder cmsSignedDataBuilder = getCMSSignedDataBuilder(parameters);
-        cmsSignedDataBuilder.createCMSSignedData(signerInfoGenerator, new InMemoryDocument(messageDigest.getValue()));
+        CMSForCAdESBuilderHelper cmsBuilderHelper = initCMSBuilderHelper(messageDigest, parameters, customContentSigner);
+        cmsBuilderHelper.createCMS();
 
         final byte[] dataToSign = customContentSigner.getOutputStream().toByteArray();
         return new ToBeSigned(dataToSign);
     }
 
     /**
-     * This method is used to create a signed CMSSignedData to be used for incorporation within a PDF document
+     * This method is used to create a signed CMS to be used for incorporation within a PDF document
      * for a PAdES signature creation
      *
      * @param messageDigest {@link DSSMessageDigest}
@@ -144,45 +159,40 @@ public class ExternalCMSService {
      *                            containing configuration for CMS creation
      * @param signatureValue {@link SignatureValue}
      *                            representing private-key signing of the DTBS
-     * @return {@link CMSSignedDocument} representing a CMS signature suitable for PAdES signature creation
+     * @return {@link DSSDocument} representing a CMS signature suitable for PAdES signature creation
      */
-    public CMSSignedDocument signMessageDigest(DSSMessageDigest messageDigest, PAdESSignatureParameters parameters,
-                                               SignatureValue signatureValue) {
+    public DSSDocument signMessageDigest(DSSMessageDigest messageDigest, PAdESSignatureParameters parameters,
+                                         SignatureValue signatureValue) {
         Objects.requireNonNull(messageDigest, "messageDigest cannot be null!");
         Objects.requireNonNull(parameters, "SignatureParameters cannot be null!");
         Objects.requireNonNull(signatureValue, "SignatureValue cannot be null!");
         assertConfigurationValid(messageDigest, parameters);
 
-        final CMSSignedData cmsSignedData = buildCMSSignedData(messageDigest, parameters, signatureValue);
-
+        final CMS cms = buildCMS(messageDigest, parameters, signatureValue);
         parameters.reinit();
-        return new CMSSignedDocument(cmsSignedData);
+        return CMSUtils.writeToDSSDocument(cms, resourcesHandlerBuilder);
     }
 
     /**
-     * This method builds a {@code CMSSignedData} without executing additional checks on provided configuration
+     * This method builds a {@code CMS} without executing additional checks on provided configuration
      *
      * @param messageDigest {@link DSSMessageDigest} representing digest of PDF ByteRange to be signed
      * @param parameters {@link PAdESSignatureParameters}
      * @param signatureValue {@link SignatureValue}
-     * @return {@link CMSSignedData}
+     * @return {@link CMS}
      */
-    protected CMSSignedData buildCMSSignedData(DSSMessageDigest messageDigest, PAdESSignatureParameters parameters,
-                                               SignatureValue signatureValue) {
+    protected CMS buildCMS(DSSMessageDigest messageDigest, PAdESSignatureParameters parameters,
+                           SignatureValue signatureValue) {
         final SignatureAlgorithm signatureAlgorithm = parameters.getSignatureAlgorithm();
         final SignatureLevel signatureLevel = parameters.getSignatureLevel();
         Objects.requireNonNull(signatureAlgorithm, "SignatureAlgorithm cannot be null!");
         Objects.requireNonNull(signatureLevel, "SignatureLevel must be defined!");
 
         signatureValue = new SignatureValueChecker().ensureSignatureValue(signatureValue, parameters.getSignatureAlgorithm());
-        final CustomContentSigner customContentSigner = new CustomContentSigner(
-                signatureAlgorithm.getJCEId(), signatureValue.getValue());
+        final CustomContentSigner customContentSigner = new CustomContentSignerBuilder().build(signatureAlgorithm, signatureValue);
 
-        final SignerInfoGenerator signerInfoGenerator = new PAdESSignerInfoGeneratorBuilder(messageDigest)
-                .build(parameters, customContentSigner);
-
-        CMSSignedData cmsSignedData = getCMSSignedDataBuilder(parameters)
-                .createCMSSignedData(signerInfoGenerator, new InMemoryDocument(messageDigest.getValue()));
+        CMSForCAdESBuilderHelper cmsBuilderHelper = initCMSBuilderHelper(messageDigest, parameters, customContentSigner);
+        CMS cms = cmsBuilderHelper.createCMS();
 
         if (!SignatureLevel.PAdES_BASELINE_B.equals(signatureLevel)) {
             Objects.requireNonNull(tspSource, "TSPSource shall be provided for T-level creation!");
@@ -190,9 +200,9 @@ public class ExternalCMSService {
             parameters.getContext().setDetachedContents(Collections.singletonList(digestDocument));
 
             CAdESLevelBaselineT cadesLevelBaselineT = new CAdESLevelBaselineT(tspSource, certificateVerifier);
-            cmsSignedData = cadesLevelBaselineT.extendCMSSignatures(cmsSignedData, parameters);
+            cms = cadesLevelBaselineT.extendCMSSignatures(cms, parameters);
         }
-        return cmsSignedData;
+        return cms;
     }
 
     /**
@@ -240,14 +250,18 @@ public class ExternalCMSService {
         signatureRequirementsChecker.assertSigningCertificateIsValid(signingCertificate);
     }
 
-    private CMSSignedDataBuilder getCMSSignedDataBuilder(PAdESSignatureParameters parameters) {
-        return new CMSSignedDataBuilder()
-                .setSigningCertificate(parameters.getSigningCertificate())
-                .setCertificateChain(parameters.getCertificateChain())
-                .setGenerateWithoutCertificates(parameters.isGenerateTBSWithoutCertificate())
-                .setTrustAnchorBPPolicy(parameters.bLevel().isTrustAnchorBPPolicy())
-                .setTrustedCertificateSource(certificateVerifier.getTrustedCertSources())
-                .setEncapsulate(false);
+    /**
+     * Instantiates a {@code CMSForPAdESBuilderHelper}
+     *
+     * @param messageDigest {@link DSSMessageDigest}
+     * @param signatureParameters {@link PAdESSignatureParameters}
+     * @param contentSigner {@link ContentSigner}
+     * @return {@link CMSForCAdESBuilderHelper}
+     */
+    protected CMSForPAdESBuilderHelper initCMSBuilderHelper(DSSMessageDigest messageDigest, PAdESSignatureParameters signatureParameters,
+                                                            ContentSigner contentSigner) {
+        return new CMSForPAdESBuilderHelper(messageDigest, signatureParameters, contentSigner)
+                .setTrustedCertificateSource(certificateVerifier.getTrustedCertSources());
     }
 
 }

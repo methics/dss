@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -29,9 +29,11 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.io.Closeable;
@@ -82,12 +84,12 @@ public class ApacheCommonsUtils implements IUtils {
 
 	@Override
 	public boolean areStringsEqual(String text1, String text2) {
-		return StringUtils.equals(text1, text2);
+		return Strings.CS.equals(text1, text2);
 	}
 
 	@Override
 	public boolean areStringsEqualIgnoreCase(String text1, String text2) {
-		return StringUtils.equalsIgnoreCase(text1, text2);
+		return Strings.CI.equals(text1, text2);
 	}
 
 	@Override
@@ -125,7 +127,7 @@ public class ApacheCommonsUtils implements IUtils {
 
 	@Override
 	public boolean endsWithIgnoreCase(String text, String expected) {
-		return StringUtils.endsWithIgnoreCase(text, expected);
+		return Strings.CI.endsWith(text, expected);
 	}
 
 	@Override
@@ -211,6 +213,12 @@ public class ApacheCommonsUtils implements IUtils {
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
+	public int collectionSize(Collection collection) {
+		return CollectionUtils.size(collection);
+	}
+
+	@Override
 	public boolean isMapEmpty(Map<?,?> map) {
 		return MapUtils.isEmpty(map);
 	}
@@ -221,9 +229,8 @@ public class ApacheCommonsUtils implements IUtils {
 	}
 
 	@Override
-	@SuppressWarnings("rawtypes")
-	public int collectionSize(Collection collection) {
-		return CollectionUtils.size(collection);
+	public int mapSize(Map<?, ?> map) {
+		return MapUtils.size(map);
 	}
 
 	@Override
@@ -294,6 +301,11 @@ public class ApacheCommonsUtils implements IUtils {
 		IOUtils.write(content, os);
 	}
 	
+	@Override
+	public OutputStream nullOutputStream() {
+		return NullOutputStream.INSTANCE;
+	}
+
 	@Override
 	public long getInputStreamSize(InputStream is) throws IOException {
 		long byteCounter = 0;

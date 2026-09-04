@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -79,12 +79,12 @@ class XAdESInvalidEnvelopedSignatureCreationTest extends AbstractXAdESTestSignat
 
         documentToSign = signedDocument;
 
-        Exception exception = assertThrows(IllegalInputException.class, () -> super.sign());
+        Exception exception = assertThrows(IllegalInputException.class, super::sign);
         assertEquals("Unable to create an enveloped signature for another XML signature document!", exception.getMessage());
 
         documentToSign = new InMemoryDocument("Hello World!".getBytes(), "test.txt");
 
-        exception = assertThrows(IllegalInputException.class, () -> super.sign());
+        exception = assertThrows(IllegalInputException.class, super::sign);
         assertEquals("Enveloped signature cannot be created. Reason : the provided document is not XML!", exception.getMessage());
 
         documentToSign = signedDocument;
@@ -103,7 +103,7 @@ class XAdESInvalidEnvelopedSignatureCreationTest extends AbstractXAdESTestSignat
         reference.setTransforms(dssTransformList);
         signatureParameters.setReferences(Arrays.asList(reference));
 
-        exception = assertThrows(IllegalInputException.class, () -> super.sign());
+        exception = assertThrows(IllegalInputException.class, super::sign);
         assertEquals(String.format("Unable to perform the next transform. The %s produced an empty output!", xpathTransform), exception.getMessage());
     }
 

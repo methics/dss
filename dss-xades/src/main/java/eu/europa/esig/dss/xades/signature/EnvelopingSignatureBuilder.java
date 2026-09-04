@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -45,8 +45,8 @@ import java.util.List;
 class EnvelopingSignatureBuilder extends XAdESSignatureBuilder {
 
 	/**
-	 * The default constructor for EnvelopingSignatureBuilder. The enveloped signature uses by default the inclusive
-	 * method of canonicalization.
+	 * The constructor for EnvelopingSignatureBuilder for a document signing.
+	 * The enveloped signature uses by default the inclusive method of canonicalization.
 	 * 
 	 * @param params
 	 *            The set of parameters relating to the structure and process of the creation or extension of the
@@ -59,6 +59,23 @@ class EnvelopingSignatureBuilder extends XAdESSignatureBuilder {
 	public EnvelopingSignatureBuilder(final XAdESSignatureParameters params, final DSSDocument document,
 									  final CertificateVerifier certificateVerifier) {
 		super(params, document, certificateVerifier);
+	}
+
+	/**
+	 * The constructor for EnvelopingSignatureBuilder for signing of multiple documents.
+	 * The enveloped signature uses by default the inclusive method of canonicalization.
+	 *
+	 * @param params
+	 *            The set of parameters relating to the structure and process of the creation or extension of the
+	 *            electronic signature.
+	 * @param documents
+	 *            The original documents to sign.
+	 * @param certificateVerifier
+	 *            {@link CertificateVerifier}
+	 */
+	public EnvelopingSignatureBuilder(final XAdESSignatureParameters params, final List<DSSDocument> documents,
+									  final CertificateVerifier certificateVerifier) {
+		super(params, documents, certificateVerifier);
 	}
 
 	@Override

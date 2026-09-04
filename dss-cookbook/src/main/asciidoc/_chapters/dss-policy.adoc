@@ -137,6 +137,20 @@ Default: `FAIL`
 </ContainerConstraints>
 ----
 
+* `FilenameAdherence` - this constraint is used to check whether filenames of the embedded documents (such as signature or timestamp documents) correspond to the ASiC specification. If a filename of document is not conformant to the specification, the check will fail.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of FilenameAdherence usage (with WARN validation level)
+----
+<ContainerConstraints>
+    ...
+    <FilenameAdherence  Level="WARN" />
+    ...
+</ContainerConstraints>
+----
+
 * `AllFilesSigned` - this constraint is used to check whether all documents present on the root level of the ASiC container (for ASiC-S) or outside the /META-INF folder (for ASiC-E) are actually signed by the signature. If the container contains other documents not covered by the signature, the check will fail.
 
 Default: `WARN`
@@ -820,6 +834,22 @@ Default: `FAIL`
 </SigningCertificate>
 ----
 
+* `SunsetDate` - this constraint is used to check whether the trust anchor is not yet expired. If the trust anchor's sunset date (when defined) is before the control time, the check will fail.
+
+NOTE: The validity of trust anchors shall be extracted in order for the current constraint to apply. Please see <<TrustAnchorValidityPredicate>> for more information about trust anchor validity extraction from a Trusted List.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of SunsetDate usage (with FAIL validation level)
+----
+<SigningCertificate>
+    ...
+    <SunsetDate Level="FAIL" />
+    ...
+</SigningCertificate>
+----
+
 * `AuthorityInfoAccessPresent` - this constraint is used to check whether the certificate has AuthorityInfoAccess url(s) to extract CA issuers. If the certificate does not have AIA url, the check will fail.
 
 Default: `WARN`
@@ -1044,6 +1074,50 @@ NOTE: DSS supports processing of the name constraints that are imposed only on t
 <SigningCertificate>
     ...
     <NameConstraints Level="WARN" />
+    ...
+</SigningCertificate>
+----
+
+* `AuthorityKeyIdentifierPresent` - this constraint is used to perform a verification whether the RFC 5280 "4.2.1.1. Authority Key Identifier" certificate extension (OID: 2.5.29.35) is present within the certificate issued by a CA certificate. If the certificate issued by a CA certificate does not contain the Authority Key Identifier certificate extension, the check will fail.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of AuthorityKeyIdentifierPresent usage (with WARN validation level)
+----
+<SigningCertificate>
+    ...
+    <AuthorityKeyIdentifierPresent Level="WARN" />
+    ...
+</SigningCertificate>
+----
+
+NOTE: The check is not executed for self-signed certificates.
+
+* `SubjectKeyIdentifierPresent` - this constraint is used to perform a verification whether the RFC 5280 "4.2.1.2. Subject Key Identifier" certificate extension (OID: 2.5.29.14) is present within the certificate. If the certificate does not contain the Subject Key Identifier certificate extension, the check will fail.
+
+Default: `FAIL` (for CA certificates only)
+
+[source,xml,indent=0]
+.Example of SubjectKeyIdentifierPresent usage (with FAIL validation level)
+----
+<CACertificate>
+    ...
+    <SubjectKeyIdentifierPresent Level="FAIL" />
+    ...
+</CACertificate>
+----
+
+* `NoRevAvail` - this constraint is used to perform validation of certificate's conformance to the RFC 9608 standard (cf. <<R30>>), when `noRevAvail` (OID: 2.5.29.56) certificate extension is present. If the certificate having `noRevAvail` certificate extension does not satisfy the rules defined within RFC 9608, the check will fail.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of NoRevAvail usage (with WARN validation level)
+----
+<SigningCertificate>
+    ...
+    <NoRevAvail Level="WARN" />
     ...
 </SigningCertificate>
 ----
@@ -1528,7 +1602,7 @@ Default: not executed
 </SigningCertificate>
 ----
 
-* `QcLegislationCountryCodes` - this constraint is used to check whether the certificate contains a QcCCLegislations QcStatement with one of the defined values. If the certificate does not contain QcCCLegislations QcStatement with one of the defined values, the check will fail.
+* `QcLegislationCountryCodes` - this constraint is used to check whether the certificate contains a QcCCLegislation QcStatement with one of the defined values. If the certificate does not contain QcCCLegislation QcStatement with one of the defined values, the check will fail.
 
 Default: not executed
 
@@ -1538,8 +1612,7 @@ Default: not executed
 <SigningCertificate>
     ...
     <QcLegislationCountryCodes Level="WARN">
-        <Id>FR</Id>
-        <Id>LU</Id>
+        <Id>UA</Id>
     </QcEuPDSLocation>
     ...
 </SigningCertificate>
@@ -1634,6 +1707,87 @@ Default: not executed
     <PSD2QcCompetentAuthorityId Level="WARN">
         <Id>LU-LNB</Id>
     </PSD2QcCompetentAuthorityId>
+    ...
+</SigningCertificate>
+----
+
+* `QcQSCDLegislation` - this constraint is used to check whether the certificate contains a QcQSCDlegislation QcStatement with one of the defined values. If the certificate does not contain QcQSCDlegislation QcStatement with one of the defined values, the check will fail.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of QcQSCDLegislation usage (with WARN validation level)
+----
+<SigningCertificate>
+    ...
+    <QcQSCDLegislation Level="WARN">
+        <Id>UA</Id>
+    </QcQSCDLegislation>
+    ...
+</SigningCertificate>
+----
+
+* `QcIdentificationMethod` - this constraint is used to check whether the certificate contains a QcIdentMethod QcStatement with one of the defined values. If the certificate does not contain QcIdentMethod QcStatement with one of the defined values, the check will fail.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of QcIdentificationMethod usage (with WARN validation level)
+----
+<SigningCertificate>
+    ...
+    <QcIdentificationMethod Level="WARN">
+        <Id>0.4.0.1862.1.8.3</Id>
+        <Id>0.4.0.1862.1.8.4</Id>
+    </QcIdentificationMethod>
+    ...
+</SigningCertificate>
+----
+
+* `QcPSBCountryOfLegislation` - this constraint is used to check whether the value of the 'countryOfLegislation' field of certificate's QcPSB QcStatement corresponds to one of the defined values. If the certificate does not contain the QcPSB's with its 'countryOfLegislation' field having one of the defined values, the check will fail.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of QcPSBCountryOfLegislation usage (with WARN validation level)
+----
+<SigningCertificate>
+    ...
+    <QcPSBCountryOfLegislation Level="WARN">
+        <Id>EU</Id>
+    </QcPSBCountryOfLegislation>
+    ...
+</SigningCertificate>
+----
+
+* `QcPSBAuthSourceIdentification` - this constraint is used to check whether the value of the 'authSourceIdentification' field of certificate's QcPSB QcStatement corresponds to one of the defined values. If the certificate does not contain the QcPSB's with its 'authSourceIdentification' field having one of the defined values, the check will fail.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of QcPSBAuthSourceIdentification usage (with WARN validation level)
+----
+<SigningCertificate>
+    ...
+    <QcPSBAuthSourceIdentification Level="WARN">
+        <Id>ASI-12345</Id>
+    </QcPSBAuthSourceIdentification>
+    ...
+</SigningCertificate>
+----
+
+* `QcPSBLegislationIdentification` - this constraint is used to check whether the value of the 'legislationIdentification' field of certificate's QcPSB QcStatement corresponds to one of the defined values. If the certificate does not contain the QcPSB's with its 'legislationIdentification' field having one of the defined values, the check will fail.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of QcPSBLegislationIdentification usage (with WARN validation level)
+----
+<SigningCertificate>
+    ...
+    <QcPSBLegislationIdentification Level="WARN">
+        <Id>eIDAS</Id>
+    </QcPSBLegislationIdentification>
     ...
 </SigningCertificate>
 ----
@@ -1780,11 +1934,11 @@ Default: `FAIL`
 </SignedAttributes>
 ----
 
-* `KeyIdentifierPresent` - this constraint checks whether the 'kid' signed attribute is present within the JAdES signature. If the 'kid' signed attribute is not present within the signature, the check will fail.
+* `KeyIdentifierPresent` - this constraint checks whether the 'kid' signed attribute is present within the JAdES or CB-AdES signature. If the 'kid' signed attribute is not present within the signature, the check will fail.
 
 Default: not executed
 
-Note: the check is executed only for JAdES
+Note: the check is executed only for JAdES and CB-AdES
 
 [source,xml,indent=0]
 .Example of KeyIdentifierPresent usage (with WARN validation level)
@@ -1800,7 +1954,7 @@ Note: the check is executed only for JAdES
 
 Default: `WARN`
 
-Note: the check is executed only for JAdES
+Note: the check is executed only for JAdES and CB-AdES
 
 [source,xml,indent=0]
 .Example of KeyIdentifierMatch usage (with WARN validation level)
@@ -1812,11 +1966,41 @@ Note: the check is executed only for JAdES
 </SignedAttributes>
 ----
 
+* `X509UrlPresent` - this constraint checks whether the 'x5u' signed attribute is present within the JAdES or CB-AdES signature. If the 'x5u' signed attribute is not present within the signature, the check will fail.
+
+Default: not executed
+
+Note: the check is executed only for JAdES and CB-AdES
+
+[source,xml,indent=0]
+.Example of X509UrlPresent usage (with WARN validation level)
+----
+<SignedAttributes>
+    ...
+    <X509UrlPresent Level="WARN" />
+    ...
+</SignedAttributes>
+----
+
+* `X509UrlMatch` - this constraint checks whether the value of the 'x5u' signed attribute matches the signing-certificate, when attribute is present. If the value of 'x5u' signed attribute does not match the signing-certificate, the check will fail.
+
+Default: `WARN`
+
+Note: the check is executed only for JAdES and CB-AdES
+
+[source,xml,indent=0]
+.Example of X509UrlMatch usage (with WARN validation level)
+----
+<SignedAttributes>
+    ...
+    <X509UrlMatch Level="WARN" />
+    ...
+</SignedAttributes>
+----
+
 * `SigningTime` - this constraint checks whether the "signing-time" signed attribute is present. If the "signing-time" attribute is not present, the check will fail.
 
 Default: `FAIL`
-
-Note: the check is executed only for JAdES
 
 [source,xml,indent=0]
 .Example of SigningTime usage (with FAIL validation level)
@@ -1824,6 +2008,40 @@ Note: the check is executed only for JAdES
 <SignedAttributes>
     ...
     <SigningTime Level="FAIL" />
+    ...
+</SignedAttributes>
+----
+
+* `SigningTimeInCertRange` - this constraint checks whether the value of the "signing-time" signed attribute lies within the validity range of the signing-certificate, when present. If the value "signing-time" attribute lies beyond the validity of the signing-certificate, the check will fail.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of SigningTimeInCertRange usage (with FAIL validation level)
+----
+<SignedAttributes>
+    ...
+    <SigningTimeInCertRange Level="FAIL" />
+    ...
+</SignedAttributes>
+----
+
+NOTE: For CMS validation (which includes CAdES and PAdES signatures), the verification of the signing-time signed attribute (when present) is enforced on signature integrity validation by the underlying library BouncyCastle. Therefore, disabling the constraint may not achieve the desired effect on validation of these signature formats.
+
+* `SignatureType` - this constraint checks whether the "typ" (Signature Type) signed attribute has the expected value. If the "typ" attribute's value does not match the expected value, the check will fail.
+
+Default: not executed
+
+Note: executed for JAdES only
+
+[source,xml,indent=0]
+.Example of SignatureType usage (with FAIL validation level)
+----
+<SignedAttributes>
+    ...
+    <SignatureType Level="FAIL">
+        <Id>jose</Id>
+    </SignatureType>
     ...
 </SignedAttributes>
 ----
@@ -1837,7 +2055,9 @@ Default: not executed
 ----
 <SignedAttributes>
     ...
-    <ContentType Level="FAIL" value="1.2.840.113549.1.7.1" />
+    <ContentType Level="FAIL">
+        <Id>1.2.840.113549.1.7.1</Id>
+    </ContentType>
     ...
 </SignedAttributes>
 ----
@@ -1853,7 +2073,9 @@ Note: executed for CAdES only
 ----
 <SignedAttributes>
     ...
-    <ContentHints Level="FAIL" value="1.2.840.113549.1.7.1" />
+    <ContentHints Level="FAIL">
+        <Id>1.2.840.113549.1.7.1</Id>
+    </ContentHints>
     ...
 </SignedAttributes>
 ----
@@ -1869,7 +2091,9 @@ Note: executed for CAdES only
 ----
 <SignedAttributes>
     ...
-    <ContentIdentifier Level="FAIL" value="1.2.840.113549.1.7.1" />
+    <ContentIdentifier Level="FAIL">
+        <Id>1.2.840.113549.1.7.1</Id>
+    </ContentIdentifier>
     ...
 </SignedAttributes>
 ----
@@ -1894,7 +2118,7 @@ Note: executed for XAdES, CAdES, PAdES
 
 Default: `WARN`
 
-Note: executed for JAdES only
+Note: executed for JAdES and CB-AdES only
 
 [source,xml,indent=0]
 .Example of EllipticCurveKeySize usage (with WARN validation level)
@@ -2257,6 +2481,34 @@ Default: not executed
 </Timestamp>
 ----
 
+* `AtsHashIndex` - this constraint checks if the ats-hash-index(-v3) attribute present within CAdES archive-time-stamp-v3 is valid according to the ETSI EN 319 122-1 (cf. <<R02>>) definition . If the ats-hash-index(-v3) attribute is not present or not valid for the corresponding CAdES archive-time-stamp-v3 unsigned property, the check will fail.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of AtsHashIndex usage (with WARN validation level)
+----
+<Timestamp>
+    ...
+    <AtsHashIndex Level="WARN" />
+    ...
+</Timestamp>
+----
+
+* `ContainerSignedAndTimestampedFilesCovered` - this constraint checks if all data files signed and/or time-asserted covered signatures or timestamps are protected by the container timestamp. If one of the data files signed and/or time-asserted by a covered signature or timestamp is not protected by the container timestamp, the check will fail.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of ContainerSignedAndTimestampedFilesCovered usage (with FAIL validation level)
+----
+<Timestamp>
+    ...
+    <ContainerSignedAndTimestampedFilesCovered Level="FAIL" />
+    ...
+</Timestamp>
+----
+
 ===== Revocation constraints
 
 The `<Revocation>` block defines rules for checking revocation data applicability rules (CRLs and OCSPs). The `<Revocation>` element shall be a child of `ConstraintsParameters`:
@@ -2283,6 +2535,78 @@ Default: `FAIL`
 <Revocation>
     ...
     <UnknownStatus Level="FAIL" />
+    ...
+</Revocation>
+----
+
+* `ThisUpdatePresent` - this constraint checks whether the `thisUpdate` field is present within the revocation data. If the `thisUpdate` field is missed from the revocation data's structure, the check will fail.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of ThisUpdatePresent usage (with FAIL validation level)
+----
+<Revocation>
+    ...
+    <ThisUpdatePresent Level="FAIL" />
+    ...
+</Revocation>
+----
+
+* `RevocationIssuerKnown` - this constraint checks whether the signing certificate of the revocation data has been identified. If no signing certificate has been found for the revocation data, the check will fail.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of RevocationIssuerKnown usage (with FAIL validation level)
+----
+<Revocation>
+    ...
+    <RevocationIssuerKnown Level="FAIL" />
+    ...
+</Revocation>
+----
+
+* `RevocationIssuerValidAtProductionTime` - this constraint checks whether the signing certificate of the revocation data has been valid at the revocation data's production time. If the revocation data's production time is outside the revocation data issuer's validity range, the check will fail.
+
+NOTE: The check is executed only for OCSP responses.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of RevocationIssuerValidAtProductionTime usage (with FAIL validation level)
+----
+<Revocation>
+    ...
+    <RevocationIssuerValidAtProductionTime Level="FAIL" />
+    ...
+</Revocation>
+----
+
+* `RevocationAfterCertificateIssuance` - this constraint checks whether the revocation data has been issued at or after the concerned certificate's issuance time (`notBefore`). If the revocation data has been issued before the issuance time of the concerned certificate, the check will fail.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of RevocationAfterCertificateIssuance usage (with FAIL validation level)
+----
+<Revocation>
+    ...
+    <RevocationAfterCertificateIssuance Level="FAIL" />
+    ...
+</Revocation>
+----
+
+* `RevocationHasInformationAboutCertificate` - this constraint checks whether the revocation data issuer contains the revocation status of the concerned certificate. This is always TRUE for still valid certificates, but variable for expired certificates. In order to satisfy condition for expired certificates, one of the `expiredCertsOnCRL` (for a CRL), `archiveCutOff` (for an OCSP response) or `expiredCertsRevocationInfo` (for a Trusted List) shall be present and be at or before expiration time of the concerned certificate, or `certHash` extension shall be present and its value shall match to the hash of the concerned certificate (more information is available in the Common PKI v2.0 specification, cf. <<R27>>). If the revocation data has been issued after the expiration time of the concerned certificate and none of the aforementioned conditions satisfy, the check will fail.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of RevocationHasInformationAboutCertificate usage (with FAIL validation level)
+----
+<Revocation>
+    ...
+    <RevocationHasInformationAboutCertificate Level="FAIL" />
     ...
 </Revocation>
 ----
@@ -2359,6 +2683,20 @@ The `<EvidenceRecord>` block defines rules for validating an evidence record. Th
 </ConstraintsParameters>
 ----
 
+* `EvidenceRecordValid` - this constraint checks whether the validation of the evidence record's timestamp chain returns a PASSED indication.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of EvidenceRecordValid usage (with FAIL validation level)
+----
+<EvidenceRecord>
+    ...
+    <EvidenceRecordValid Level="FAIL" />
+    ...
+</EvidenceRecord>
+----
+
 * `DataObjectExistence` - this constraint checks whether the data object provided to the validation has been found within the evidence record's first data object group.
 
 Default: `FAIL`
@@ -2415,6 +2753,34 @@ Default: `WARN`
 </EvidenceRecord>
 ----
 
+* `SignedFilesCovered` - this constraint checks if all data files signed by a covered signature are protected by the current evidence record. If one of the data files signed by a covered signature is not protected by the evidence record, the check will fail.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of SignedFilesCovered usage (with WARN validation level)
+----
+<Timestamp>
+    ...
+    <SignedFilesCovered Level="WARN" />
+    ...
+</Timestamp>
+----
+
+* `ContainerSignedAndTimestampedFilesCovered` - this constraint checks if all data files signed and/or time-asserted covered signatures or timestamps are protected by the current evidence record. If one of the data files signed and/or time-asserted by a covered signature or timestamp is not protected by the evidence record, the check will fail.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of ContainerSignedAndTimestampedFilesCovered usage (with WARN validation level)
+----
+<Timestamp>
+    ...
+    <ContainerSignedAndTimestampedFilesCovered Level="WARN" />
+    ...
+</Timestamp>
+----
+
 * `HashTreeRenewal` - this constraint checks if the evidence record's time-stamp used to renew the hashtree (i.e. the time-stamp starting a new ArchiveTimeStampChain) covers all archive data objects covered by the initial archive time-stamp of the evidence record.
 
 Default: `FAIL`
@@ -2429,11 +2795,680 @@ Default: `FAIL`
 </EvidenceRecord>
 ----
 
+===== Attestation constraints
+
+The `<Attestation>` block defines rules for validating an attestation (e.g. EAA, PID, etc.). The `<Attestation>` element shall be a child of `ConstraintsParameters`:
+
+[source,xml,indent=0]
+.Attestation element definition
+----
+<ConstraintsParameters>
+    ...
+    <Attestation>
+       ...
+    </Attestation>
+    ...
+</ConstraintsParameters>
+----
+
+* `AttestationSignatureUnicity` - this constraint checks whether the attestation contains a single signature, excluding the key binding signature.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of AttestationSignatureUnicity usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <AttestationSignatureUnicity Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `AttestationSignatureValid` - this constraint checks whether the signature protecting the attestation payload is valid and results in a TOTAL-PASSED validation status.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of AttestationSignatureValid usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <AttestationSignatureValid Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `DisclosurePresent` - this constraint checks whether the attestation presentation contains attached disclosures.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of DisclosurePresent usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <DisclosurePresent Level="WARN" />
+    ...
+</Attestation>
+----
+
+* `DisclosureFound` - this constraint checks whether a selectively disclosable claim hash matching the provided disclosure has been found within the attestation token.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of DisclosureFound usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <DisclosureFound Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `DisclosureIntact` - this constraint checks whether the hash value computed from the provided disclosure matches the selectively disclosable claim hash contained within the attestation token.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of DisclosureIntact usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <DisclosureIntact Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `DisclosureListExhaustive` - this constraint checks whether all selectively disclosable claim hashes defined within the attestation token have a corresponding disclosure attached to the attestation presentation.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of DisclosureListExhaustive usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <DisclosureListExhaustive Level="WARN" />
+    ...
+</Attestation>
+----
+
+* `KeyBindingSignaturePresent` - this constraint checks whether a key binding signature is present within the attestation token.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of KeyBindingSignaturePresent usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <KeyBindingSignaturePresent Level="WARN" />
+    ...
+</Attestation>
+----
+
+* `KeyBindingSignatureValid` - this constraint checks whether the key binding signature is valid and results in a TOTAL-PASSED validation status.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of KeyBindingSignatureValid usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <KeyBindingSignatureValid Level="WARN" />
+    ...
+</Attestation>
+----
+
+* `ETSI194721Conformance` - this constraint checks whether the attestation token is conformant to ETSI TS 119 472-1 (cf. <<R34>>).
+
+Default: `WARN`
+
+NOTE: This constraint aims to enforce all requirements specified in the ETSI TS 119 472-1. For some selective checks, please see the constraints below.
+
+[source,xml,indent=0]
+.Example of ETSI194721Conformance usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <ETSI194721Conformance Level="WARN" />
+    ...
+</Attestation>
+----
+
+* `AttestationType` - this constraint checks whether the attestation type is part of the list of accepted values. The wildcard value `*` can be used to accept any attestation type.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of AttestationType usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <AttestationType Level="WARN">
+         <Id>*</Id>
+    </AttestationType>
+    ...
+</Attestation>
+----
+
+* `AttestationTypeIntegrityPresent` - this constraint checks whether the vct#integrity claim is present within an SD-JWT VC attestation token.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of AttestationTypeIntegrityPresent usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <AttestationTypeIntegrityPresent Level="WARN" />
+    ...
+</Attestation>
+----
+
+* `IdentifierPresent` - this constraint checks whether an attestation identifier is present within the attestation token.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of IdentifierPresent usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <IdentifierPresent Level="WARN" />
+    ...
+</Attestation>
+----
+
+* `IssuanceDatePresent` - this constraint checks whether the issuance date is present within an ISO/IEC-mdoc attestation token.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of IssuanceDatePresent usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <IssuanceDatePresent Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `NotBeforePresent` - this constraint checks whether the `nbf` (not before) claim is present within the attestation token.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of NotBeforePresent usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <NotBeforePresent Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `ExpirationPresent` - this constraint checks whether the `exp` (expiration) claim is present within the attestation token.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of ExpirationPresent usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <ExpirationPresent Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `NotExpired` - this constraint checks whether the validation time falls within the attestation technical validity period defined by the `nbf` and `exp` claims.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of NotExpired usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <NotExpired Level="WARN" />
+    ...
+</Attestation>
+----
+
+* `AdministrativeIssuanceDatePresent` - this constraint checks whether the administrative issuance date is present within the attestation token.
+
+Default: not execute
+
+[source,xml,indent=0]
+.Example of AdministrativeIssuanceDatePresent usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <AdministrativeIssuanceDatePresent Level="WARN" />
+    ...
+</Attestation>
+----
+
+* `AdministrativeExpirationDatePresent` - this constraint checks whether the administrative expiration date is present within the attestation token.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of AdministrativeExpirationDatePresent usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <AdministrativeExpirationDatePresent Level="WARN" />
+    ...
+</Attestation>
+----
+
+* `AdministrativePeriodNotExpired` - this constraint checks whether the validation time falls within the attestation administrative validity period defined by the `adm_nbf` and `adm_exp` claims.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of AdministrativePeriodNotExpired usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <AdministrativePeriodNotExpired Level="WARN" />
+    ...
+</Attestation>
+----
+
+* `Category` - this constraint checks whether the attestation category claim corresponds to one of the accepted values. The wildcard value `*` can be used to accept any category.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of Category usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <Category Level="FAIL">
+        <Id>*</Id>
+    </Category>
+    ...
+</Attestation>
+----
+
+* `Subject` - this constraint checks whether the attestation subject claim corresponds to one of the accepted values. The wildcard value `*` can be used to accept any subject.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of Subject usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <Subject Level="WARN">
+        <Id>*</Id>
+    </Subject>
+    ...
+</Attestation>
+----
+
+* `Pseudonym` - this constraint checks whether the attestation subject pseudonym claim corresponds to one of the accepted values. The wildcard value `*` can be used to accept any pseudonym.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of Pseudonym usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <Pseudonym Level="WARN">
+        <Id>*</Id>
+    </Pseudonym>
+    ...
+</Attestation>
+----
+
+* `IssuingCountry` - this constraint checks whether the attestation issuing country claim corresponds to one of the accepted values. The wildcard value `*` can be used to accept any issuing country.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of IssuingCountry usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <IssuingCountry Level="WARN">
+        <Id>*</Id>
+    </IssuingCountry>
+    ...
+</Attestation>
+----
+
+* `IssuingAuthority` - this constraint checks whether the attestation issuing authority claim corresponds to one of the accepted values. The wildcard value `*` can be used to accept any issuing authority.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of IssuingAuthority usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <IssuingAuthority Level="WARN">
+        <Id>*</Id>
+    </IssuingAuthority>
+    ...
+</Attestation>
+----
+
+* `IssuingAuthorityRegistrationIdentifier` - this constraint checks whether the registration identifier of the attestation issuer corresponds to one of the accepted values. The wildcard value `*` can be used to accept any registration identifier.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of IssuingAuthorityRegistrationIdentifier usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <IssuingAuthorityRegistrationIdentifier Level="WARN">
+        <Id>*</Id>
+    </IssuingAuthorityRegistrationIdentifier>
+    ...
+</Attestation>
+----
+
+* `OneTimeUse` - this constraint checks whether the attestation token contains a one-time use claim.
+
+Default: `INFORM`
+
+[source,xml,indent=0]
+.Example of OneTimeUse usage (with INFORM validation level)
+----
+<Attestation>
+    ...
+    <OneTimeUse Level="INFORM" />
+    ...
+</Attestation>
+----
+
+* `ShortLived` - this constraint checks whether the attestation token contains a short-lived claim.
+
+Default: `INFORM`
+
+[source,xml,indent=0]
+.Example of ShortLived usage (with INFORM validation level)
+----
+<Attestation>
+    ...
+    <ShortLived Level="INFORM" />
+    ...
+</Attestation>
+----
+
+* `RevocationPresent` - this constraint checks whether the attestation token contains a status claim.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of RevocationPresent usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <RevocationPresent Level="WARN" />
+    ...
+</Attestation>
+----
+
+* `RevocationAvailable` - this constraint checks whether an revocation token was obtained for the given attestation, when applicable.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of RevocationAvailable usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <RevocationAvailable Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `AcceptableRevocationFound` - this constraint checks whether a valid and applicable revocation token was found for the given attestation.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of AcceptableRevocationFound usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <AcceptableRevocationFound Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `NotRevoked` - this constraint checks whether the attestation is not revoked.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of NotRevoked usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <NotRevoked Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `NotOnHold` - this constraint checks whether the attestation is not on hold.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of NotOnHold usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <NotOnHold Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `UsePseudonym` - this constraint checks whether the attestation token uses a pseudonym claim.
+
+Default: `INFORM`
+
+[source,xml,indent=0]
+.Example of UsePseudonym usage (with INFORM validation level)
+----
+<Attestation>
+    ...
+    <UsePseudonym Level="INFORM" />
+    ...
+</Attestation>
+----
+
+* `Claims` - this constraint checks whether the attestation token contains all claims specified within the list in the constraint. Nested claims are not validated by this constraint.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of Claims usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <Claims Level="WARN">
+         <Id>given_name</Id>
+         <Id>family_name</Id>
+         ...
+    </Claims>
+    ...
+</Attestation>
+----
+
+* `SupportedClaims` - this constraint checks whether the attestation token contains only supported root-level claims. Nested claims are not validated by this constraint.
+
+Default: not executed
+
+[source,xml,indent=0]
+.Example of SupportedClaims usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <SupportedClaims Level="WARN">
+         <Id>nbf</Id>
+         <Id>exp</Id>
+         ...
+    </SupportedClaims>
+    ...
+</Attestation>
+----
+
+* `SupportedNamespaces` - this constraint checks whether the attestation token contains only claims within supported namespaces. The constraint is applied only for mdoc validation.
+
+Default: not executed (mdoc only)
+
+[source,xml,indent=0]
+.Example of SupportedNamespaces usage (with WARN validation level)
+----
+<Attestation>
+    ...
+    <SupportedNamespaces Level="WARN">
+         <Id>org.iso.18013.5.1</Id>
+         <Id>org.etsi.01947201.010101</Id>
+         ...
+    </SupportedNamespaces>
+    ...
+</Attestation>
+----
+
+===== Attestation revocation constraints
+
+The `<AttestationRevocation>` block defines rules for validating a revocation data for applicable attestations. The `<AttestationRevocation>` element shall be a child of `ConstraintsParameters`:
+
+[source,xml,indent=0]
+.AttestationRevocation element definition
+----
+<ConstraintsParameters>
+    ...
+    <AttestationRevocation>
+        ...
+    </AttestationRevocation>
+    ...
+</ConstraintsParameters>
+----
+
+* `Type` - this constraint checks the type of the attestation revocation token (self-claimed).
+
+Default: `FAIL` (accept all)
+
+[source,xml,indent=0]
+.Example of Type usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <Type Level="FAIL">
+         <Id>*</Id>
+    </Type>
+    ...
+</Attestation>
+----
+
+* `UnknownStatus` - this constraint checks the status of the attestation revocation token is not unknown for the given attestation.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of UnknownStatus usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <UnknownStatus Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `IssuanceTime` - this constraint checks whether the issuance time claim is present within the payload of the attestation revocation token.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of IssuanceTime usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <IssuanceTime Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `ExpirationTime` - this constraint checks whether the expiration time claim is present within the payload of the attestation revocation token.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of ExpirationTime usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <ExpirationTime Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `Subject` - this constraint checks whether the value of the subject claim present in the payload of the attestation revocation token matches the expected value(s).
+
+Default: `FAIL` (accept all)
+
+[source,xml,indent=0]
+.Example of Subject usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <Subject Level="FAIL">
+        <Id>*</Id>
+    </Subject>
+    ...
+</Attestation>
+----
+
+* `SubjectMatch` - this constraint checks whether the value of the subject claim present in the payload of the attestation revocation token matches the revocation token's subject extracted from the corresponding attestation's payload claim.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of SubjectMatch usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <SubjectMatch Level="FAIL" />
+    ...
+</Attestation>
+----
+
+* `IssuerValidAtIssuanceTime` - this constraint checks whether the issuer of the attestation revocation token was valid at the time of the token issuance.
+
+Default: `FAIL`
+
+[source,xml,indent=0]
+.Example of IssuerValidAtIssuanceTime usage (with FAIL validation level)
+----
+<Attestation>
+    ...
+    <IssuerValidAtIssuanceTime Level="FAIL" />
+    ...
+</Attestation>
+----
+
+[[CryptographicConstraints]]
 ===== Cryptographic Constraints
 
 The `<Cryptographic>` block defines list of acceptable digest and encryption algorithms, as well as the dates of their expiration. The `<Cryptographic>` element may be defined for each particular token (e.g. for a signing-certificate, for revocation data, etc.) to define specific rules for the algorithms processing within the given token, as well as may be defined within `<ConstraintsParameters>` to define the general rules for all token types, if no specific rules are defined.
 
 * `AcceptableEncryptionAlgo` - this constraint defines a list of acceptable encryption algorithms. If a different encryption algorithm is used from the defined list, the check will fail.
+
+NOTE: Starting from DSS version `6.4`, the `Level` argument within the `AcceptableEncryptionAlgo` element, when defined, applies to the validation of the signature algorithm holistically.
 
 Default: `FAIL` (`RSA`, `DSA`, `ECDSA`, `PLAIN-ECDSA`)
 
@@ -2474,6 +3509,8 @@ Default: `FAIL` (`RSA=1024`, `DSA=1024`, `ECDSA=160`, `PLAIN-ECDSA=160`)
 ----
 
 * `AcceptableDigestAlgo` - this constraint defines a list of acceptable digest algorithms. If a different digest algorithm is used from the defined list, the check will fail.
+
+NOTE: Starting from DSS version `6.4`, the `Level` argument within the `AcceptableDigestAlgo` element, when defined, applies only when a digest algorithm is validated independently of a signature algorithm (e.g. reference validation, timestamp message-imprint, etc.). For validation level change on validation of signature algorithms, please see `AcceptableEncryptionAlgo` element.
 
 Default: `FAIL` (`MD5`, `SHA1`, `SHA224`, `SHA256`, `SHA384`, `SHA512`, `SHA3-256`, `SHA3-384`, `SHA3-512`, `RIPEMD160`, `WHIRLPOOL`)
 
@@ -2599,6 +3636,8 @@ The `<eIDAS>` element defines constraint for checking applicability rules for co
 </ConstraintsParameters>
 ----
 
+====== TL validation constraints
+
 * `TLFreshness` - this constraint checks whether the Trusted List has been issued not before than the validation time minus the defined time value. If the Trusted List has been issued before than the validation time minus the defined time value (i.e. not fresh enough), the check will fail.
 
 Default: `WARN` (`HOURS=6`)
@@ -2643,14 +3682,107 @@ Default: `WARN`
 
 * `TLVersion` - this constraint checks whether the "version" attribute of the Trusted List corresponds to the defined value. If the version of the Trusted List matches the expected value, the check will fail.
 
-Default: `WARN` (`5`)
+Default: `FAIL` (`5` and `6`)
 
 [source,xml,indent=0]
-.Example of TLVersion usage (with WARN validation level)
+.Example of TLVersion usage (with FAIL validation level)
 ----
 <eIDAS>
     ...
-    <TLVersion Level="FAIL" value="5" />
+    <TLVersion Level="FAIL">
+        <Id>5</Id>
+        <Id>6</Id>
+    </TLVersion>
+    ...
+</eIDAS>
+----
+
+* `TLStructure` - this constraint checks whether the structure of the Trusted List is valid according to
+the definition of the corresponding Trusted List verison and its XSD. If the Trusted List's structure is not valid, the check will fail.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of TLStructure usage (with WARN validation level)
+----
+<eIDAS>
+    ...
+    <TLStructure Level="WARN" />
+    ...
+</eIDAS>
+----
+
+====== LoTE validation constraints
+
+* `LoTEFreshness` - this constraint checks whether the List of Trusted Entities has been issued not before than the validation time minus the defined time value. If the List of Trusted Entities has been issued before than the validation time minus the defined time value (i.e. not fresh enough), the check will fail.
+
+Default: `WARN` (`HOURS=6`)
+
+[source,xml,indent=0]
+.Example of LoTEFreshness usage (with WARN validation level)
+----
+<eIDAS>
+    ...
+    <LoTEFreshness Level="WARN" Unit="HOURS" Value="6" />
+    ...
+</eIDAS>
+----
+
+* `LoTENotExpired` - this constraint checks whether the "nextUpdate" attribute defined within the List of Trusted Entities is not before the validation time. If the List of Trusted Entities's "nextUpdate" attribute has the value before the validation time, the check will fail.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of LoTENotExpired usage (with WARN validation level)
+----
+<eIDAS>
+    ...
+    <LoTENotExpired Level="WARN" />
+    ...
+</eIDAS>
+----
+
+* `LoTEWellSigned` - this constraint checks whether the signature of the List of Trusted Entities is valid according the signature validation process. If the List of Trusted Entities's signature is not valid, the check will fail.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of LoTEWellSigned usage (with WARN validation level)
+----
+<eIDAS>
+    ...
+    <LoTEWellSigned Level="WARN" />
+    ...
+</eIDAS>
+----
+
+* `LoTEVersion` - this constraint checks whether the "version" attribute of the List of Trusted Entities corresponds to the defined value. If the version of the List of Trusted Entities matches the expected value, the check will fail.
+
+Default: `FAIL` (`1`)
+
+[source,xml,indent=0]
+.Example of LoTEVersion usage (with FAIL validation level)
+----
+<eIDAS>
+    ...
+    <LoTEVersion Level="FAIL">
+        <Id>1</Id>
+    </LoTEVersion>
+    ...
+</eIDAS>
+----
+
+* `LoTEStructure` - this constraint checks whether the structure of the List of Trusted Entities is valid according to
+the definition of the corresponding List of Trusted Entities verison and its XSD. If the List of Trusted Entities's structure is not valid, the check will fail.
+
+Default: `WARN`
+
+[source,xml,indent=0]
+.Example of LoTEStructure usage (with WARN validation level)
+----
+<eIDAS>
+    ...
+    <LoTEStructure Level="WARN" />
     ...
 </eIDAS>
 ----
@@ -2663,13 +3795,14 @@ This table defines the correspondence between the enforced validation policy con
 [%header,cols="5*^.^1"]
 |===
    |Block                         |Constraint                      |Type                              |Indication            |SubIndication
-.8+|ContainerConstraints          |AcceptableContainerTypes        |MultiValuesConstraint             |FAILED                |FORMAT_FAILURE
+.9+|ContainerConstraints          |AcceptableContainerTypes        |MultiValuesConstraint             |FAILED                |FORMAT_FAILURE
                                   |ZipCommentPresent               |LevelConstraint                   |FAILED                |FORMAT_FAILURE
                                   |AcceptableZipComment            |MultiValuesConstraint             |FAILED                |FORMAT_FAILURE
                                   |MimeTypeFilePresent             |LevelConstraint                   |FAILED                |FORMAT_FAILURE
                                   |AcceptableMimeTypeFileContent   |MultiValuesConstraint             |FAILED                |FORMAT_FAILURE
                                   |ManifestFilePresent             |LevelConstraint                   |FAILED                |FORMAT_FAILURE
                                   |SignedFilesPresent              |LevelConstraint                   |FAILED                |FORMAT_FAILURE
+                                  |FilenameAdherence               |LevelConstraint                   |FAILED                |FORMAT_FAILURE
                                   |AllFilesSigned                  |LevelConstraint                   |FAILED                |FORMAT_FAILURE
 .2+|PDFAConstraints               |AcceptablePDFAProfiles          |MultiValuesConstraint             |FAILED                |FORMAT_FAILURE
                                   |PDFACompliant                   |LevelConstraint                   |FAILED                |FORMAT_FAILURE
@@ -2717,14 +3850,15 @@ This table defines the correspondence between the enforced validation policy con
                                .2+|NotExpired                   .2+|LevelConstraint                   |INDETERMINATE         |OUT_OF_BOUNDS_NO_POE +
                                                                                                                               OUT_OF_BOUNDS_NOT_REVOKED
                                                                                                       |FAILED                |EXPIRED
+                                  |SunsetDate                      |LevelConstraint                   |INDETERMINATE         |NO_CERTIFICATE_CHAIN_FOUND_NO_POE
                                   |AuthorityInfoAccessPresent      |LevelConstraint                   |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |RevocationInfoAccessPresent     |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
                                   |RevocationDataAvailable         |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
                                   |AcceptableRevocationDataFound   |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
                                   |CRLNextUpdatePresent            |LevelConstraint                   |INDETERMINATE         |TRY_LATER
                                   |OCSPNextUpdatePresent           |LevelConstraint                   |INDETERMINATE         |TRY_LATER
-                                  |RevocationFreshness             |TimeConstraint                    |INDETERMINATE         |TRY_LATER
-.12+|CertificateConstraints       |RevocationFreshnessNextUpdate   |LevelConstraint                   |INDETERMINATE         |TRY_LATER
+.12+|CertificateConstraints       |RevocationFreshness             |TimeConstraint                    |INDETERMINATE         |TRY_LATER
+                                  |RevocationFreshnessNextUpdate   |LevelConstraint                   |INDETERMINATE         |TRY_LATER
                                   |CA                              |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
                                   |MaxPathLength                   |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
                                   |KeyUsage                        |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE +
@@ -2732,12 +3866,15 @@ This table defines the correspondence between the enforced validation policy con
                                   |ExtendedKeyUsage                |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |PolicyTree                      |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
                                   |NameConstraints                 |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
+                                  |AuthorityKeyIdentifierPresent   |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
+                                  |SubjectKeyIdentifierPresent     |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
+                                  |NoRevAvail                      |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
                                   |SupportedCriticalExtensions     |MultiValuesConstraint             |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
-                                  |ForbiddenExtensions             |MultiValuesConstraint             |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
+.12+|CertificateConstraints       |ForbiddenExtensions             |MultiValuesConstraint             |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
                                   |Surname                         |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |GivenName                       |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |CommonName                      |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
-.12+|CertificateConstraints       |Pseudonym                       |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
+                                  |Pseudonym                       |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |Title                           |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |Email                           |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |OrganizationIdentifier          |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
@@ -2745,11 +3882,11 @@ This table defines the correspondence between the enforced validation policy con
                                   |OrganizationUnit                |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |OrganizationName                |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |Country                         |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
-                                  |Locality                        |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
+.12+|CertificateConstraints       |Locality                        |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |State                           |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |IssuerName                      |LevelConstraint                   |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |SerialNumberPresent             |LevelConstraint                   |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
-.12+|CertificateConstraints    .2+|NotRevoked                   .2+|LevelConstraint                   |INDETERMINATE         |REVOKED_NO_POE +
+                               .2+|NotRevoked                   .2+|LevelConstraint                   |INDETERMINATE         |REVOKED_NO_POE +
                                                                                                                               REVOKED_CA_NO_POE
                                                                                                       |FAILED                |REVOKED
                                   |NotOnHold                       |LevelConstraint                   |INDETERMINATE         |TRY_LATER
@@ -2758,11 +3895,11 @@ This table defines the correspondence between the enforced validation policy con
                                   |NotSelfSigned                   |LevelConstraint                   |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |PolicyIds                       |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |PolicyQualificationIds          |LevelConstraint                   |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
-                                  |PolicySupportedByQSCDIds        |LevelConstraint                   |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
+.12+|CertificateConstraints       |PolicySupportedByQSCDIds        |LevelConstraint                   |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |QcCompliance                    |LevelConstraint                   |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |QcEuLimitValueCurrency          |ValueConstraint                   |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |MinQcEuLimitValue               |IntValueConstraint                |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
-.13+|CertificateConstraints       |MinQcEuRetentionPeriod          |IntValueConstraint                |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
+                                  |MinQcEuRetentionPeriod          |IntValueConstraint                |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |QcSSCD                          |LevelConstraint                   |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |QcEuPDSLocation                 |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |QcType                          |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
@@ -2770,12 +3907,14 @@ This table defines the correspondence between the enforced validation policy con
                                   |IssuedToNaturalPerson           |LevelConstraint                   |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |IssuedToLegalPerson             |LevelConstraint                   |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |SemanticsIdentifier             |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
-                                  |PSD2QcTypeRolesOfPSP            |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
+.7+|CertificateConstraints        |PSD2QcTypeRolesOfPSP            |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |PSD2QcCompetentAuthorityName    |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |PSD2QcCompetentAuthorityId      |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
+                                  |QcQSCDLegislation               |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
+                                  |QcIdentificationMethod          |MultiValuesConstraint             |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |UsePseudonym                    |LevelConstraint                   |INDETERMINATE         |CHAIN_CONSTRAINTS_FAILURE
                                   |Cryptographic                   |CryptographicConstraint         2+|See CryptographicConstraint
-.10+|SignedAttributesConstraints  |SigningCertificatePresent       |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
+.12+|SignedAttributesConstraints  |SigningCertificatePresent       |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
                                   |UnicitySigningCertificate       |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
                                   |SigningCertificateRefersCertificateChain  |LevelConstraint         |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
                                   |ReferencesToAllCertificateChainPresent    |LevelConstraint         |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
@@ -2785,10 +3924,14 @@ This table defines the correspondence between the enforced validation policy con
                                   |IssuerSerialMatch               |LevelConstraint                   |INDETERMINATE         |NO_SIGNING_CERTIFICATE_FOUND
                                   |KeyIdentifierPresent            |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
                                   |KeyIdentifierMatch              |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
-.11+|SignedAttributesConstraints  |SigningTime                     |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
-                                  |ContentType                     |ValueConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
-                                  |ContentHints                    |ValueConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
-                                  |ContentIdentifier               |ValueConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
+                                  |X509UrlPresent                  |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
+                                  |X509UrlMatch                    |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
+.13+|SignedAttributesConstraints  |SigningTime                     |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
+                                  |SigningTimeInCertRange          |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
+                                  |SignatureType                   |MultiValuesConstraint             |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
+                                  |ContentType                     |MultiValuesConstraint             |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
+                                  |ContentHints                    |MultiValuesConstraint             |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
+                                  |ContentIdentifier               |MultiValuesConstraint             |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
                                   |MessageDigestOrSignedPropertiesPresent    |LevelConstraint         |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
                                   |CommitmentTypeIndication        |MultiValuesConstraint             |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
                                   |SignerLocation                  |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
@@ -2804,7 +3947,7 @@ This table defines the correspondence between the enforced validation policy con
                                   |DocumentTimeStamp               |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
                                   |TLevelTimeStamp                 |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
                                   |LTALevelTimeStamp               |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
-.10+|TimestampConstraints         |TimestampDelay                  |TimeConstraint                    |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
+.12+|TimestampConstraints         |TimestampDelay                  |TimeConstraint                    |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
                                   |RevocationTimeAgainstBestSignatureTime   |LevelConstraint          |INDETERMINATE         |REVOKED_NO_POE +
                                                                                                                               REVOKED_CA_NO_POE
                                   |BestSignatureTimeBeforeExpirationDateOfSigningCertificate |LevelConstraint  |FAILED       |NOT_YET_VALID
@@ -2815,20 +3958,66 @@ This table defines the correspondence between the enforced validation policy con
                                   |TSAGeneralNamePresent           |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
                                   |TSAGeneralNameContentMatch      |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
                                   |TSAGeneralNameOrderMatch        |LevelConstraint                   |INDETERMINATE         |SIG_CONSTRAINTS_FAILURE
-.6+|RevocationConstraints         |UnknownStatus                   |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
+                                  |AtsHashIndex                    |LevelConstraint                   |FAILED                |FORMAT_FAILURE
+                                  |ContainerSignedAndTimestampedFilesCovered   |LevelConstraint       |FAILED                |FORMAT_FAILURE
+.11+|RevocationConstraints        |UnknownStatus                   |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
+                                  |ThisUpdatePresent               |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
+                                  |RevocationIssuerKnown           |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
+                                  |RevocationIssuerValidAtProductionTime     |LevelConstraint         |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
+                                  |RevocationAfterCertificateIssuance        |LevelConstraint         |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
+                                  |RevocationHasInformationAboutCertificate  |LevelConstraint         |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
                                   |OCSPResponderIdMatch            |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
                                   |OCSPCertHashPresent             |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
                                   |OCSPCertHashMatch               |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
                                   |SelfIssuedOCSP                  |LevelConstraint                   |INDETERMINATE         |CERTIFICATE_CHAIN_GENERAL_FAILURE
                                   |BasicSignatureConstraints       |BasicSignatureConstraints       2+|See BasicSignatureConstraints
-.7+|EvidenceRecordConstraints     |EvidenceRecordValid             |LevelConstraint                   |Indication from ER or timestamp |SubIndication from ER or timestamp
+.9+|EvidenceRecordConstraints     |EvidenceRecordValid             |LevelConstraint                   |Indication from ER or timestamp |SubIndication from ER or timestamp
                                   |DataObjectExistence             |LevelConstraint                   |INDETERMINATE         |SIGNED_DATA_NOT_FOUND
                                   |DataObjectIntact                |LevelConstraint                   |FAILED                |HASH_FAILURE
                                   |DataObjectFound                 |LevelConstraint                   |INDETERMINATE         |SIGNED_DATA_NOT_FOUND
                                   |DataObjectGroup                 |LevelConstraint                   |INDETERMINATE         |SIGNED_DATA_NOT_FOUND
+                                  |SignedFilesCovered              |LevelConstraint                   |FAILED                |FORMAT_FAILURE
+                                  |ContainerSignedAndTimestampedFilesCovered   |LevelConstraint       |FAILED                |FORMAT_FAILURE
                                   |HashTreeRenewal                 |LevelConstraint                   |INDETERMINATE +
                                                                                                        FAILED                |SIGNED_DATA_NOT_FOUND +
                                                                                                                               HASH_FAILURE
+                                  |Cryptographic                   |CryptographicConstraint         2+|See CryptographicConstraint
+.16+|AttestationConstraints       |AttestationSignatureUnicity     |LevelConstraint                   |FAILED                |FORMAT_FAILURE
+                                  |AttestationSignatureValid       |LevelConstraint                   |Indication from signature |SubIndication from signature
+                                  |DisclosurePresent               |LevelConstraint                   |INDETERMINATE         |SIGNED_DATA_NOT_FOUND
+                                  |DisclosureFound                 |LevelConstraint                   |INDETERMINATE         |SIGNED_DATA_NOT_FOUND
+                                  |DisclosureIntact                |LevelConstraint                   |FAILED                |HASH_FAILURE
+                                  |DisclosureListExhaustive        |LevelConstraint                   |INDETERMINATE         |SIGNED_DATA_NOT_FOUND
+                                  |KeyBindingSignaturePresent      |LevelConstraint                   |FAILED                |FORMAT_FAILURE
+                                  |KeyBindingSignatureValid        |LevelConstraint                   |Indication from signature |SubIndication from signature
+                                  |ETSI194721Conformance           |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |AttestationType                 |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |AttestationTypeIntegrityPresent |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |IdentifierPresent               |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |IssuanceDatePresent             |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |otBeforePresent                 |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |ExpirationPresent               |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |NotExpired                      |LevelConstraint                   |INDETERMINATE         |OUT_OF_BOUNDS_NO_POE
+.16+|AttestationConstraints       |AdministrativeIssuanceDatePresent        |LevelConstraint          |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |AdministrativeExpirationDatePresent      |LevelConstraint          |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |AdministrativePeriodNotExpired           |LevelConstraint          |INDETERMINATE         |OUT_OF_BOUNDS_NO_POE
+                                  |Category                        |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |Subject                         |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |Pseudonym                       |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |IssuingCountry                  |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |IssuingAuthority                |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |IssuingAuthorityRegistrationIdentifier   |LevelConstraint          |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |OneTimeUse                      |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |ShortLived                      |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |RevocationPresent               |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |RevocationAvailable             |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |AcceptableRevocationFound       |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |NotRevoked                      |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |NotOnHold                       |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+.5+|AttestationConstraints        |UsePseudonym                    |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |Claims                          |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |SupportedClaims                 |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
+                                  |SupportedNamespaces             |LevelConstraint                   |INDETERMINATE         |ATTESTATION_CONSTRAINTS_FAILURE
                                   |Cryptographic                   |CryptographicConstraint         2+|See CryptographicConstraint
 .4+|Cryptographic                 |AcceptableEncryptionAlgo        |ListAlgo                          |INDETERMINATE         |CRYPTO_CONSTRAINTS_FAILURE_NO_POE +
                                                                                                                               CRYPTO_CONSTRAINTS_FAILURE
@@ -2838,7 +4027,13 @@ This table defines the correspondence between the enforced validation policy con
                                                                                                                               CRYPTO_CONSTRAINTS_FAILURE
                                   |AlgoExpirationDate              |AlgoExpirationDate                |INDETERMINATE         |CRYPTO_CONSTRAINTS_FAILURE_NO_POE +
                                                                                                                               CRYPTO_CONSTRAINTS_FAILURE
-.4+|eIDAS                         |TLFreshness                     |TimeConstraint                    |FAILED                |-
+.10+|eIDAS                        |TLFreshness                     |TimeConstraint                    |FAILED                |-
                                   |TLNotExpired                    |LevelConstraint                   |FAILED                |-
                                   |TLWellSigned                    |LevelConstraint                   |FAILED                |-
                                   |TLVersion                       |ValueConstraint                   |FAILED                |-
+                                  |TLStructure                     |LevelConstraint                   |FAILED                |-
+                                  |LoTEFreshness                   |TimeConstraint                    |FAILED                |-
+                                  |LoTENotExpired                  |LevelConstraint                   |FAILED                |-
+                                  |LoTEWellSigned                  |LevelConstraint                   |FAILED                |-
+                                  |LoTEVersion                     |ValueConstraint                   |FAILED                |-
+                                  |LoTEStructure                   |LevelConstraint                   |FAILED                |-

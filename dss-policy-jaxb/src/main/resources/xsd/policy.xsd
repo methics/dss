@@ -41,6 +41,11 @@
 					<xsd:documentation>Constraints related to the counter-signatures</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
+			<xsd:element name="KeyBindingSignatureConstraints" type="SignatureConstraints" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Constraints related to the counter-signatures</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
 			<xsd:element name="Timestamp" type="TimestampConstraints" minOccurs="0">
 				<xsd:annotation>
 					<xsd:documentation>Constraints on the timestamps</xsd:documentation>
@@ -53,7 +58,17 @@
 			</xsd:element>
 			<xsd:element name="EvidenceRecord" type="EvidenceRecordConstraints" minOccurs="0">
 				<xsd:annotation>
-					<xsd:documentation>Constraints on the timestamps</xsd:documentation>
+					<xsd:documentation>Constraints on the evidence records</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Attestation" type="AttestationConstraints" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Constraints on the attestation presentations</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="AttestationRevocation" type="AttestationRevocationConstraints" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Constraints related to the attestation revocation token</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
 			<xsd:element name="Cryptographic" type="CryptographicConstraint" minOccurs="0">
@@ -117,6 +132,11 @@
 			<xsd:element name="SignedFilesPresent" type="LevelConstraint" minOccurs="0">
 				<xsd:annotation>
 					<xsd:documentation>Checks if one or more signed files is present outside META-INF folder (ASiC-E) or only one file is present at root level (ASiC-S)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="FilenameAdherence" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Verifies conformance of a document filename to the ASiC specification</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
 			<xsd:element name="AllFilesSigned" type="LevelConstraint" minOccurs="0">
@@ -250,12 +270,22 @@
 			</xsd:element>
 			<xsd:element name="KeyIdentifierPresent" type="LevelConstraint" minOccurs="0">
 				<xsd:annotation>
-					<xsd:documentation>Checks if 'kid' (key identifier) header parameter is present within a protected header of the signature (JAdES only)</xsd:documentation>
+					<xsd:documentation>Checks if 'kid' (key identifier) header parameter is present within a protected header of the signature (JAdES, CB-AdES)</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
 			<xsd:element name="KeyIdentifierMatch" type="LevelConstraint" minOccurs="0">
 				<xsd:annotation>
-					<xsd:documentation>Checks if the value of 'kid' (key identifier) header parameter matches the signing-certificate (JAdES only)</xsd:documentation>
+					<xsd:documentation>Checks if the value of 'kid' (key identifier) header parameter matches the signing-certificate (JAdES, CB-AdES)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="X509UrlPresent" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks if 'x5u' (X.509 URL) header parameter is present within a protected header of the signature (JAdES, CB-AdES)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="X509UrlMatch" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks if the SVA was able to derive the signing certificate using the 'x5u' protected header value (JAdES, CB-AdES)</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
 			<xsd:element name="SigningTime" type="LevelConstraint" minOccurs="0">
@@ -263,17 +293,27 @@
 					<xsd:documentation>Checks the presence of the signing-time attribute</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
-			<xsd:element name="ContentType" type="ValueConstraint" minOccurs="0">
+			<xsd:element name="SigningTimeInCertRange" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks whether the claimed signing-time value is within the signing-certificate validity range, when present</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="SignatureType" type="MultiValuesConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks if the 'typ' (Signature Type) attribute has the expected value (JAdES)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="ContentType" type="MultiValuesConstraint" minOccurs="0">
 				<xsd:annotation>
 					<xsd:documentation>Checks if the content-type attribute has the expected value</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
-			<xsd:element name="ContentHints" type="ValueConstraint" minOccurs="0">
+			<xsd:element name="ContentHints" type="MultiValuesConstraint" minOccurs="0">
 				<xsd:annotation>
 					<xsd:documentation>Checks if the content-hints attribute (CAdES) has the expected value</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
-			<xsd:element name="ContentIdentifier" type="ValueConstraint" minOccurs="0">
+			<xsd:element name="ContentIdentifier" type="MultiValuesConstraint" minOccurs="0">
 				<xsd:annotation>
 					<xsd:documentation>Checks if the content-identifier attribute (CAdES) has the expected value</xsd:documentation>
 				</xsd:annotation>
@@ -285,7 +325,7 @@
 			</xsd:element>
 			<xsd:element name="EllipticCurveKeySize" type="LevelConstraint" minOccurs="0">
 				<xsd:annotation>
-					<xsd:documentation>Verifies whether the size of the elliptic curve key used to create the signature corresponds to the defined signature algorithm (see RFC 7518)</xsd:documentation> <!-- JAdES only -->
+					<xsd:documentation>Verifies whether the size of the elliptic curve key used to create the signature corresponds to the defined signature algorithm (see RFC 7518)</xsd:documentation> <!-- JAdES and CB-AdES only -->
 				</xsd:annotation>
 			</xsd:element>
 			<xsd:element name="CommitmentTypeIndication" type="MultiValuesConstraint" minOccurs="0">
@@ -424,6 +464,16 @@
 					<xsd:documentation>Checks if a TSTInfo.tsa field's value and order matches the timestamp's issuer distinguishing name when present</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
+			<xsd:element name="AtsHashIndex" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks if CAdES ats-hash-index(-v3) attribute of the archive-time-stamp-v3 is present and valid, conforming to the ETSI EN 319 122-1 definition</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="ContainerSignedAndTimestampedFilesCovered" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks whether all previously signed and/or time-asserted file objects are subsequently covered by the current timestamp in an ASiC container.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
 		</xsd:sequence>
 	</xsd:complexType>
 
@@ -437,6 +487,31 @@
 					<xsd:element name="UnknownStatus" type="LevelConstraint" minOccurs="0">
 						<xsd:annotation>
 							<xsd:documentation>Checks the returned status is not unknown</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="ThisUpdatePresent" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether thisUpdate field is defined within the revocation data</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="RevocationIssuerKnown" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the revocation issuer certificate can be identified</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="RevocationIssuerValidAtProductionTime" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the revocation issuer has been valid during the production time of the revocation data (i.e. at producedAt time)</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="RevocationAfterCertificateIssuance" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the thisUpdate date of the revocation information is after the verifying certificate's notBefore date</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="RevocationHasInformationAboutCertificate" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the revocation issuer has information about the certificate. The condition applies when: either certificate is still valid; or the revocation contains expiredCertsOnCRL (CRL) or archiveCutOff (OCSP), or Trust Service defines a expiredCertsRevocationInfo, with a value before certificate's expiration; or the cert-hash matches (OCSP).</xsd:documentation>
 						</xsd:annotation>
 					</xsd:element>
 					<xsd:element name="OCSPResponderIdMatch" type="LevelConstraint" minOccurs="0">
@@ -468,7 +543,6 @@
 			</xsd:extension>
 		</xsd:complexContent>
 	</xsd:complexType>
-
 
 	<xsd:complexType name="EvidenceRecordConstraints">
 		<xsd:annotation>
@@ -502,6 +576,16 @@
 							<xsd:documentation>Checks that only the hash values of the provided data objects are present in the first hash value list</xsd:documentation>
 						</xsd:annotation>
 					</xsd:element>
+					<xsd:element name="SignedFilesCovered" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>When an external evidence record applies to a signature, checks whether all signed documents are covered by the evidence record</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="ContainerSignedAndTimestampedFilesCovered" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether all previously signed and/or time-asserted file objects are subsequently covered by the current evidence record in an ASiC container.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
 					<xsd:element name="HashTreeRenewal" type="LevelConstraint" minOccurs="0">
 						<xsd:annotation>
 							<xsd:documentation>Checks that a HashTree renewal archive time-stamp covers all original documents found within the first archive time-stamp data group of the evidence record</xsd:documentation>
@@ -509,7 +593,261 @@
 					</xsd:element>
 					<xsd:element name="Cryptographic" type="CryptographicConstraint" minOccurs="0">
 						<xsd:annotation>
-							<xsd:documentation>Group of cryptographic checks to operate on the certificate</xsd:documentation>
+							<xsd:documentation>Group of cryptographic checks to operate on the evidence record</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+
+	<xsd:complexType name="AttestationConstraints">
+		<xsd:annotation>
+			<xsd:documentation>Group of constraints for the Electronic attestation Of Attributes validation process</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="LevelConstraint">
+				<xsd:sequence>
+					<xsd:element name="AttestationSignatureUnicity" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks if the attestation has been created with a single signature (not considering key binding signature)</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="AttestationSignatureValid" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks if the signature used to sign the attestation Payload is valid (i.e. results to a TOTAL-PASSED validation status)</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="DisclosurePresent" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation contains attached disclosures</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="DisclosureFound" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation contains a selectively disclosable claim hash for the provided disclosure</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="DisclosureIntact" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the hash value of a selectively disclosable claim is intact</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="DisclosureListExhaustive" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether for all selectively disclosable claim hashes defined within an attestation a matching disclosure attached to the attestation Presentation was found</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="KeyBindingSignaturePresent" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the key binding signature is present within the attestation token</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="KeyBindingSignatureValid" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the key binding signature is valid (i.e. results to a TOTAL-PASSED validation status)</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="ETSI194721Conformance" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation token is conformant to the standard ETSI TS 119 472-1</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+                    <xsd:element name="AttestationType" type="MultiValuesConstraint" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Checks if the attestation profile is part of the acceptable value list. '*' can be used and means any value.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="AttestationTypeIntegrityPresent" type="LevelConstraint" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Checks whether the claim "vct#integrity" is present within the attestation token. This check is only executed for SD-JWT attestation.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="IdentifierPresent" type="LevelConstraint" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Checks whether the attestation Identifier is present within the attestation token</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="IssuanceDatePresent" type="LevelConstraint" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Checks whether the attestation issuance is present within the attestation token. This check is only executed for ISO/IEC-mdoc attestation.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="NotBeforePresent" type="LevelConstraint" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Checks whether the "not before" is present within the attestation token</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="ExpirationPresent" type="LevelConstraint" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Checks whether the expiration is present within the attestation token</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+					<xsd:element name="NotExpired" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the validation time is within the attestation technical validity range ('nbf' and 'exp' headers)</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+                    <xsd:element name="AdministrativeIssuanceDatePresent" type="LevelConstraint" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Checks whether the administrative issuance date is present within the attestation token</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="AdministrativeExpirationDatePresent" type="LevelConstraint" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Checks whether the administrative expiration date is present within the attestation token</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+					<xsd:element name="AdministrativePeriodNotExpired" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the validation time is within the attestation administrative validity range ('adm_nbf' and 'adm_exp' headers)</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Category" type="MultiValuesConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation category claim corresponds to one of the defined values</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Subject" type="MultiValuesConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation subject claim corresponds to one of the defined values</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Pseudonym" type="MultiValuesConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation subject pseudonym claim corresponds to one of the defined values</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="IssuingCountry" type="MultiValuesConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation issuing country claim corresponds to one of the defined values</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="IssuingAuthority" type="MultiValuesConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation issuing authority claim corresponds to one of the defined values</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="IssuingAuthorityRegistrationIdentifier" type="MultiValuesConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the registration identifier of the attestation issuer claim corresponds to one of the defined values</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="OneTimeUse" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation contains a one-time use claim</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="ShortLived" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation contains a short-lived claim</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="RevocationPresent" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation contains a revocation claim</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="RevocationAvailable" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks if an attestation revocation token is found for the attestation</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="AcceptableRevocationFound" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks if an acceptable attestation revocation token has been found for the attestation</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="NotRevoked" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks if the attestation is not revoked, annulled, taken back, recalled or cancelled.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="NotOnHold" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks if the attestation is not temporarily invalid, hanging, debarred from privilege.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="UsePseudonym" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation uses a pseudonym claim</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Claims" type="MultiValuesConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation token contains all specified claims (whether as part of the original payload or through selective disclosures). Only the root level of the attestation is checked, not the nested claims.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+                    <xsd:element name="SupportedClaims" type="MultiValuesConstraint" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Checks whether the attestation token contains only claims that are supported. Only the root level of the attestation is checked, not the nested claims.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+					<xsd:element name="SupportedNamespaces" type="MultiValuesConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation token contains only claims within namespaces which are supported. Mdoc only.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Cryptographic" type="CryptographicConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Group of cryptographic checks to operate on the disclosure hash algorithm(s)</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+
+	<xsd:complexType name="AttestationRevocationConstraints">
+		<xsd:annotation>
+			<xsd:documentation>Group of constraints on the revocation data</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="LevelConstraint">
+				<xsd:sequence>
+					<xsd:element name="Type" type="MultiValuesConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the value of the 'type' field is within the accepted list of tokens</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="UnknownStatus" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks the returned status is not unknown</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="IssuanceTime" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether 'issuedAt' field is defined within the attestation revocation token</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="ExpirationTime" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether thisUpdate field is defined within the revocation data</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="NotExpired" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the validation time is within the validity range of the attestation revocation token</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Subject" type="MultiValuesConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the subject is defined within the attestation revocation token</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="SubjectMatch" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the subject defined within the attestation revocation token matches</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="IssuerValidAtIssuanceTime" type="LevelConstraint" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Checks whether the attestation revocation token issuer's certificate was valid at the attestation revocation token issuance time</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="BasicSignatureConstraints" type="BasicSignatureConstraints" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Group of common checks on this token signature</xsd:documentation>
 						</xsd:annotation>
 					</xsd:element>
 				</xsd:sequence>
@@ -695,6 +1033,11 @@
 					<xsd:documentation>Checks if the validation time is in the validity range of the certificate</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
+			<xsd:element name="SunsetDate" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>If a sunset date is associated with the that trust anchor, checks whether the validation is before the certificate's trust sunset date.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
 			<xsd:element name="AuthorityInfoAccessPresent" type="LevelConstraint" minOccurs="0">
 				<xsd:annotation>
 					<xsd:documentation>Checks the presence of the AIA (issuer) in the certificate</xsd:documentation>
@@ -768,6 +1111,21 @@
 			<xsd:element name="NameConstraints" type="LevelConstraint" minOccurs="0">
 				<xsd:annotation>
 					<xsd:documentation>Performs validation of the certificate distinguished and subject alternative names against the name constraints imposed by its certificate chain</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="AuthorityKeyIdentifierPresent" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks whether the certificate contains the Authority Key Identifier certificate extension. Check is not executed for self-signed certificates.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="SubjectKeyIdentifierPresent" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks whether the certificate contains the Subject Key Identifier certificate extension</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="NoRevAvail" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Performs validation of certificate's compliance to RFC 9608, when noRevAvail (OID: 2.5.29.56) certificate extension is present</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
 			<xsd:element name="SupportedCriticalExtensions" type="MultiValuesConstraint" minOccurs="0">
@@ -960,6 +1318,31 @@
 					<xsd:documentation>Checks if the certificate's PSD2QcType Id of competent authority is in the acceptable values list</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
+			<xsd:element name="QcQSCDLegislation" type="MultiValuesConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks that the private key related to the certified public key resides in an SCD recognized as qualified within a defined legal framework from an identified country, or set of countries. Shall be empty for EU qualified certificates.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="QcIdentificationMethod" type="MultiValuesConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks the identification method used for the certificate issuance, according to eIDAS Article 24</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="QcPSBCountryOfLegislation" type="MultiValuesConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks if the certificate's QcPSB legislation country is in the list of acceptable values. The values are represented by two-letter ISO 3166 alpha-2 country codes or 'EU'.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="QcPSBAuthSourceIdentification" type="MultiValuesConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks if the certificate's QcPSB authentication source identification is in the list of acceptable values</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="QcPSBLegislationIdentification" type="MultiValuesConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks if the certificate's QcPSB authentication source identification is in the list of acceptable values</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
 			<xsd:element name="UsePseudonym" type="LevelConstraint" minOccurs="0">
 				<xsd:annotation>
 					<xsd:documentation>Checks if the certificate use a pseudonym</xsd:documentation>
@@ -1034,7 +1417,7 @@
 						<xsd:documentation>Date of the last update of cryptographic suites (matching the Format)</xsd:documentation>
 					</xsd:annotation>
 				</xsd:attribute>
-				<xsd:attribute name="LevelAfterUpdate" type="level" use="optional">
+				<xsd:attribute name="LevelAfterUpdate" type="Level" use="optional">
 					<xsd:annotation>
 						<xsd:documentation>Defines a level of the check for cryptographic constraints expiring after the defined UpdateDate value</xsd:documentation>
 					</xsd:annotation>
@@ -1081,9 +1464,39 @@
 					<xsd:documentation>Checks if the signature of the Trusted List is valid</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
-			<xsd:element name="TLVersion" type="ValueConstraint" minOccurs="0">
+			<xsd:element name="TLVersion" type="MultiValuesConstraint" minOccurs="0">
 				<xsd:annotation>
-					<xsd:documentation>Checks if the version (TSLVersionIdentifier) of the Trusted List is equals to the given value</xsd:documentation>
+					<xsd:documentation>Checks if the version (TSLVersionIdentifier) of the Trusted List is equals to one of the given values</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="TLStructure" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks if the Trusted List passes the structure validation</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="LoTEFreshness" type="TimeConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks the List of Trusted Entities freshness to ensure the validation uses an up-to-date version</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="LoTENotExpired" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks if the List of Trusted Entities is not expired (NextUpdate)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="LoTEWellSigned" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks if the signature of the List of Trusted Entities is valid</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="LoTEVersion" type="MultiValuesConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks if the version (LoTEVersionIdentifier) of the List of Trusted Entities is equals to one of the given values</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="LoTEStructure" type="LevelConstraint" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Checks if the List of Trusted Entities passes the structure validation</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
 		</xsd:sequence>
@@ -1093,7 +1506,7 @@
 		<xsd:annotation>
 			<xsd:documentation>Boolean check : follows the specified level behavior in case of failure</xsd:documentation>
 		</xsd:annotation>
-		<xsd:attribute name="Level" type="level">
+		<xsd:attribute name="Level" type="Level">
 			<xsd:annotation>
 				<xsd:documentation>The level of criticality</xsd:documentation>
 			</xsd:annotation>
@@ -1161,7 +1574,7 @@
   		</xsd:complexContent>
 	</xsd:complexType>
 	
-	<xsd:simpleType name="level">
+	<xsd:simpleType name="Level">
 		<xsd:annotation>
 			<xsd:documentation>Defined levels for a validation step</xsd:documentation>
 		</xsd:annotation>

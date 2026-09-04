@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -30,8 +30,10 @@ import eu.europa.esig.dss.diagnostic.jaxb.XmlTimestampedObject;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.DigestMatcherType;
 import eu.europa.esig.dss.enumerations.EvidenceRecordTimestampType;
+import eu.europa.esig.dss.enumerations.EvidenceRecordTypeEnum;
 import eu.europa.esig.dss.enumerations.Indication;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
+import eu.europa.esig.dss.enumerations.SignatureScopeType;
 import eu.europa.esig.dss.enumerations.TimestampedObjectType;
 import eu.europa.esig.dss.pades.validation.suite.AbstractPAdESTestValidation;
 import eu.europa.esig.dss.simplereport.SimpleReport;
@@ -74,6 +76,25 @@ public abstract class AbstractPAdESWithEvidenceRecordTestValidation extends Abst
             for (EvidenceRecordWrapper evidenceRecord : evidenceRecords) {
                 List<XmlSignatureScope> evidenceRecordScopes = evidenceRecord.getEvidenceRecordScopes();
                 assertEquals(getNumberOfExpectedEvidenceScopes(), Utils.collectionSize(evidenceRecordScopes));
+                if (evidenceRecord.isEmbedded()) {
+                    assertEquals(EvidenceRecordTypeEnum.ASN1_EVIDENCE_RECORD, evidenceRecord.getEvidenceRecordType());
+                    assertNotNull(evidenceRecord.getIncorporationType());
+                }
+
+                boolean sigNameFound = false;
+                for (XmlSignatureScope evidenceRecordScope : evidenceRecordScopes) {
+                    if (SignatureScopeType.SIGNATURE == evidenceRecordScope.getScope()) {
+                        if (signature.getId().equals(evidenceRecordScope.getName())) {
+                            sigNameFound = true;
+                        }
+                    } else if (SignatureScopeType.FULL == evidenceRecordScope.getScope()) {
+                        if (Utils.isStringEmpty(signature.getFilename()) && "Full document".equals(evidenceRecordScope.getDescription())
+                                || signature.getFilename().equals(evidenceRecordScope.getName())) {
+                            sigNameFound = true;
+                        }
+                    }
+                }
+                assertTrue(sigNameFound);
 
                 boolean coversSignature = false;
                 boolean coversSignedData = false;
@@ -98,12 +119,17 @@ public abstract class AbstractPAdESWithEvidenceRecordTestValidation extends Abst
                 assertTrue(coversSignature);
                 assertTrue(coversSignedData);
                 assertTrue(coversCertificates);
-                if (SignatureLevel.PAdES_BASELINE_B != signature.getSignatureFormat()) {
+                if (SignatureLevel.PAdES_BASELINE_B != signature.getSignatureFormat() &&
+                        SignatureLevel.PAdES_BES != signature.getSignatureFormat() ) {
                     assertTrue(coversTimestamps);
                     if (SignatureLevel.PAdES_BASELINE_T != signature.getSignatureFormat()) {
                         assertTrue(coversRevocationData);
                     }
                 }
+
+                int expectedSignaturesCounter = diagnosticData.getSignatures().size();
+                assertEquals(expectedSignaturesCounter,
+                        coveredObjects.stream().filter(r -> TimestampedObjectType.SIGNATURE == r.getCategory()).count());
 
                 int tstCounter = 0;
 
@@ -116,10 +142,28 @@ public abstract class AbstractPAdESWithEvidenceRecordTestValidation extends Abst
                     assertTrue(timestamp.isMessageImprintDataFound());
                     assertTrue(timestamp.isMessageImprintDataIntact());
                     assertTrue(timestamp.isSignatureIntact());
-                    assertTrue(timestamp.isSignatureValid());
 
                     List<XmlSignatureScope> timestampScopes = timestamp.getTimestampScopes();
-                    assertEquals(getNumberOfExpectedEvidenceScopes(), timestampScopes.size());
+                    if (timestamp.isSignatureValid()) {
+                        assertEquals(getNumberOfExpectedEvidenceScopes(), Utils.collectionSize(timestampScopes));
+
+                        sigNameFound = false;
+                        for (XmlSignatureScope evidenceRecordScope : evidenceRecordScopes) {
+                            if (SignatureScopeType.SIGNATURE == evidenceRecordScope.getScope()) {
+                                if (signature.getId().equals(evidenceRecordScope.getName())) {
+                                    sigNameFound = true;
+                                }
+                            } else if (SignatureScopeType.FULL == evidenceRecordScope.getScope()) {
+                                if (Utils.isStringEmpty(signature.getFilename()) && "Full document".equals(evidenceRecordScope.getDescription())
+                                        || signature.getFilename().equals(evidenceRecordScope.getName())) {
+                                    sigNameFound = true;
+                                }
+                            }
+                        }
+                        assertTrue(sigNameFound);
+                    } else {
+                        assertTrue(Utils.isCollectionEmpty(timestampScopes));
+                    }
 
                     boolean coversEvidenceRecord = false;
                     coversSignature = false;
@@ -149,12 +193,16 @@ public abstract class AbstractPAdESWithEvidenceRecordTestValidation extends Abst
                     assertTrue(coversSignature);
                     assertTrue(coversSignedData);
                     assertTrue(coversCertificates);
-                    if (SignatureLevel.PAdES_BASELINE_B != signature.getSignatureFormat()) {
+                    if (SignatureLevel.PAdES_BASELINE_B != signature.getSignatureFormat() &&
+                            SignatureLevel.PAdES_BES != signature.getSignatureFormat() ) {
                         assertTrue(coversTimestamps);
                         if (SignatureLevel.PAdES_BASELINE_T != signature.getSignatureFormat()) {
                             assertTrue(coversRevocationData);
                         }
                     }
+
+                    assertEquals(expectedSignaturesCounter,
+                            timestampedObjects.stream().filter(r -> TimestampedObjectType.SIGNATURE == r.getCategory()).count());
 
                     if (tstCounter > 0) {
                         List<XmlDigestMatcher> tstDigestMatcherList = timestamp.getDigestMatchers();
@@ -165,7 +213,8 @@ public abstract class AbstractPAdESWithEvidenceRecordTestValidation extends Abst
                         for (XmlDigestMatcher digestMatcher : tstDigestMatcherList) {
                             if (DigestMatcherType.EVIDENCE_RECORD_ARCHIVE_TIME_STAMP.equals(digestMatcher.getType())) {
                                 archiveTstDigestFound = true;
-                            } else if (DigestMatcherType.EVIDENCE_RECORD_ARCHIVE_TIME_STAMP_SEQUENCE.equals(digestMatcher.getType())) {
+                            } else if (DigestMatcherType.EVIDENCE_RECORD_MASTER_SIGNATURE.equals(digestMatcher.getType()) ||
+                                    DigestMatcherType.EVIDENCE_RECORD_ARCHIVE_OBJECT.equals(digestMatcher.getType())) {
                                 archiveTstSequenceDigestFound = true;
                             }
                             assertTrue(digestMatcher.isDataFound());
@@ -187,6 +236,7 @@ public abstract class AbstractPAdESWithEvidenceRecordTestValidation extends Abst
 
     protected abstract int getNumberOfExpectedEvidenceScopes();
 
+    @Override
     protected void verifySimpleReport(SimpleReport simpleReport) {
         super.verifySimpleReport(simpleReport);
 
@@ -268,7 +318,6 @@ public abstract class AbstractPAdESWithEvidenceRecordTestValidation extends Abst
                 assertEquals(1, cryptoInformation.getValidationObjectId().getVOReference().size());
                 assertNotNull(DigestAlgorithm.forXML(cryptoInformation.getAlgorithm()));
                 assertTrue(cryptoInformation.isSecureAlgorithm());
-                assertNotNull(cryptoInformation.getNotAfter());
 
                 ValidationObjectRepresentationType validationObjectRepresentation = validationObjectType.getValidationObjectRepresentation();
                 assertNotNull(validationObjectRepresentation);

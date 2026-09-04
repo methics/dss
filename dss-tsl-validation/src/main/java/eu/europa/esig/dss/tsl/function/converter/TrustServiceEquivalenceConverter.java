@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -114,13 +114,12 @@ public class TrustServiceEquivalenceConverter implements Function<TrustServiceEq
 	}
 
 	private Map<ServiceTypeASi, ServiceTypeASi> getTypeASiEquivalence(TrustServiceTSLTypeEquivalenceListType serviceTSLTypeEquivalenceList) {
+		Map<ServiceTypeASi, ServiceTypeASi> typeAsiEquivalence = new HashMap<>();
 		if (serviceTSLTypeEquivalenceList != null) {
 			TrustServiceTSLTypeListType expected = serviceTSLTypeEquivalenceList.getTrustServiceTSLTypeListPointedParty();
 			TrustServiceTSLTypeListType substitute = serviceTSLTypeEquivalenceList.getTrustServiceTSLTypeListPointingParty();
 			List<TrustServiceTSLTypeType> expectedServiceTSLTypes = expected.getTrustServiceTSLType();
 			List<TrustServiceTSLTypeType> substituteServiceTSLTypes = substitute.getTrustServiceTSLType();
-
-			Map<ServiceTypeASi, ServiceTypeASi> typeAsiEquivalence = new HashMap<>();
 
 			for (TrustServiceTSLTypeType expectedTypeASI : expectedServiceTSLTypes) {
 				ServiceTypeASi staExpected = getServiceTypeASi(expectedTypeASI);
@@ -129,9 +128,8 @@ public class TrustServiceEquivalenceConverter implements Function<TrustServiceEq
 					typeAsiEquivalence.put(staExpected, staSubstitute);
 				}
 			}
-			return typeAsiEquivalence;
 		}
-		return null;
+		return typeAsiEquivalence;
 	}
 
 	private ServiceTypeASi getServiceTypeASi(TrustServiceTSLTypeType expectedTypeASI) {
@@ -168,10 +166,10 @@ public class TrustServiceEquivalenceConverter implements Function<TrustServiceEq
 	}
 
 	private List<CertificateContentEquivalence> getCertificateEquivalence(CertificateContentReferencesEquivalenceListType certificateContentEquivalenceList) {
+		List<CertificateContentEquivalence> certificateContentEquivalences = new ArrayList<>();
 		if (certificateContentEquivalenceList != null
 				&& Utils.isCollectionNotEmpty(certificateContentEquivalenceList.getCertificateContentReferenceEquivalence())) {
 
-			List<CertificateContentEquivalence> certificateContentEquivalences = new ArrayList<>();
 			for (CertificateContentReferenceEquivalenceType certEquiv : certificateContentEquivalenceList.getCertificateContentReferenceEquivalence()) {
 				CriteriaListType expected = certEquiv.getCertificateContentDeclarationPointedParty();
 				CriteriaListType substitute = certEquiv.getCertificateContentDeclarationPointingParty();
@@ -184,9 +182,8 @@ public class TrustServiceEquivalenceConverter implements Function<TrustServiceEq
 
 				certificateContentEquivalences.add(equiv);
 			}
-			return certificateContentEquivalences;
 		}
-		return null;
+		return certificateContentEquivalences;
 	}
 
 	private QCStatementOids getQCStatementOids(Condition condition) {
@@ -294,10 +291,10 @@ public class TrustServiceEquivalenceConverter implements Function<TrustServiceEq
 	}
 
 	private Map<String, String> getQualifierEquivalence(TrustServiceTSLQualificationExtensionEquivalenceListType qualificationExtensionEquivalenceListType) {
+		Map<String, String> qualifierEquivalenceMap = new HashMap<>();
 		if (qualificationExtensionEquivalenceListType != null
 				&& Utils.isCollectionNotEmpty(qualificationExtensionEquivalenceListType.getQualifierEquivalenceList())) {
 
-			Map<String, String> qualifierEquivalenceMap = new HashMap<>();
 			for (QualifierEquivalenceListType qualifierEquivalenceList : qualificationExtensionEquivalenceListType.getQualifierEquivalenceList()) {
 
 				List<QualifierEquivalenceType> qualifierEquivalence = qualifierEquivalenceList.getQualifierEquivalence();
@@ -307,9 +304,8 @@ public class TrustServiceEquivalenceConverter implements Function<TrustServiceEq
 					qualifierEquivalenceMap.put(qualifierExpected.getUri(), qualifierSubstitute.getUri());
 				}
 			}
-			return qualifierEquivalenceMap;
 		}
-		return null;
+		return qualifierEquivalenceMap;
 	}
 
 }

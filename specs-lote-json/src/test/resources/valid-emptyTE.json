@@ -1,0 +1,15 @@
+{
+   "LoTE" : {
+      "ListAndSchemeInformation": {
+         "LoTEVersionIdentifier": 1,
+         "LoTESequenceNumber": 42,
+         "SchemeOperatorName": [
+            { "lang":  "en",
+            "value": "Example Scheme Operator"
+            }
+         ],
+         "ListIssueDateTime": "2025-07-16T12:00:00Z",
+         "NextUpdate": "2025-08-16T12:00:00Z"
+      }
+   }
+}

@@ -7,6 +7,18 @@
 [[TrustedLists]]
 == Trusted Lists
 
+NOTE: In accordance with https://eur-lex.europa.eu/eli/dec_impl/2025/2164/oj/eng[Commission Implementing Decision (EU) 2025/2164], amending https://eur-lex.europa.eu/eli/dec_impl/2015/1505/oj/eng[Commission Implementing Decision (EU) 2015/1505], Trusted Lists provided for in Article 22(1) of Regulation (EU) No 910/2014 <<R12>> shall conform to the specifications and requirements laid down in ETSI TS 119 612 v2.4.1 <<R11>>, which introduces the Trusted List v6 format. Those specifications shall apply from 28 April 2026 at 22:00:00 UTC.
+
+The followings versions of DSS are compatible with both Trusted Lists v5 and Trusted Lists v6: `5.13.1`, `6.0.1`, `6.1.1` and all other versions starting from `6.2` or higher.
+
+All implementors are strongly advised to upgrade their systems to one of the aforementioned versions of DSS.
+
+WARNING: Failure to upgrade DSS version may result to inability to process the Trusted Lists v6.
+
+In addition to the Trusted List version change, the https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=uriserv:OJ.C_.2019.276.01.0001.01.ENG[OJ EU keystore] is set for a change as well. For the migration procedure, please refer to the <<TLKeystoreConfig>>.
+
+For signing a Trusted List of v5 or v6, please see the chapter <<TLSigning>>.
+
 [[tlValidationJob]]
 === Configuration of TL validation job
 
@@ -78,7 +90,8 @@ include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/TLValidati
 
 NOTE: `Sha2FileCacheDataLoader` is meant to be used for downloading of Trusted Lists implementing the ETSI TS 119 612 standard (cf. <<R11>>). There is no guarantee the class will work as intended in any other scope. Thus, it is use is not recommended outside of `TLValidationJob`. If needed, please use `FileCacheDataLoader` instead.
 
-==== The SynchronizationStrategy
+[[SynchronizationStrategy]]
+==== SynchronizationStrategy
 
 The `SynchronizationStrategy` defines the trusted lists or list(s) of trusted lists to be synchronized. By default, DSS synchronizes all of them and DSS does not reject any trusted lists (e.g. expired, invalid, etc.). The default behavior can be customized with implementation of the `SynchronizationStrategy`.
 
@@ -103,7 +116,8 @@ An example of a custom implementation of `SynchronizationStrategy` can be found 
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/TLValidationJobSnippets.java[tags=custom-strategy]
 ----
 
-==== The CacheCleaner
+[[CacheCleaner]]
+==== CacheCleaner
 
 The `CacheCleaner` specifies how DSS clears the cache (e.g. in case of expired URL, etc.). Two cleaning options are available : memory and file system.
 
@@ -183,7 +197,7 @@ The TSP Service predicates are not enforced by default, therefore in a plain con
 
 Within the framework the following `TrustServicePredicate` is provided:
 
-* `GrantedTrustService` - this predicate is meant to filter trusted services containing an acceptable (i.e. accredited or granted) status with despite it was defined before or after eIDAS regulation.
+* `GrantedTrustService` - this predicate is meant to filter trusted services containing an acceptable (i.e. accredited or granted) status despite it was defined before or after eIDAS regulation.
 
 Below you may find an example of `TrustServicePredicate` configuration:
 
@@ -193,6 +207,111 @@ Below you may find an example of `TrustServicePredicate` configuration:
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/TLValidationJobSnippets.java[tags=trust-service-predicate]
 ----
 
+==== Trusted List version
+
+Since version `6.2` DSS provides a possibility to perform a verification of the XML Trusted List structure, in order to establish conformance to the used Trusted List version. When set, the parameter allows filtering out unsupported versions of XML Trusted Lists, as well as to verifying the conformance of supported Trusted List versions to their definition.
+
+NOTE: The structure validation is independent of the XML validation against the latest ETSI TS 119 612 (cf. <<R11>>) XSD schema and includes additional verification process, according to the XML Trusted List's version definition.
+
+By default, no structure validation is enforced, but it is recommended to force the supported version(s), in order to avoid unexpected cases. In the time of writing of the current document, the supported XML Trusted Lists versions are `5` and `6`.
+
+When the value is set and an error is encountered during the validation, the error message will be propagated to a `ParsingInfoRecord` of the concerned `LOTLInfo`/`TLInfo` object within a `TLValidationJobSummary`.
+
+NOTE: When the value is set within a `LOTLSource` object, the parameter will be applied for all extracted Trusted Lists as well.
+
+[source,java,indent=0]
+.Examples of Trusted List supported versions configuration
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/TLValidationJobSnippets.java[tags=tl-version]
+----
+
+[[TLKeystoreConfig]]
+==== Trusted List keystore configuration
+
+To validate the signature of a Trusted List (TL) or a List of Trusted Lists (LOTL), DSS requires a collection of signing certificate candidates. These certificates act as trust anchors for verifying the authenticity of the TL/LOTL.
+
+These certificates must be supplied in a form of `CertificateSource` and associated with the corresponding `TLSource` or `LOTLSource` instance:
+
+[source,java,indent=0]
+.LOTL signing-certificates configuration
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/EuropeanLOTLSnippets.java[tags=eu-lotl-cert-source]
+----
+
+===== LOTL keystore configuration
+
+When using a `TLValidationJob` configured with a LOTL, only the certificates for the initial LOTL (or pivot LOTL) should be provided, as shown above. Certificates required for validating referenced Trusted Lists are automatically extracted from the LOTL content. See chapters below for LOTL-related specifics.
+
+====== Pivot mechanism
+
+When a LOTL relies on a pivot mechanism, the initial keystore must contain the signing certificate candidates corresponding to the first pivot LOTL.  This allows the LOTL signing certificates to evolve over time without breaking validation. For more details about this mechanism, refer to the https://ec.europa.eu/tools/lotl/pivot-lotl-explanation.html[pivot mechanism explanation].
+
+To enable pivot support please use the property below:
+
+[source,java,indent=0]
+.Pivot mechanism configuration
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/EuropeanLOTLSnippets.java[tags=eu-lotl-pivot]
+----
+
+====== Signing certificate announcement predicate
+
+When the pivot mechanism is enabled, LOTL validation may be performed using different entry points. These sources are declared in the LOTL using `<SchemeInformationURI>` element.
+
+To ensure deterministic validation, it is recommended to explicitly define the location of the original keystore (or the list of signing certificates) used to validate the LOTL signature:
+
+[source,java,indent=0]
+.Signing certificate announcement predicate
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/EuropeanLOTLSnippets.java[tags=eu-lotl-ojeu]
+----
+
+Where `OJ_URL` is a value of the `<SchemeInformationURI>/<URI>` element pointing to the publication of signing certificate candidates.
+
+WARNING: If no signing certificate announcement predicate is defined, DSS will process all pivot LOTLs, provided the pivot mechanism is enabled.
+
+====== EU LOTL keystore transition
+
+NOTE: In the EU LOTL, multiple OJEU URIs may temporarily coexist during transitions (e.g. due to a LOTL location or version change). After the transition, only the latest URI (and therefore, keystore) remains active.
+
+Should the EU LOTL initiate a transition process, implementers must perform the following actions:
+
+1. Locate the latest Official Journal of the European Union (OJEU) publication referenced in the freshest EU LOTL inside a `<SchemeInformationURI>` element.
+2. Update the certificate source with a new set of LOTL signing-certificate candidates obtained from the new OJEU URI.
+3. Update the `signingCertificatesAnnouncementPredicate` in the `LOTLSource` to reference the new OJEU URI.
+
+WARNING: Inability to update the keystore before the transition period ends, may result to a failure on the LOTL validation.
+
+[[TrustAnchorValidityPredicate]]
+==== Trust anchor validity predicate
+
+Since version `6.2` DSS provides an option to configure a validity period of trust anchors extracted from a Trusted List, in order to support an introduction of a sunset date for trust anchors in ETSI EN 319 102-1 within version 1.4.1 (cf. <<R09>>).
+
+When a `TrustAnchorValidityPredicate` is configured, the trust time of an extracted SDI from a Trusted List will correspond to a range of history instances from a corresponding Trust Service for which the `TrustAnchorValidityPredicate` condition satisfies.
+
+In case all the history instances (when present) and the current status match the condition of the predicate, the extracted SDI trust anchor will be threaded as indefinitely valid during the validation process.
+
+If none of the history instances match, the Trust Service information will be extracted, but the SDI will not be considered as a trust anchor during the validation process.
+
+NOTE: If no `TrustAnchorValidityPredicate` is configured, the old behavior is applied with a trust anchor being valid for an indefinite period of time (i.e. trust anchors never expire).
+
+DSS provides the following `TrustAnchorValidityPredicate` implementations in its default configuration:
+
+* `GrantedTrustAnchorPeriodPredicate` - this predicate is meant to filter trusted service's history instances containing an acceptable eIDAS status (i.e. accredited or granted) despite it was defined before or after eIDAS regulation.
+
+* `GrantedOrRecognizedAtNationalLevelTrustAnchorPeriodPredicate` - this predicate is meant to filter trusted service's history instances containing an acceptable eIDAS status (i.e. accredited or granted) despite it was defined before or after eIDAS regulation or trust services set by national law or recognized at national level.
+
+NOTE: When a `TrustAnchorValidityPredicate` is defined within a `LOTLSource`, the predicate will be applied for all Trusted Lists fetched from the current List of Trusted Lists.
+
+Below you may find an example of `TrustAnchorValidityPredicate` configuration:
+
+[source,java,indent=0]
+.Examples of Trust Anchor Validity Predicate configuration
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/TLValidationJobSnippets.java[tags=trust-anchor-validity-predicate]
+----
+
+[[ExecutorService]]
 ==== Executor Service
 
 An Executor Service allows you to customize a way of the program execution on your Java machine, by configuring a number of possible threads to be running, await time and so on.
@@ -214,6 +333,7 @@ Below, you can find a complete configuration for the European List Of Trusted Li
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/EuropeanLOTLSnippets.java[tags=complete-european-lotl-config]
 ----
 
+[[TLRefresh]]
 ==== The TL / LOTL refresh
 
 The TL / LOTL loading in DSS works as below :
@@ -291,6 +411,7 @@ An eIDAS XML node linked to the status of the Trusted List is included in the DS
 * *TLNotExpired*: The TL might be expired in case of an attack consisting in replacing the current TL by an older one. Using an old TL might bring problems. The expired TL could for example contain Certificate Authorities that are not present in the current TL. Thus, an expired TL should lead to a warning during the validation.
 * *TLWellSigned*: If the signature of the TL is not valid, the TL should be discarded. A non-valid TL signature might indicate that the content of that TL is "fake" and should not be trusted.
 * *TLVersion*: If the version of the trusted list does not correspond to the version indicated in the validation policy, the validation process fails.
+* *TLStructure*: If the structure of the trusted list does not correspond to the definition and XSD of the Trusted List of the corresponding version, the validation of the check fails.
 
 === Using non-EU trusted lists
 
@@ -315,17 +436,25 @@ A Pilot for the International Compatibility of Trust Services based on the Mutua
 To enable Trust Service Equivalence Mapping in DSS, the corresponding instance of `LOTLSource` supporting the MRA-equivalence scheme has to be configured and provided within `TLValidationJob`:
 
 [source,java,indent=0]
-.Sign a Trusted List with the TrustedListSignatureParametersBuilder
+.LOTLSource configuration with enabled MRA mapping support
 ----
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/validate/mra/ThirdCountryLOTLTest.java[tags=demo]
 ----
 
+[[TLSigning]]
 === Signing a trusted list
 
-The standard ETSI TS 119 612 (cf. <<R11>>) specifies in its annex B the XML structure and the format of the signature (XAdES, enveloped signature, transformation, canonicalization, etc.). With the class `TrustedListSignatureParametersBuilder`, DSS is able to pre-configure the signature parameters to comply with the specifications and simplify the signature creation.
+The standard ETSI TS 119 612 (cf. <<R11>>) specifies in its annex B the XML structure and the format of the signature (XAdES, enveloped signature, transformation, canonicalization, etc.).
+
+To simplify the configuration for creation of conformant XML Trusted List signatures, DSS provides two classes:
+
+* `TrustedListV5SignatureParametersBuilder` - builds signature parameters for signing of an XML Trusted List version 5. This class creates a digital signature conformant to ETSI TS 119 612 V2.1.1 standard (with `xades:SigningCertificate` signed property, identifying the signing-certificate).
+* `TrustedListV6SignatureParametersBuilder` - builds signature parameters for signing of an XML Trusted List version 6. This class creates a digital signature conformant to ETSI EN 319 132-1 (cf. <<R01>>) (with `xades:SigningCertificateV2` signed property, identifying the signing-certificate).
+
+Example below demonstrates a signature creation with the `TrustedListV5SignatureParametersBuilder` class for XML Trusted List version 5:
 
 [source,java,indent=0]
-.Sign a Trusted List with the TrustedListSignatureParametersBuilder
+.Sign a Trusted List with the TrustedListV5SignatureParametersBuilder
 ----
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/SignTrustedListTest.java[tags=demo]
 ----

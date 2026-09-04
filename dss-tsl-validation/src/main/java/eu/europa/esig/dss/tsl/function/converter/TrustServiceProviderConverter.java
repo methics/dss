@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -37,6 +37,8 @@ import eu.europa.esig.trustedlist.jaxb.tsl.PostalAddressType;
 import eu.europa.esig.trustedlist.jaxb.tsl.TSPInformationType;
 import eu.europa.esig.trustedlist.jaxb.tsl.TSPServicesListType;
 import eu.europa.esig.trustedlist.jaxb.tsl.TSPType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,6 +53,8 @@ import java.util.stream.Collectors;
  *
  */
 public class TrustServiceProviderConverter implements Function<TSPType, TrustServiceProvider> {
+
+	private static final Logger LOG = LoggerFactory.getLogger(TrustServiceProviderConverter.class);
 
 	/** The country code */
 	private String territory;
@@ -84,23 +88,28 @@ public class TrustServiceProviderConverter implements Function<TSPType, TrustSer
 	}
 
 	private void extractTSPInfo(TrustServiceProviderBuilder tspBuilder, TSPInformationType tspInformation) {
-		tspBuilder.setTerritory(territory);
+		if (tspInformation != null) {
+			tspBuilder.setTerritory(territory);
 
-		InternationalNamesTypeConverter converter = new InternationalNamesTypeConverter();
-		tspBuilder.setNames(converter.apply(tspInformation.getTSPName()));
+			InternationalNamesTypeConverter converter = new InternationalNamesTypeConverter();
+			tspBuilder.setNames(converter.apply(tspInformation.getTSPName()));
 
-		converter = new InternationalNamesTypeConverter(new TradeNamePredicate()); // filter registration identifiers
-		tspBuilder.setTradeNames(converter.apply(tspInformation.getTSPTradeName()));
+			converter = new InternationalNamesTypeConverter(new TradeNamePredicate()); // filter registration identifiers
+			tspBuilder.setTradeNames(converter.apply(tspInformation.getTSPTradeName()));
 
-		tspBuilder.setRegistrationIdentifiers(extractRegistrationIdentifiers(tspInformation.getTSPTradeName()));
+			tspBuilder.setRegistrationIdentifiers(extractRegistrationIdentifiers(tspInformation.getTSPTradeName()));
 
-		AddressType tspAddress = tspInformation.getTSPAddress();
-		if (tspAddress != null) {
-			tspBuilder.setPostalAddresses(extractPostalAddress(tspAddress.getPostalAddresses()));
-			tspBuilder.setElectronicAddresses(extractElectronicAddress(tspAddress.getElectronicAddress()));
+			AddressType tspAddress = tspInformation.getTSPAddress();
+			if (tspAddress != null) {
+				tspBuilder.setPostalAddresses(extractPostalAddress(tspAddress.getPostalAddresses()));
+				tspBuilder.setElectronicAddresses(extractElectronicAddress(tspAddress.getElectronicAddress()));
+			}
+
+			tspBuilder.setInformation(extractInformationURI(tspInformation.getTSPInformationURI()));
+
+		} else {
+			LOG.warn("No mandatory TSPInformation element found in the TrustServiceProvider element!");
 		}
-
-		tspBuilder.setInformation(extractInformationURI(tspInformation.getTSPInformationURI()));
 	}
 
 	private List<String> extractRegistrationIdentifiers(InternationalNamesType internationalNamesType) {

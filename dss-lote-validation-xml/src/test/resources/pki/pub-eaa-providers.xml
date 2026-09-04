@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<pki xmlns="http://pki-factory.nowina.lu/pki-factory" name="pub-eaa-providers">
+
+    <!-- LoTE Signer -->
+    <certificate>
+        <serialNumber>10</serialNumber>
+        <subject>LoTE-Signer</subject>
+        <organization>EU Digital Ministry</organization>
+        <country>EU</country>
+        <issuer serialNumber="10">LoTE-Signer</issuer>
+        <notBefore year="-10"/>
+        <notAfter year="10"/>
+        <keyAlgo encryption="RSA" length="4096"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>digitalSignature</keyUsage>
+            <keyUsage>nonRepudiation</keyUsage>
+        </keyUsages>
+        <ca/>
+    </certificate>
+
+    <!-- LoLoTE Signer -->
+    <certificate>
+        <serialNumber>20</serialNumber>
+        <subject>LoLoTE-Signer</subject>
+        <organization>EU Digital Ministry</organization>
+        <country>EU</country>
+        <issuer serialNumber="20">LoLoTE-Signer</issuer>
+        <notBefore year="-10"/>
+        <notAfter year="10"/>
+        <keyAlgo encryption="RSA" length="4096"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>digitalSignature</keyUsage>
+            <keyUsage>nonRepudiation</keyUsage>
+        </keyUsages>
+        <ca/>
+    </certificate>
+
+    <!-- National RootCA certificate-->
+    <certificate>
+        <serialNumber>100000</serialNumber>
+        <subject>Test-RootCA</subject>
+        <organization>Test Pub-EAA Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100000">Test-RootCA</issuer>
+        <notBefore year="-10"/>
+        <notAfter year="10"/>
+        <keyAlgo encryption="RSA" length="4096"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>crlSign</keyUsage>
+            <keyUsage>keyCertSign</keyUsage>
+        </keyUsages>
+        <ca/>
+    </certificate>
+
+    <!-- CA-->
+    <certificate>
+        <serialNumber>100100</serialNumber>
+        <subject>Test-CA</subject>
+        <organization>Test Pub-EAA Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100000">Test-RootCA</issuer>
+        <ocspResponder serialNumber="100110">Test-CA</ocspResponder>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="4096"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>crlSign</keyUsage>
+            <keyUsage>keyCertSign</keyUsage>
+        </keyUsages>
+        <ca/>
+        <crl>Test-RootCA</crl>
+        <caIssuers>Test-RootCA</caIssuers>
+        <trustAnchor/>
+    </certificate>
+
+    <!-- CA OCSP Responder -->
+    <certificate>
+        <serialNumber>100110</serialNumber>
+        <subject>Test-CA-ocsp-responder</subject>
+        <organization>Test Pub-EAA Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100100">Test-RootCA</issuer>
+        <notBefore month="-6"/>
+        <notAfter month="6"/>
+        <keyAlgo encryption="RSA" length="2048"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>digitalSignature</keyUsage>
+        </keyUsages>
+        <extendedKeyUsages>
+            <extendedKeyUsage>1.3.6.1.5.5.7.3.9</extendedKeyUsage> <!-- ocsp-signing -->
+        </extendedKeyUsages>
+        <ocspNoCheck/>
+    </certificate>
+
+    <!-- QTSA certificate-->
+    <certificate>
+        <serialNumber>100101</serialNumber>
+        <subject>Test-Pub-EAA</subject>
+        <organization>Test Pub-EAA Trusted Entity 1</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100100">Test-RootCA</issuer>
+        <notBefore year="-3"/>
+        <notAfter year="3"/>
+        <keyAlgo encryption="RSA" length="2048"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>digitalSignature</keyUsage>
+            <keyUsage>nonRepudiation</keyUsage>
+        </keyUsages>
+        <crl>Test-CA</crl>
+        <ocsp>Test-CA</ocsp>
+        <caIssuers>Test-CA</caIssuers>
+    </certificate>
+
+</pki>

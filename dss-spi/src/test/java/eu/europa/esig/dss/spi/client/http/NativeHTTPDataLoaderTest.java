@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,6 +21,7 @@
 package eu.europa.esig.dss.spi.client.http;
 
 import eu.europa.esig.dss.model.DSSException;
+import eu.europa.esig.dss.model.http.ResponseEnvelope;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.spi.DSSUtils;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,8 @@ class NativeHTTPDataLoaderTest {
 
 	private static final String HTTP_URL_TO_LOAD = "http://certs.eid.belgium.be/belgiumrs2.crt";
 	private static final String FILE_URL_TO_LOAD = "file:src/test/resources/belgiumrs2.crt";
+
+	private static final String TIMEOUT_URL = "https://httpstat.us/200?sleep=1";
 
 	@Test
 	void testHttpGet() {
@@ -81,7 +84,7 @@ class NativeHTTPDataLoaderTest {
 		NativeHTTPDataLoader dataLoader = new NativeHTTPDataLoader();
 		dataLoader.setConnectTimeout(1);
 		// change URL, as a connection may be already established with the other one
-		assertThrows(DSSException.class, () -> dataLoader.get("http://dss.nowina.lu/", true));
+		assertThrows(DSSException.class, () -> dataLoader.get(TIMEOUT_URL, true));
 	}
 
 	@Test
@@ -119,23 +122,28 @@ class NativeHTTPDataLoaderTest {
 		private MockNativeDataLoaderCall nativeDataLoaderCall;
 
 		@Override
-		protected Callable<byte[]> createNativeDataLoaderCall(String url, HttpMethod method, byte[] content, boolean refresh) {
+		protected Callable<ResponseEnvelope> createNativeHTTPDataLoaderCall(String url, HttpMethod method, byte[] content, boolean refresh,
+																			boolean includeResponseDetails, boolean includeResponseBody) {
 			if (nativeDataLoaderCall == null) {
-				nativeDataLoaderCall = new MockNativeDataLoaderCall(
-						url, content, refresh, getMaxInputSize(), getConnectTimeout(), getReadTimeout());
+				nativeDataLoaderCall = new MockNativeDataLoaderCall(url, content);
+				nativeDataLoaderCall.setConnectTimeout(getConnectTimeout());
+				nativeDataLoaderCall.setReadTimeout(getReadTimeout());
+				nativeDataLoaderCall.setMaxInputSize(getMaxInputSize());
+				nativeDataLoaderCall.setUseCaches(!refresh);
+				nativeDataLoaderCall.setIncludeResponseDetails(includeResponseDetails);
+				nativeDataLoaderCall.setIncludeResponseBody(includeResponseBody);
 			}
 			return nativeDataLoaderCall;
 		}
 
 	}
 
-	private static class MockNativeDataLoaderCall extends NativeDataLoaderCall {
+	private static class MockNativeDataLoaderCall extends NativeHTTPDataLoaderCall {
 
 		private URLConnection connection;
 
-		public MockNativeDataLoaderCall(String url, byte[] content, boolean useCaches, int maxInputSize,
-										int connectTimeout, int readTimeout) {
-			super(url, content, useCaches, maxInputSize, connectTimeout, readTimeout);
+		public MockNativeDataLoaderCall(String url, byte[] content) {
+			super(url, content);
 		}
 
 		@Override

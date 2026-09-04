@@ -17,12 +17,16 @@ $ curl 'http://localhost:8080/services/rest/signature/external-cms/getDataToSign
     "manifestSignature" : false,
     "jwsSerializationType" : null,
     "sigDMechanism" : null,
-    "base64UrlEncodedPayload" : true,
-    "base64UrlEncodedEtsiUComponents" : true,
-    "signatureAlgorithm" : null,
+    "base64UrlEncodedPayload" : null,
+    "base64UrlEncodedEtsiUComponents" : null,
+    "signatureType" : null,
+    "keyIdentifier" : null,
+    "x509Url" : null,
+    "coseStructureType" : null,
+    "tagged" : null,
+    "externallySuppliedData" : null,
     "digestAlgorithm" : "SHA256",
     "encryptionAlgorithm" : null,
-    "maskGenerationFunction" : null,
     "referenceDigestAlgorithm" : null,
     "contentTimestamps" : null,
     "contentTimestampParameters" : {
@@ -40,7 +44,6 @@ $ curl 'http://localhost:8080/services/rest/signature/external-cms/getDataToSign
       "canonicalizationMethod" : "http://www.w3.org/2001/10/xml-exc-c14n#",
       "timestampContainerForm" : null
     },
-    "signWithExpiredCertificate" : false,
     "generateTBSWithoutCertificate" : false,
     "imageParameters" : null,
     "signatureIdToCounterSign" : null,
@@ -66,7 +69,7 @@ $ curl 'http://localhost:8080/services/rest/signature/external-cms/getDataToSign
   },
   "messageDigest" : {
     "algorithm" : "SHA256",
-    "value" : "NG1EDrr2hbqtEgoqZCvxIgEsWJWyTGq7rwgVdk2UTew="
+    "value" : "XWNKqDJ/rfQMAbbnkro+MDlWBBKgaLdNmPqSx1dUZ34="
   }
 }'
 ----

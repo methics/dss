@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -26,8 +26,9 @@ import eu.europa.esig.dss.detailedreport.jaxb.XmlMessage;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlDiagnosticData;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlSignature;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
 import eu.europa.esig.dss.enumerations.Indication;
+import eu.europa.esig.dss.enumerations.Level;
+import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.enumerations.SubIndication;
 import eu.europa.esig.dss.enumerations.TimestampType;
 import eu.europa.esig.dss.i18n.I18nProvider;
@@ -36,7 +37,6 @@ import eu.europa.esig.dss.policy.jaxb.Algo;
 import eu.europa.esig.dss.policy.jaxb.AlgoExpirationDate;
 import eu.europa.esig.dss.policy.jaxb.ConstraintsParameters;
 import eu.europa.esig.dss.policy.jaxb.CryptographicConstraint;
-import eu.europa.esig.dss.policy.jaxb.Level;
 import eu.europa.esig.dss.policy.jaxb.ListAlgo;
 import eu.europa.esig.dss.simplereport.SimpleReport;
 import eu.europa.esig.dss.validation.reports.Reports;
@@ -83,7 +83,7 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		
 		result = defaultConstraintSetLevelForPreviousValidationPolicy(Level.WARN);
 		assertEquals(Indication.TOTAL_PASSED, result);
-		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 		
 		result = defaultConstraintAlgorithmExpiredTest(ALGORITHM_SHA1, 0); // some other algorithm is expired
 		assertEquals(Indication.TOTAL_PASSED, result);
@@ -104,40 +104,40 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		revocationBasicBuildingBlock = detailedReport.getBasicBuildingBlockById(detailedReport.getRevocationIds().get(0));
 		assertEquals(Indication.INDETERMINATE, revocationBasicBuildingBlock.getSAV().getConclusion().getIndication());
 		assertEquals(Indication.INDETERMINATE, detailedReport.getBasicTimestampValidationIndication(detailedReport.getTimestampIds().get(0)));
-		checkRevocationErrorPresence(detailedReport, MessageTag.ASCCM_DAA_ANS, true);
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_DAA_ANS, true);
+		checkRevocationErrorPresence(detailedReport, MessageTag.ASCCM_CAA_ANS, true);
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_CAA_ANS, true);
 
 		result = defaultConstraintSetLevelForPreviousValidationPolicy(Level.WARN);
 		assertEquals(Indication.TOTAL_PASSED, result);
-		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_DAA_ANS, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_CAA_ANS, SignatureAlgorithm.RSA_SHA256.getName(), MessageTag.ACCM_POS_SIG_SIG));
 		
 		result = defaultConstraintAcceptableDigestAlgorithmIsNotDefined(ALGORITHM_SHA1, 0); // some other algorithm is not defined
 		assertEquals(Indication.TOTAL_PASSED, result);
 		detailedReport = createDetailedReport();
-		checkErrorMessageAbsence(MessageTag.ASCCM_DAA_ANS);
+		checkErrorMessageAbsence(MessageTag.ASCCM_CAA_ANS);
 		revocationBasicBuildingBlock = detailedReport.getBasicBuildingBlockById(detailedReport.getRevocationIds().get(0));
 		assertEquals(Indication.PASSED, revocationBasicBuildingBlock.getSAV().getConclusion().getIndication());
 		assertEquals(Indication.PASSED, detailedReport.getBasicTimestampValidationIndication(detailedReport.getTimestampIds().get(0)));
-		checkRevocationErrorPresence(detailedReport, MessageTag.ASCCM_DAA_ANS, false);
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_DAA_ANS, false);
+		checkRevocationErrorPresence(detailedReport, MessageTag.ASCCM_CAA_ANS, false);
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_CAA_ANS, false);
 		
 		result = defaultConstraintAcceptableEncryptionAlgorithmIsNotDefined(ALGORITHM_RSA, 0);
 		assertEquals(Indication.INDETERMINATE, result);
 
 		result = defaultConstraintSetLevelForPreviousValidationPolicy(Level.WARN);
 		assertEquals(Indication.TOTAL_PASSED, result);
-		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_EAA_ANS, EncryptionAlgorithm.RSA, MessageTag.ACCM_POS_SIG_SIG));
+		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_CAA_ANS, SignatureAlgorithm.RSA_SHA256.getName(), MessageTag.ACCM_POS_SIG_SIG));
 		
 		result = defaultConstraintAcceptableEncryptionAlgorithmIsNotDefined(ALGORITHM_DSA, 0); // some other algorithm is not defined
 		assertEquals(Indication.TOTAL_PASSED, result);
-		checkErrorMessageAbsence(MessageTag.ASCCM_EAA_ANS);
+		checkErrorMessageAbsence(MessageTag.ASCCM_CAA_ANS);
 		
 		result = defaultConstraintLargeMiniPublicKeySize(ALGORITHM_RSA);
 		assertEquals(Indication.INDETERMINATE, result);
 
 		result = defaultConstraintSetLevelForPreviousValidationPolicy(Level.WARN);
 		assertEquals(Indication.TOTAL_PASSED, result);
-		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_APKSA_ANS, EncryptionAlgorithm.RSA, "2048", MessageTag.ACCM_POS_SIG_SIG));
+		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_APKSA_ANS, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 		
 		result = defaultConstraintLargeMiniPublicKeySize(ALGORITHM_DSA); // some other algorithm is changed
 		assertEquals(Indication.TOTAL_PASSED, result);
@@ -218,7 +218,7 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		detailedReport = createDetailedReport();
 		XmlBasicBuildingBlocks revocationBasicBuildingBlock = detailedReport.getBasicBuildingBlockById(detailedReport.getRevocationIds().get(0));
 		assertEquals(Indication.PASSED, revocationBasicBuildingBlock.getSAV().getConclusion().getIndication());
-		checkErrorMessageAbsence(MessageTag.ASCCM_DAA_ANS);
+		checkErrorMessageAbsence(MessageTag.ASCCM_CAA_ANS);
 		
 		result = revocationConstraintAcceptableEncryptionAlgorithmIsNotDefined(ALGORITHM_RSA, 0);
 		detailedReport = createDetailedReport();
@@ -234,8 +234,8 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		assertEquals(Indication.INDETERMINATE, revocationBasicBuildingBlock.getSAV().getConclusion().getIndication());
 		assertEquals(Indication.INDETERMINATE, detailedReport.getBasicTimestampValidationIndication(detailedReport.getTimestampIds().get(0)));
 		assertEquals(SubIndication.CRYPTO_CONSTRAINTS_FAILURE_NO_POE, detailedReport.getBasicTimestampValidationSubIndication(detailedReport.getTimestampIds().get(0)));
-		checkRevocationErrorPresence(detailedReport, MessageTag.ASCCM_DAA_ANS, true);
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_DAA_ANS, false);
+		checkRevocationErrorPresence(detailedReport, MessageTag.ASCCM_CAA_ANS, true);
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_CAA_ANS, false);
 		
 		// Timestamp tests
 		result = timestampConstraintAcceptableDigestAlgorithmIsNotDefined(ALGORITHM_SHA256, 0);
@@ -243,8 +243,8 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		revocationBasicBuildingBlock = detailedReport.getBasicBuildingBlockById(detailedReport.getRevocationIds().get(0));
 		assertEquals(Indication.PASSED, revocationBasicBuildingBlock.getSAV().getConclusion().getIndication());
 		assertEquals(Indication.INDETERMINATE, detailedReport.getBasicTimestampValidationIndication(detailedReport.getTimestampIds().get(0)));
-		checkRevocationErrorPresence(detailedReport, MessageTag.ASCCM_DAA_ANS, false);
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_DAA_ANS, true);
+		checkRevocationErrorPresence(detailedReport, MessageTag.ASCCM_CAA_ANS, false);
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_CAA_ANS, true);
 		
 	}
 
@@ -263,206 +263,206 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
 		assertEquals(Indication.INDETERMINATE, result);
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, Level.WARN, null, null,
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.TOTAL_PASSED, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_ANR);
-		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_AKSNR);
+		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, null, Level.WARN, null,
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.INDETERMINATE, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, null, Level.WARN, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.TOTAL_PASSED, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_ANR);
-		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_AKSNR);
+		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, null, null, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.INDETERMINATE, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, null, Level.FAIL, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.INDETERMINATE, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, Level.WARN, Level.FAIL, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.INDETERMINATE, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, Level.FAIL, Level.FAIL, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.INDETERMINATE, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, Level.FAIL, Level.WARN, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.TOTAL_PASSED, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_ANR);
-		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_AKSNR);
+		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, null, null, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2014-01-01");
 		assertEquals(Indication.INDETERMINATE, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, null, Level.WARN, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2014-01-01");
 		assertEquals(Indication.INDETERMINATE, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, Level.WARN, null, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2014-01-01");
 		assertEquals(Indication.TOTAL_PASSED, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_ANR);
-		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_AKSNR);
+		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, Level.WARN, Level.WARN, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2014-01-01");
 		assertEquals(Indication.TOTAL_PASSED, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_ANR);
-		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_AKSNR);
+		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, Level.WARN, Level.FAIL, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2014-01-01");
 		assertEquals(Indication.TOTAL_PASSED, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_ANR);
-		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_AKSNR);
+		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, Level.FAIL, Level.WARN, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2014-01-01");
 		assertEquals(Indication.INDETERMINATE, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.WARN, null, Level.FAIL, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.INDETERMINATE, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.WARN, Level.FAIL, null, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.INDETERMINATE, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.WARN, Level.WARN, Level.FAIL, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.INDETERMINATE, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.WARN, Level.FAIL, Level.FAIL, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.INDETERMINATE, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.WARN, Level.FAIL, Level.WARN, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.TOTAL_PASSED, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_ANR);
-		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_AKSNR);
+		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.WARN, Level.WARN, Level.FAIL, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.INDETERMINATE, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, Level.WARN, Level.INFORM, "2014-06-30",
 				ALGORITHM_SHA256, 0, "2015-01-01");
 		assertEquals(Indication.TOTAL_PASSED, result);
 		reports = createReports();
 		detailedReport = reports.getDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_ANR);
-		checkInfoMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_AKSNR);
+		checkInfoMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, null, null, null,
 				ALGORITHM_RSA, 2048, "2015-01-01");
@@ -471,7 +471,7 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		detailedReport = reports.getDetailedReport();
 		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, EncryptionAlgorithm.RSA, "2048", MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, Level.WARN, null, null,
 				ALGORITHM_RSA, 2048, "2015-01-01");
@@ -481,7 +481,7 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		simpleReport = reports.getSimpleReport();
 		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_AKSNR);
-		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, EncryptionAlgorithm.RSA, "2048", MessageTag.ACCM_POS_SIG_SIG));
+		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, null, Level.WARN, null,
 				ALGORITHM_RSA, 2048, "2015-01-01");
@@ -490,7 +490,7 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		detailedReport = reports.getDetailedReport();
 		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, EncryptionAlgorithm.RSA, "2048", MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, null, Level.WARN, "2014-06-30",
 				ALGORITHM_RSA, 2048, "2015-01-01");
@@ -500,7 +500,7 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		simpleReport = reports.getSimpleReport();
 		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_AKSNR);
-		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, EncryptionAlgorithm.RSA, "2048", MessageTag.ACCM_POS_SIG_SIG));
+		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, null, Level.WARN, "2014-06-30",
 				ALGORITHM_RSA, 2048, "2014-01-01");
@@ -509,7 +509,7 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		detailedReport = reports.getDetailedReport();
 		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, EncryptionAlgorithm.RSA, "2048", MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, Level.WARN, Level.WARN, "2014-06-30",
 				ALGORITHM_RSA, 2048, "2014-01-01");
@@ -519,7 +519,7 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		simpleReport = reports.getSimpleReport();
 		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_AKSNR);
-		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, EncryptionAlgorithm.RSA, "2048", MessageTag.ACCM_POS_SIG_SIG));
+		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.FAIL, Level.FAIL, Level.WARN, "2014-06-30",
 				ALGORITHM_RSA, 2048, "2014-01-01");
@@ -528,7 +528,7 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		detailedReport = reports.getDetailedReport();
 		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, EncryptionAlgorithm.RSA, "2048", MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.WARN, null, Level.WARN, null,
 				ALGORITHM_RSA, 2048, "2015-01-01");
@@ -538,7 +538,7 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		simpleReport = reports.getSimpleReport();
 		checkErrorMessageAbsence(simpleReport, MessageTag.ASCCM_AR_ANS_AKSNR);
-		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, EncryptionAlgorithm.RSA, "2048", MessageTag.ACCM_POS_SIG_SIG));
+		checkWarningMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = cryptoSuiteCustomUpdateDateValidation(Level.WARN, null, Level.FAIL, "2014-06-30",
 				ALGORITHM_RSA, 2048, "2015-01-01");
@@ -547,7 +547,7 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		detailedReport = reports.getDetailedReport();
 		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
 		simpleReport = reports.getSimpleReport();
-		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, EncryptionAlgorithm.RSA, "2048", MessageTag.ACCM_POS_SIG_SIG));
+		checkErrorMessagePresence(simpleReport, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SHA256.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 	}
 	
 	@Test
@@ -574,50 +574,50 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		result = signatureConstraintAlgorithmExpired(ALGORITHM_SHA256, "2020-01-01", 0);
 		assertEquals(Indication.TOTAL_PASSED, result);
 		detailedReport = createDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		
 		result = signatureConstraintAlgorithmExpired(ALGORITHM_SHA256, "2019-01-01", 0);
 		assertEquals(Indication.TOTAL_PASSED, result);
 		detailedReport = createDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true); // PSV is not executed
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true); // PSV is not executed
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		
 		result = signatureConstraintAlgorithmExpired(ALGORITHM_SHA256, "2018-01-01", 0);
 		assertEquals(Indication.INDETERMINATE, result);
 		detailedReport = createDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, true);
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		
 		result = signatureConstraintAlgorithmExpired(ALGORITHM_SHA1, "2018-01-01", 0);
 		assertEquals(Indication.TOTAL_PASSED, result);
 		detailedReport = createDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		
 		result = signatureConstraintAlgorithmExpired(ALGORITHM_RSA, "2020-01-01", 0);
 		assertEquals(Indication.TOTAL_PASSED, result);
 		detailedReport = createDetailedReport();
-		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		
 		result = signatureConstraintAlgorithmExpired(ALGORITHM_RSA, "2019-01-01", 2048);
 		assertEquals(Indication.TOTAL_PASSED, result);
 		detailedReport = createDetailedReport();
 		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true); // PSV is not executed
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		
 		result = signatureConstraintAlgorithmExpired(ALGORITHM_RSA, "2018-01-01", 2048);
 		assertEquals(Indication.INDETERMINATE, result);
 		detailedReport = createDetailedReport();
 		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true);
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 		
 		result = signatureConstraintAlgorithmExpired(ALGORITHM_RSA, "2019-01-01", 2048);
 		assertEquals(Indication.TOTAL_PASSED, result);
 		detailedReport = createDetailedReport();
 		checkBasicSignatureErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, true); // PSV is not executed
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_ANR, false);
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_AR_ANS_AKSNR, false);
 	}
 	
 	@Test
@@ -745,6 +745,7 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		simpleReport = createSimpleReport();
 		assertEquals(Indication.INDETERMINATE, simpleReport.getIndication(simpleReport.getFirstSignatureId()));
 
+		setAlgoExpDate(cryptographic, "RSA", 1536, "2020-1-1");
 		removeAlgo(cryptographic.getAlgoExpirationDate().getAlgos(), "RSA", 2048);
 		simpleReport = createSimpleReport();
 		assertEquals(Indication.TOTAL_PASSED, simpleReport.getIndication(simpleReport.getFirstSignatureId()));
@@ -848,8 +849,16 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		acceptableEncryptionAlgos.getAlgos().add(createAlgo("RSA"));
 
 		simpleReport = createSimpleReport();
+		assertEquals(Indication.TOTAL_PASSED, simpleReport.getIndication(simpleReport.getFirstSignatureId()));
+
+		// too big
+		miniPublicKeySize.getAlgos().add(createAlgo("RSA", 4000));
+
+		simpleReport = createSimpleReport();
 		assertEquals(Indication.INDETERMINATE, simpleReport.getIndication(simpleReport.getFirstSignatureId()));
 
+		miniPublicKeySize.getAlgos().clear();
+		miniPublicKeySize.getAlgos().add(createAlgo("DSA", 1024));
 		miniPublicKeySize.getAlgos().add(createAlgo("RSA", 1024));
 
 		simpleReport = createSimpleReport();
@@ -902,7 +911,7 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 
 		result = defaultConstraintSetLevelForPreviousValidationPolicy(Level.WARN);
 		assertEquals(Indication.TOTAL_PASSED, result);
-		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_AKSNR, SignatureAlgorithm.RSA_SSA_PSS_SHA256_MGF1.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = defaultConstraintAlgorithmExpiredTest(ALGORITHM_SHA1, 0); // some other algorithm is expired
 		assertEquals(Indication.TOTAL_PASSED, result);
@@ -923,41 +932,39 @@ class CustomCryptographicConstraintsTest extends AbstractCryptographicConstraint
 		revocationBasicBuildingBlock = detailedReport.getBasicBuildingBlockById(detailedReport.getRevocationIds().get(0));
 		assertEquals(Indication.INDETERMINATE, revocationBasicBuildingBlock.getSAV().getConclusion().getIndication());
 		assertEquals(Indication.INDETERMINATE, detailedReport.getBasicTimestampValidationIndication(detailedReport.getTimestampIds().get(0)));
-		checkRevocationErrorPresence(detailedReport, MessageTag.ASCCM_DAA_ANS, true);
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_DAA_ANS, true);
+		checkRevocationErrorPresence(detailedReport, MessageTag.ASCCM_CAA_ANS, true);
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_CAA_ANS, true);
 
 		result = defaultConstraintSetLevelForPreviousValidationPolicy(Level.WARN);
 		assertEquals(Indication.TOTAL_PASSED, result);
-		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_DAA_ANS, DigestAlgorithm.SHA256, MessageTag.ACCM_POS_SIG_SIG));
+		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_CAA_ANS, SignatureAlgorithm.RSA_SSA_PSS_SHA256_MGF1.getName(), MessageTag.ACCM_POS_SIG_SIG));
 
 		result = defaultConstraintAcceptableDigestAlgorithmIsNotDefined(ALGORITHM_SHA1, 0); // some other algorithm is not defined
 		assertEquals(Indication.TOTAL_PASSED, result);
 		detailedReport = createDetailedReport();
-		checkErrorMessageAbsence(MessageTag.ASCCM_DAA_ANS);
+		checkErrorMessageAbsence(MessageTag.ASCCM_CAA_ANS);
 		revocationBasicBuildingBlock = detailedReport.getBasicBuildingBlockById(detailedReport.getRevocationIds().get(0));
 		assertEquals(Indication.PASSED, revocationBasicBuildingBlock.getSAV().getConclusion().getIndication());
 		assertEquals(Indication.PASSED, detailedReport.getBasicTimestampValidationIndication(detailedReport.getTimestampIds().get(0)));
-		checkRevocationErrorPresence(detailedReport, MessageTag.ASCCM_DAA_ANS, false);
-		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_DAA_ANS, false);
+		checkRevocationErrorPresence(detailedReport, MessageTag.ASCCM_CAA_ANS, false);
+		checkTimestampErrorPresence(detailedReport, MessageTag.ASCCM_CAA_ANS, false);
 
 		result = defaultConstraintAcceptableEncryptionAlgorithmIsNotDefined(ALGORITHM_RSASSA_PSS, 0);
-		assertEquals(Indication.TOTAL_PASSED, result); // TODO : temp processing in 6.1 (accepts RSA)
+		assertEquals(Indication.INDETERMINATE, result);
 
 		result = defaultConstraintSetLevelForPreviousValidationPolicy(Level.WARN);
 		assertEquals(Indication.TOTAL_PASSED, result);
-		// TODO : temp handling (see above)
-		// checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_EAA_ANS, EncryptionAlgorithm.RSASSA_PSS.getName(), MessageTag.ACCM_POS_SIG_SIG));
 
 		result = defaultConstraintAcceptableEncryptionAlgorithmIsNotDefined(ALGORITHM_DSA, 0); // some other algorithm is not defined
 		assertEquals(Indication.TOTAL_PASSED, result);
-		checkErrorMessageAbsence(MessageTag.ASCCM_EAA_ANS);
+		checkErrorMessageAbsence(MessageTag.ASCCM_CAA_ANS);
 
 		result = defaultConstraintLargeMiniPublicKeySize(ALGORITHM_RSASSA_PSS);
 		assertEquals(Indication.INDETERMINATE, result);
 
 		result = defaultConstraintSetLevelForPreviousValidationPolicy(Level.WARN);
 		assertEquals(Indication.TOTAL_PASSED, result);
-		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_APKSA_ANS, EncryptionAlgorithm.RSASSA_PSS.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
+		checkWarningMessagePresence(i18nProvider.getMessage(MessageTag.ASCCM_APKSA_ANS, SignatureAlgorithm.RSA_SSA_PSS_SHA256_MGF1.getName(), "2048", MessageTag.ACCM_POS_SIG_SIG));
 
 		result = defaultConstraintLargeMiniPublicKeySize(ALGORITHM_DSA); // some other algorithm is changed
 		assertEquals(Indication.TOTAL_PASSED, result);

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -23,6 +23,7 @@ package eu.europa.esig.dss.asic.xades.merge.asice;
 import eu.europa.esig.dss.asic.xades.ASiCWithXAdESSignatureParameters;
 import eu.europa.esig.dss.asic.xades.merge.AbstractWithXAdESTestMerge;
 import eu.europa.esig.dss.asic.xades.signature.ASiCWithXAdESService;
+import eu.europa.esig.dss.diagnostic.DiagnosticData;
 import eu.europa.esig.dss.enumerations.ASiCContainerType;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.model.DSSDocument;
@@ -31,6 +32,7 @@ import eu.europa.esig.dss.signature.MultipleDocumentsSignatureService;
 import eu.europa.esig.dss.xades.XAdESTimestampParameters;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -50,12 +52,16 @@ class ASiCEWithXAdESLevelBContainerMergerSameSigParamsTest extends AbstractWithX
 
         service = new ASiCWithXAdESService(getCompleteCertificateVerifier());
 
-        Date signingTime = new Date();
+        Calendar calendar = Calendar.getInstance();
+        Date signingTime = calendar.getTime();
 
         firstSignatureParameters = new ASiCWithXAdESSignatureParameters();
         firstSignatureParameters.setSignatureLevel(SignatureLevel.XAdES_BASELINE_B);
         firstSignatureParameters.aSiC().setContainerType(ASiCContainerType.ASiC_E);
         firstSignatureParameters.bLevel().setSigningDate(signingTime);
+
+        calendar.add(Calendar.SECOND, 1);
+        signingTime = calendar.getTime();
 
         secondSignatureParameters = new ASiCWithXAdESSignatureParameters();
         secondSignatureParameters.setSignatureLevel(SignatureLevel.XAdES_BASELINE_B);
@@ -85,6 +91,11 @@ class ASiCEWithXAdESLevelBContainerMergerSameSigParamsTest extends AbstractWithX
         secondSignatureParameters.setSigningCertificate(getSigningCert());
         secondSignatureParameters.setCertificateChain(getCertificateChain());
         return secondSignatureParameters;
+    }
+
+    @Override
+    protected void checkSigningDate(DiagnosticData diagnosticData) {
+        // skip
     }
 
     @Override

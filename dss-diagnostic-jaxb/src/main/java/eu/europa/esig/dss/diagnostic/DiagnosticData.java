@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -23,8 +23,13 @@ package eu.europa.esig.dss.diagnostic;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlCertificate;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlContainerInfo;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlDiagnosticData;
+import eu.europa.esig.dss.diagnostic.jaxb.XmlAttestationPresentationInfo;
+import eu.europa.esig.dss.diagnostic.jaxb.XmlAttestation;
+import eu.europa.esig.dss.diagnostic.jaxb.XmlAttestationRevocationToken;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlEncapsulationType;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlEvidenceRecord;
+import eu.europa.esig.dss.diagnostic.jaxb.XmlListOfTrustedEntities;
+import eu.europa.esig.dss.diagnostic.jaxb.XmlManifestFile;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlOrphanCertificateToken;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlOrphanRevocationToken;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlRevocation;
@@ -38,8 +43,8 @@ import eu.europa.esig.dss.enumerations.ASiCContainerType;
 import eu.europa.esig.dss.enumerations.CertificateSourceType;
 import eu.europa.esig.dss.enumerations.CertificateStatus;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.AttestationDocumentFormat;
 import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
-import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
 import eu.europa.esig.dss.enumerations.RevocationReason;
 import eu.europa.esig.dss.enumerations.RevocationType;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
@@ -75,6 +80,9 @@ public class DiagnosticData {
 
 	/** List of found evidence records */
 	private List<EvidenceRecordWrapper> foundEvidenceRecords;
+
+	/** List of found attestation presentations */
+	private List<AttestationWrapper> foundAttestations;
 
 	/**
 	 * Default constructor
@@ -231,24 +239,6 @@ public class DiagnosticData {
 	}
 
 	/**
-	 * This method returns the {@code MaskGenerationFunction} for the given signature.
-	 *
-	 * @param signatureId
-	 *            The identifier of the signature, for which the algorithm is sought.
-	 * @return The {@code MaskGenerationFunction} for the given signature
-	 * @deprecated since DSS 6.1. Please use {@code #getSignatureEncryptionAlgorithm} method to determine
-	 *             the mask generation function (i.e. RSA for none MGF, RSASSA-PSS for MGF1)
-	 */
-	@Deprecated
-	public MaskGenerationFunction getSignatureMaskGenerationFunction(String signatureId) {
-		EncryptionAlgorithm encryptionAlgorithm = getSignatureEncryptionAlgorithm(signatureId);
-		if (EncryptionAlgorithm.RSASSA_PSS == encryptionAlgorithm) {
-			return MaskGenerationFunction.MGF1;
-		}
-		return null;
-	}
-
-	/**
 	 * This method returns signing certificate dss id for the given signature.
 	 *
 	 * @param signatureId
@@ -280,9 +270,21 @@ public class DiagnosticData {
 	 *
 	 * @param signatureId
 	 *            The identifier of the signature.
+	 * @return list of certificates representing a signature's certificate chain.
+	 */
+	public List<CertificateWrapper> getSignatureCertificateChain(final String signatureId) {
+		SignatureWrapper signature = getSignatureByIdNullSafe(signatureId);
+		return signature.getCertificateChain();
+	}
+
+	/**
+	 * This method returns the list of certificate identifiers in the chain of the main signature.
+	 *
+	 * @param signatureId
+	 *            The identifier of the signature.
 	 * @return list of certificate's dss id for the given signature.
 	 */
-	public List<String> getSignatureCertificateChain(final String signatureId) {
+	public List<String> getSignatureCertificateChainIds(final String signatureId) {
 		SignatureWrapper signature = getSignatureByIdNullSafe(signatureId);
 		List<String> result = new ArrayList<>();
 		for (CertificateWrapper certWrapper : signature.getCertificateChain()) {
@@ -464,6 +466,18 @@ public class DiagnosticData {
 	}
 
 	/**
+	 * Indicates if there is an embedded evidence record.
+	 *
+	 * @param signatureId
+	 *            The identifier of the signature.
+	 * @return true if an embedded evidence record is present
+	 */
+	public boolean isThereERSLevel(final String signatureId) {
+		SignatureWrapper signatureWrapper = getSignatureByIdNullSafe(signatureId);
+		return signatureWrapper.isThereERSLevel();
+	}
+
+	/**
 	 * Returns a list of all Signer's documents used to create a signature
 	 *
 	 * NOTE: returns a first level documents only (e.g. a signed Manifest for XAdES, when applicable)
@@ -600,7 +614,7 @@ public class DiagnosticData {
 	 * This method returns the revocation status for the given certificate.
 	 *
 	 * @param dssCertificateId DSS certificate identifier to be checked
-	 * @return certificate status
+	 * @return certificate revocation
 	 */
 	public CertificateStatus getCertificateRevocationStatus(final String dssCertificateId) {
 		CertificateWrapper certificate = getUsedCertificateByIdNullSafe(dssCertificateId);
@@ -998,6 +1012,59 @@ public class DiagnosticData {
 	}
 
 	/**
+	 * This method retrieves a list of attestation wrappers
+	 *
+	 * @return a list of attestation wrappers
+	 */
+	public List<AttestationWrapper> getAttestations() {
+		if (foundAttestations == null) {
+			foundAttestations = new ArrayList<>();
+			List<XmlAttestation> xmlAttestations = wrapped.getAttestations();
+			if (xmlAttestations != null) {
+				for (XmlAttestation xmlAttestation : xmlAttestations) {
+					foundAttestations.add(new AttestationWrapper(xmlAttestation));
+				}
+			}
+		}
+		return foundAttestations;
+	}
+
+	/**
+	 * Returns the AttestationWrapper corresponding to the given id.
+	 *
+	 * @param id
+	 *            attestation presentation id
+	 * @return attestation wrapper or null
+	 */
+	public AttestationWrapper getAttestationById(String id) {
+		List<AttestationWrapper> attestations = getAttestations();
+		for (AttestationWrapper attestation : attestations) {
+			if (id.equals(attestation.getId())) {
+				return attestation;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * This method returns the first attestation id.
+	 *
+	 * @return the first attestation id
+	 */
+	public String getFirstAttestationId() {
+		AttestationWrapper firstAttestation = getFirstAttestationNullSafe();
+		return firstAttestation.getId();
+	}
+
+	private AttestationWrapper getFirstAttestationNullSafe() {
+		List<AttestationWrapper> attestations = getAttestations();
+		if (attestations != null && !attestations.isEmpty()) {
+			return attestations.get(0);
+		}
+		return new AttestationWrapper(new XmlAttestation());
+	}
+
+	/**
 	 * This method retrieves a list of certificate wrappers
 	 * 
 	 * @return a list of {@link CertificateWrapper}s.
@@ -1024,7 +1091,7 @@ public class DiagnosticData {
 		Set<SignatureWrapper> signatures = new HashSet<>();
 		List<SignatureWrapper> mixedSignatures = getSignatures();
 		for (SignatureWrapper signatureWrapper : mixedSignatures) {
-			if (signatureWrapper.getParent() == null) {
+			if (!signatureWrapper.isCounterSignature() && !signatureWrapper.isKeyBindingSignature()) {
 				signatures.add(signatureWrapper);
 			}
 		}
@@ -1040,7 +1107,7 @@ public class DiagnosticData {
 		Set<SignatureWrapper> signatures = new HashSet<>();
 		List<SignatureWrapper> mixedSignatures = getSignatures();
 		for (SignatureWrapper signatureWrapper : mixedSignatures) {
-			if (signatureWrapper.getParent() != null) {
+			if (signatureWrapper.isCounterSignature()) {
 				signatures.add(signatureWrapper);
 			}
 		}
@@ -1056,7 +1123,23 @@ public class DiagnosticData {
 		Set<SignatureWrapper> signatures = new HashSet<>();
 		List<SignatureWrapper> mixedSignatures = getSignatures();
 		for (SignatureWrapper signatureWrapper : mixedSignatures) {
-			if (signatureWrapper.getParent() != null && signatureWrapper.getParent().equals(masterSignatureWrapper)) {
+			if (signatureWrapper.isCounterSignature() && signatureWrapper.getParent().equals(masterSignatureWrapper)) {
+				signatures.add(signatureWrapper);
+			}
+		}
+		return signatures;
+	}
+
+	/**
+	 * This method returns key binding signatures (not attestation signatures)
+	 *
+	 * @return a set of SignatureWrapper
+	 */
+	public Set<SignatureWrapper> getAllKeyBindingSignatures() {
+		Set<SignatureWrapper> signatures = new HashSet<>();
+		List<SignatureWrapper> mixedSignatures = getSignatures();
+		for (SignatureWrapper signatureWrapper : mixedSignatures) {
+			if (signatureWrapper.isKeyBindingSignature()) {
 				signatures.add(signatureWrapper);
 			}
 		}
@@ -1091,6 +1174,32 @@ public class DiagnosticData {
 			}
 		}
 		return latest;
+	}
+
+	/**
+	 * This method returns all electronic attestation of attributes (Attestations)
+	 *
+	 * @return a set of attestations
+	 */
+	public Set<AttestationWrapper> getAllAttestations() {
+		Set<AttestationWrapper> attestations = new HashSet<>();
+		for (XmlAttestation xmlAttestation : wrapped.getAttestations()) {
+			attestations.add(new AttestationWrapper(xmlAttestation));
+		}
+		return attestations;
+	}
+
+	/**
+	 * This method returns all attestation revocation tokens
+	 *
+	 * @return a set of revocation data
+	 */
+	public Set<AttestationRevocationTokenWrapper> getAllAttestationRevocationTokens() {
+		Set<AttestationRevocationTokenWrapper> attestationRevocationTokens = new HashSet<>();
+		for (XmlAttestationRevocationToken xmlAttestationRevocationToken : wrapped.getUsedAttestationRevocationTokens()) {
+			attestationRevocationTokens.add(new AttestationRevocationTokenWrapper(xmlAttestationRevocationToken));
+		}
+		return attestationRevocationTokens;
 	}
 
 	/**
@@ -1236,6 +1345,47 @@ public class DiagnosticData {
 	}
 
 	/**
+	 * Gets a list of all manifest files extracted from the ASiC container
+	 *
+	 * @return a list of {@link XmlManifestFile}s
+	 */
+	public List<XmlManifestFile> getManifestFiles() {
+		if (wrapped.getContainerInfo() != null) {
+			return wrapped.getContainerInfo().getManifestFiles();
+		}
+		return Collections.emptyList();
+	}
+
+	/**
+	 * Gets an XmlManifestFile for the given {@code filename} document
+	 *
+	 * @param filename {@link String} to get an applicable XmlManifestFile for
+	 * @return {@link XmlManifestFile} if found
+	 */
+	public XmlManifestFile getManifestFileForFilename(String filename) {
+		if (filename != null) {
+			for (XmlManifestFile manifestFile : getManifestFiles()) {
+				if (filename.equals(manifestFile.getSignatureFilename())) {
+					return manifestFile;
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Gets a list of all original signed document filenames
+	 *
+	 * @return a list of {@link String}s
+	 */
+	public List<String> getContainerContentFilenames() {
+		if (wrapped.getContainerInfo() != null) {
+			return wrapped.getContainerInfo().getContentFiles();
+		}
+		return Collections.emptyList();
+	}
+
+	/**
 	 * Returns whether a document has been validated against PDF/A compliance
 	 *
 	 * @return TRUE if the PDF/A validation has been performed, FALSE otherwise
@@ -1281,6 +1431,82 @@ public class DiagnosticData {
 	}
 
 	/**
+	 * Gets the remote website URL used to establish a TLS/SSL secure connection.
+	 * NOTE: This method is used on QWAC validation.
+	 *
+	 * @return {@link String}
+	 */
+	public String getWebsiteUrl() {
+		if (wrapped.getConnectionInfo() != null) {
+			return wrapped.getConnectionInfo().getUrl();
+		}
+		return null;
+	}
+
+	/**
+	 * Gets the TLS Certificate Binding URL, when present (i.e. URL under the 'Link' response header).
+	 * NOTE: This method is used on QWAC validation.
+	 *
+	 * @return {@link String}
+	 */
+	public String getTLSCertificateBindingUrl() {
+		if (wrapped.getConnectionInfo() != null) {
+			return wrapped.getConnectionInfo().getTLSCertificateBindingUrl();
+		}
+		return null;
+	}
+
+	/**
+	 * Gets a TLS certificate used to establish a secure connection during the TLS/SSL handshake.
+	 * NOTE: This method is used on QWAC validation.
+	 *
+	 * @return {@link CertificateWrapper}
+	 */
+	public CertificateWrapper getTLSCertificate() {
+		if (wrapped.getConnectionInfo() != null && wrapped.getConnectionInfo().getTLSCertificate() != null
+                && wrapped.getConnectionInfo().getTLSCertificate().getCertificate() != null) {
+			return new CertificateWrapper(wrapped.getConnectionInfo().getTLSCertificate().getCertificate());
+		}
+		return null;
+	}
+
+	/**
+	 * Gets the TLS Certificate Binding signature, when present (i.e. accessed from the URL under the 'Link' response header).
+	 * NOTE: This method is used on QWAC validation.
+	 *
+	 * @return {@link SignatureWrapper}
+	 */
+	public SignatureWrapper getTLSCertificateBindingSignature() {
+		if (wrapped.getConnectionInfo() != null && wrapped.getConnectionInfo().getTLSCertificateBindingSignature() != null
+				&& wrapped.getConnectionInfo().getTLSCertificateBindingSignature().getSignature() != null) {
+			return new SignatureWrapper(wrapped.getConnectionInfo().getTLSCertificateBindingSignature().getSignature());
+		}
+		return null;
+	}
+
+	/**
+	 * Returns information about Attestation Presentation document
+	 *
+	 * @return {@link XmlAttestationPresentationInfo}
+	 */
+	public XmlAttestationPresentationInfo getAttestationPresentationInfo() {
+		return wrapped.getAttestationPresentationInfo();
+	}
+
+	/**
+	 * Gets type of the Attestation Presentation document
+	 *
+	 * @return {@link AttestationDocumentFormat}
+	 */
+	public AttestationDocumentFormat getAttestationPresentationFormat() {
+		XmlAttestationPresentationInfo attestationPresentationInfo = getAttestationPresentationInfo();
+		if (attestationPresentationInfo != null) {
+			return attestationPresentationInfo.getFormat();
+		}
+		return null;
+	}
+
+	/**
 	 * This method returns the JAXB model of the used trusted lists
 	 * 
 	 * @return the JAXB model of the used trusted lists
@@ -1307,6 +1533,38 @@ public class DiagnosticData {
 		for (XmlTrustedList xmlTrustedList : trustedLists) {
 			if (xmlTrustedList.isLOTL()) {
 				result.add(xmlTrustedList);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * This method returns the JAXB model of the used lists of trusted entities
+	 *
+	 * @return the JAXB model of the used lists of trusted entities
+	 */
+	public List<XmlListOfTrustedEntities> getListsOfTrustedEntities() {
+		List<XmlListOfTrustedEntities> result = new ArrayList<>();
+		List<XmlListOfTrustedEntities> listsOfTrustedEntities = wrapped.getListsOfTrustedEntities();
+		for (XmlListOfTrustedEntities lote : listsOfTrustedEntities) {
+			if (!lote.isLoLoTE()) {
+				result.add(lote);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * This method returns the JAXB model of the used lists of lists of trusted entities
+	 *
+	 * @return the JAXB model of the used lists of lists of trusted entities
+	 */
+	public List<XmlListOfTrustedEntities> getListsOfListsOfTrustedEntities() {
+		List<XmlListOfTrustedEntities> result = new ArrayList<>();
+		List<XmlListOfTrustedEntities> listsOfTrustedEntities = wrapped.getListsOfTrustedEntities();
+		for (XmlListOfTrustedEntities lote : listsOfTrustedEntities) {
+			if (lote.isLoLoTE()) {
+				result.add(lote);
 			}
 		}
 		return result;

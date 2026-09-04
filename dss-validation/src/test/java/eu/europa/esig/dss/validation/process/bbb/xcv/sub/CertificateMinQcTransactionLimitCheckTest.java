@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -28,8 +28,9 @@ import eu.europa.esig.dss.diagnostic.jaxb.XmlCertificate;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlQcEuLimitValue;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlQcStatements;
 import eu.europa.esig.dss.enumerations.CertificateExtensionEnum;
+import eu.europa.esig.dss.enumerations.Level;
+import eu.europa.esig.dss.policy.IntValueConstraintWrapper;
 import eu.europa.esig.dss.policy.jaxb.IntValueConstraint;
-import eu.europa.esig.dss.policy.jaxb.Level;
 import eu.europa.esig.dss.validation.process.bbb.AbstractTestCheck;
 import eu.europa.esig.dss.validation.process.bbb.xcv.sub.checks.CertificateMinQcTransactionLimitCheck;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class CertificateMinQcTransactionLimitCheckTest extends AbstractTestCheck {
 
     @Test
-    void validTest() throws Exception {
+    void validTest() {
         XmlQcStatements xmlQcStatements = new XmlQcStatements();
         xmlQcStatements.setOID(CertificateExtensionEnum.QC_STATEMENTS.getOid());
 
@@ -59,7 +60,7 @@ class CertificateMinQcTransactionLimitCheckTest extends AbstractTestCheck {
 
         XmlSubXCV result = new XmlSubXCV();
         CertificateMinQcTransactionLimitCheck cmqctlc = new CertificateMinQcTransactionLimitCheck(i18nProvider, result,
-                new CertificateWrapper(xc), constraint);
+                new CertificateWrapper(xc), new IntValueConstraintWrapper(constraint));
         cmqctlc.execute();
 
         List<XmlConstraint> constraints = result.getConstraint();
@@ -68,7 +69,7 @@ class CertificateMinQcTransactionLimitCheckTest extends AbstractTestCheck {
     }
 
     @Test
-    void sameNumberTest() throws Exception {
+    void sameNumberTest() {
         XmlQcStatements xmlQcStatements = new XmlQcStatements();
         xmlQcStatements.setOID(CertificateExtensionEnum.QC_STATEMENTS.getOid());
 
@@ -86,7 +87,7 @@ class CertificateMinQcTransactionLimitCheckTest extends AbstractTestCheck {
 
         XmlSubXCV result = new XmlSubXCV();
         CertificateMinQcTransactionLimitCheck cmqctlc = new CertificateMinQcTransactionLimitCheck(i18nProvider, result,
-                new CertificateWrapper(xc), constraint);
+                new CertificateWrapper(xc), new IntValueConstraintWrapper(constraint));
         cmqctlc.execute();
 
         List<XmlConstraint> constraints = result.getConstraint();
@@ -95,7 +96,7 @@ class CertificateMinQcTransactionLimitCheckTest extends AbstractTestCheck {
     }
 
     @Test
-    void invalidTest() throws Exception {
+    void invalidTest() {
         XmlQcStatements xmlQcStatements = new XmlQcStatements();
         xmlQcStatements.setOID(CertificateExtensionEnum.QC_STATEMENTS.getOid());
 
@@ -113,7 +114,7 @@ class CertificateMinQcTransactionLimitCheckTest extends AbstractTestCheck {
 
         XmlSubXCV result = new XmlSubXCV();
         CertificateMinQcTransactionLimitCheck cmqctlc = new CertificateMinQcTransactionLimitCheck(i18nProvider, result,
-                new CertificateWrapper(xc), constraint);
+                new CertificateWrapper(xc), new IntValueConstraintWrapper(constraint));
         cmqctlc.execute();
 
         List<XmlConstraint> constraints = result.getConstraint();
@@ -122,7 +123,7 @@ class CertificateMinQcTransactionLimitCheckTest extends AbstractTestCheck {
     }
 
     @Test
-    void qcLimitValueNotPresentTest() throws Exception {
+    void qcLimitValueNotPresentTest() {
         XmlQcStatements xmlQcStatements = new XmlQcStatements();
         xmlQcStatements.setOID(CertificateExtensionEnum.QC_STATEMENTS.getOid());
 
@@ -135,7 +136,7 @@ class CertificateMinQcTransactionLimitCheckTest extends AbstractTestCheck {
 
         XmlSubXCV result = new XmlSubXCV();
         CertificateMinQcTransactionLimitCheck cmqctlc = new CertificateMinQcTransactionLimitCheck(i18nProvider, result,
-                new CertificateWrapper(xc), constraint);
+                new CertificateWrapper(xc), new IntValueConstraintWrapper(constraint));
         cmqctlc.execute();
 
         List<XmlConstraint> constraints = result.getConstraint();
@@ -144,7 +145,7 @@ class CertificateMinQcTransactionLimitCheckTest extends AbstractTestCheck {
     }
 
     @Test
-    void qcStatementsNotPresentTest() throws Exception {
+    void qcStatementsNotPresentTest() {
         IntValueConstraint constraint = new IntValueConstraint();
         constraint.setLevel(Level.FAIL);
         constraint.setValue(500000);
@@ -153,7 +154,7 @@ class CertificateMinQcTransactionLimitCheckTest extends AbstractTestCheck {
 
         XmlSubXCV result = new XmlSubXCV();
         CertificateMinQcTransactionLimitCheck cmqctlc = new CertificateMinQcTransactionLimitCheck(i18nProvider, result,
-                new CertificateWrapper(xc), constraint);
+                new CertificateWrapper(xc), new IntValueConstraintWrapper(constraint));
         cmqctlc.execute();
 
         List<XmlConstraint> constraints = result.getConstraint();

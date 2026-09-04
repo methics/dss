@@ -1,27 +1,29 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.pades.signature;
 
-import eu.europa.esig.dss.cades.signature.CMSSignedDocument;
-import eu.europa.esig.dss.cades.signature.CustomContentSigner;
+import eu.europa.esig.dss.cms.CMS;
+import eu.europa.esig.dss.cms.CMSSignedDocument;
+import eu.europa.esig.dss.cms.operator.CustomContentSigner;
+import eu.europa.esig.dss.cms.operator.CustomContentSignerBuilder;
 import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.model.DSSDocument;
@@ -33,11 +35,8 @@ import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.PAdESTimestampParameters;
 import eu.europa.esig.dss.pades.signature.suite.AbstractPAdESTestSignature;
 import eu.europa.esig.dss.signature.DocumentSignatureService;
-import eu.europa.esig.dss.spi.DSSASN1Utils;
 import eu.europa.esig.dss.spi.DSSUtils;
-import eu.europa.esig.dss.spi.x509.CMSSignedDataBuilder;
 import org.bouncycastle.cms.CMSSignedData;
-import org.bouncycastle.cms.SignerInfoGenerator;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.Date;
@@ -94,27 +93,22 @@ public abstract class AbstractPAdESWithExternalCMSServiceTest extends AbstractPA
 		signatureParameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
 		signatureParameters.setReason("DSS testing");
 
-		PAdESSignerInfoGeneratorBuilder padesCMSSignedDataBuilder = new PAdESSignerInfoGeneratorBuilder(messageDigest);
 		SignatureAlgorithm signatureAlgorithm = signatureParameters.getSignatureAlgorithm();
+		CustomContentSigner customContentSigner = new CustomContentSignerBuilder().build(signatureAlgorithm);
 
-		CustomContentSigner customContentSigner = new CustomContentSigner(signatureAlgorithm.getJCEId());
-		SignerInfoGenerator signerInfoGenerator = padesCMSSignedDataBuilder.build(signatureParameters, customContentSigner);
-
-		CMSSignedDataBuilder cmsSignedDataBuilder = new CMSSignedDataBuilder()
-				.setSigningCertificate(signatureParameters.getSigningCertificate())
-				.setCertificateChain(signatureParameters.getCertificateChain())
-				.setGenerateWithoutCertificates(signatureParameters.isGenerateTBSWithoutCertificate())
-				.setEncapsulate(false);
-		cmsSignedDataBuilder.createCMSSignedData(signerInfoGenerator, new InMemoryDocument(messageDigest.getValue()));
+		CMSForPAdESBuilderHelper cmsBuilderHelper = new CMSForPAdESBuilderHelper(messageDigest, signatureParameters, customContentSigner)
+				.setTrustedCertificateSource(getTrustedCertificateSource());
+		cmsBuilderHelper.createCMS();
 
 		SignatureValue signatureValue = getToken().sign(new ToBeSigned(customContentSigner.getOutputStream().toByteArray()),
 				signatureParameters.getDigestAlgorithm(), getPrivateKeyEntry());
 
-		customContentSigner = new CustomContentSigner(signatureAlgorithm.getJCEId(), signatureValue.getValue());
-		signerInfoGenerator = padesCMSSignedDataBuilder.build(signatureParameters, customContentSigner);
+		customContentSigner = new CustomContentSignerBuilder().build(signatureAlgorithm, signatureValue);
+		cmsBuilderHelper = new CMSForPAdESBuilderHelper(messageDigest, signatureParameters, customContentSigner)
+				.setTrustedCertificateSource(getTrustedCertificateSource());
 
-		CMSSignedData cmsSignedData = cmsSignedDataBuilder.createCMSSignedData(signerInfoGenerator, new InMemoryDocument(messageDigest.getValue()));
-		return DSSASN1Utils.getDEREncoded(cmsSignedData);
+		CMS cms = cmsBuilderHelper.createCMS();
+		return cms.getDEREncoded();
 	}
 
 	@Override

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -25,6 +25,8 @@ import eu.europa.esig.dss.model.x509.extension.QcStatements;
 import eu.europa.esig.dss.spi.QcStatementUtils;
 import eu.europa.esig.dss.model.tsl.Condition;
 import eu.europa.esig.dss.utils.Utils;
+
+import java.util.Objects;
 
 /**
  * This class contains an information extracted for a certificate equivalence condition
@@ -117,6 +119,25 @@ public class QCStatementCondition implements Condition {
 	@Override
 	public String toString() {
 		return toString("");
+	}
+
+	@Override
+	public boolean equals(Object object) {
+		if (this == object) return true;
+		if (object == null || getClass() != object.getClass()) return false;
+
+		QCStatementCondition that = (QCStatementCondition) object;
+		return Objects.equals(oid, that.oid)
+				&& Objects.equals(type, that.type)
+				&& Objects.equals(legislation, that.legislation);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = Objects.hashCode(oid);
+		result = 31 * result + Objects.hashCode(type);
+		result = 31 * result + Objects.hashCode(legislation);
+		return result;
 	}
 
 }

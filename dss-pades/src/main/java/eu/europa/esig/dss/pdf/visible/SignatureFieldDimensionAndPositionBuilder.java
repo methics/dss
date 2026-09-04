@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -59,7 +59,7 @@ public class SignatureFieldDimensionAndPositionBuilder {
     /** The page's rotation value */
     private final int pageRotation;
 
-    /** The signature field rectangle */
+    /** The page rectangle */
     private AnnotationBox pageBox;
 
     /** The annotation box representing a target signature field dimensions when applicable */
@@ -105,7 +105,7 @@ public class SignatureFieldDimensionAndPositionBuilder {
     public SignatureFieldDimensionAndPosition build() {
         assertConfigurationValid();
         if (dimensionAndPosition == null) {
-            dimensionAndPosition = new SignatureFieldDimensionAndPosition();
+            dimensionAndPosition = new SignatureFieldDimensionAndPosition(pageBox);
             initDpi();
             initRotation();
             assignImageBoundaryBox();
@@ -121,10 +121,17 @@ public class SignatureFieldDimensionAndPositionBuilder {
         ImageResolution imageResolution;
         if (imageParameters.getImage() != null) {
             try {
-                imageResolution = ImageUtils.secureReadMetadata(imageParameters);
+                // TODO : remove legacy handling later
+                if (imageParameters.isLegacyDPIHandling()) {
+                    imageResolution = ImageUtils.readDisplayMetadataBasedOnExtension(imageParameters.getImage());
+                } else {
+                    imageResolution = ImageUtils.secureReadMetadata(imageParameters);
+                }
+
             } catch (Exception e) {
                 LOG.warn("Cannot access the image metadata : {}. Returns default info.", e.getMessage());
-                imageResolution = new ImageResolution(imageParameters.getDpi(), imageParameters.getDpi());
+                int dpi = DPIUtils.getDpi(imageParameters.getDpi());
+                imageResolution = new ImageResolution(dpi, dpi);
             }
         } else {
             imageResolution = new ImageResolution(DEFAULT_DPI, DEFAULT_DPI);
@@ -251,7 +258,8 @@ public class SignatureFieldDimensionAndPositionBuilder {
      * @return {@link AnnotationBox}
      */
     private AnnotationBox getSignatureFieldBoundaryBox() {
-        float width, height;
+        float width;
+        float height;
         if (signatureFieldAnnotationBox != null) {
             width = signatureFieldAnnotationBox.getWidth();
             height = signatureFieldAnnotationBox.getHeight();
@@ -269,15 +277,27 @@ public class SignatureFieldDimensionAndPositionBuilder {
         DSSDocument docImage = imageParameters.getImage();
         if (docImage != null) {
             AnnotationBox imageBoundaryBox = ImageUtils.getImageBoundaryBox(docImage);
-            dimensionAndPosition.setImageWidth(imageBoundaryBox.getWidth() * scaleFactor);
-            dimensionAndPosition.setImageHeight(imageBoundaryBox.getHeight() * scaleFactor);
+            float xDpiFactor = 1;
+            float yDpiFactor = 1;
+            if (imageParameters.isLegacyDPIHandling()) {
+                if (width == 0) {
+                    xDpiFactor = DPIUtils.getPageScaleFactor(dimensionAndPosition.getImageResolution().getXDpi());
+                }
+                if (height == 0) {
+                    yDpiFactor = DPIUtils.getPageScaleFactor(dimensionAndPosition.getImageResolution().getYDpi());
+                }
+            } else if (imageParameters.getDpi() != null) {
+                int dpi = DPIUtils.getDpi(imageParameters.getDpi());
+                xDpiFactor *= dimensionAndPosition.getImageResolution().getXDpi() / (float) dpi;
+                yDpiFactor *= dimensionAndPosition.getImageResolution().getXDpi() / (float) dpi;
+            }
+            dimensionAndPosition.setImageWidth(imageBoundaryBox.getWidth() * scaleFactor * xDpiFactor);
+            dimensionAndPosition.setImageHeight(imageBoundaryBox.getHeight() * scaleFactor * yDpiFactor);
             if (width == 0) {
-                width = imageBoundaryBox.getWidth();
-                width *= DPIUtils.getPageScaleFactor(dimensionAndPosition.getImageResolution().getXDpi());
+                width = imageBoundaryBox.getWidth() * xDpiFactor;
             }
             if (height == 0) {
-                height = imageBoundaryBox.getHeight();
-                height *= DPIUtils.getPageScaleFactor(dimensionAndPosition.getImageResolution().getYDpi());
+                height = imageBoundaryBox.getHeight() * yDpiFactor;
             }
         }
         width *= scaleFactor;
@@ -419,7 +439,11 @@ public class SignatureFieldDimensionAndPositionBuilder {
                     break;
 
                 case ZOOM_AND_CENTER:
-                    float x, y, width, height;
+                    float x;
+                    float y;
+                    float width;
+                    float height;
+
                     float imageRatio = dimensionAndPosition.getImageWidth() / dimensionAndPosition.getImageHeight();
                     float boxRatio = dimensionAndPosition.getImageBoxWidth() / dimensionAndPosition.getImageBoxHeight();
                     if (imageRatio < boxRatio) {
@@ -440,10 +464,32 @@ public class SignatureFieldDimensionAndPositionBuilder {
                     break;
 
                 case CENTER:
+                    float textBoxWidth = 0;
+                    float textBoxHeight = 0;
+                    SignatureImageTextParameters textParameters = imageParameters.getTextParameters();
+                    if (textParameters != null && !textParameters.isEmpty()) {
+                        switch (textParameters.getSignerTextPosition()) {
+                            case LEFT:
+                            case RIGHT:
+                                textBoxWidth = dimensionAndPosition.getTextBoxWidth();
+                                break;
+                            case TOP:
+                            case BOTTOM:
+                                textBoxHeight = dimensionAndPosition.getTextBoxHeight();
+                                break;
+                            default:
+                                throw new IllegalArgumentException(String.format("The SignerTextPosition '%s' is not supported!",
+                                        textParameters.getSignerTextPosition()));
+                        }
+                    }
+                    // TODO : the code ensures same behavior for legacy DPI handling and new behavior.
+                    // To be adapted when removing the legacy behavior
                     dimensionAndPosition.setImageX(dimensionAndPosition.getImageBoxX() +
-                            (dimensionAndPosition.getImageBoxWidth() - dimensionAndPosition.getImageWidth()) / 2f);
+                            ((dimensionAndPosition.getBoxWidth() - textBoxWidth - dimensionAndPosition.getImageBoxWidth())
+                                    + (dimensionAndPosition.getImageBoxWidth() - dimensionAndPosition.getImageWidth())) / 2f);
                     dimensionAndPosition.setImageY(dimensionAndPosition.getImageBoxY() +
-                            (dimensionAndPosition.getImageBoxHeight() - dimensionAndPosition.getImageHeight()) / 2f);
+                            ((dimensionAndPosition.getBoxHeight() - textBoxHeight - dimensionAndPosition.getImageBoxHeight())
+                                    +(dimensionAndPosition.getImageBoxHeight() - dimensionAndPosition.getImageHeight())) / 2f);
                     break;
 
                 default:

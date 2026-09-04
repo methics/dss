@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -70,12 +70,12 @@ class XAdESLevelBWithCommonCommitmentTypeOidAsUriTest extends AbstractXAdESTestS
 
     @Override
     protected DSSDocument sign() {
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> super.sign());
+        Exception exception = assertThrows(IllegalArgumentException.class, super::sign);
         assertEquals("When using OID as object identifier in XAdES, " +
                 "a Qualifier shall be provided! See EN 319 132-1 for more details.", exception.getMessage());
 
         commitmentType.setQualifier(ObjectIdentifierQualifier.OID_AS_URI);
-        exception = assertThrows(IllegalArgumentException.class, () -> super.sign());
+        exception = assertThrows(IllegalArgumentException.class, super::sign);
         assertEquals("Qualifier 'OID_AS_URI' shall not be used for URN encoded OID! " +
                 "See EN 319 132-1 for more details.", exception.getMessage());
 

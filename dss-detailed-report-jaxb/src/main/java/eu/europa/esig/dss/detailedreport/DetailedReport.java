@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -22,26 +22,39 @@ package eu.europa.esig.dss.detailedreport;
 
 import eu.europa.esig.dss.detailedreport.jaxb.XmlBasicBuildingBlocks;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlCertificate;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlCertificateQualificationProcess;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlCertificateApprovalStatus;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlCertificateApprovalStatusProcess;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlChainItem;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlConclusion;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlConstraintsConclusion;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlDetailedReport;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlAttestation;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlEvidenceRecord;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlProofOfExistence;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlQWACProcess;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlSignature;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlSubXCV;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlTLAnalysis;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlTimestamp;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlValidationCertificateQualification;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlValidationCertificateApprovalStatus;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlValidationAttestationQualification;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlValidationProcessArchivalDataTimestamp;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlValidationProcessBasicTimestamp;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlValidationProcessAttestation;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlValidationProcessEvidenceRecord;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlValidationSignatureQualification;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlValidationTimestampQualification;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlValidationTimestampQualificationAtTime;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlXCV;
+import eu.europa.esig.dss.enumerations.CertificateApprovalStatus;
+import eu.europa.esig.dss.enumerations.CertificateApprovalStatusEnum;
 import eu.europa.esig.dss.enumerations.CertificateQualification;
 import eu.europa.esig.dss.enumerations.Context;
+import eu.europa.esig.dss.enumerations.AttestationQualification;
 import eu.europa.esig.dss.enumerations.Indication;
+import eu.europa.esig.dss.enumerations.QWACProfile;
 import eu.europa.esig.dss.enumerations.SignatureQualification;
 import eu.europa.esig.dss.enumerations.SubIndication;
 import eu.europa.esig.dss.enumerations.TimestampQualification;
@@ -50,6 +63,7 @@ import eu.europa.esig.dss.jaxb.object.Message;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -194,7 +208,7 @@ public class DetailedReport {
 		List<String> result = new ArrayList<>();
 		List<XmlBasicBuildingBlocks> bbbs = jaxbDetailedReport.getBasicBuildingBlocks();
 		for (XmlBasicBuildingBlocks bbb : bbbs) {
-			if (Context.SIGNATURE == bbb.getType() || Context.COUNTER_SIGNATURE == bbb.getType()) {
+			if (Context.SIGNATURE == bbb.getType() || Context.COUNTER_SIGNATURE == bbb.getType() || Context.KEY_BINDING_SIGNATURE == bbb.getType()) {
 				result.add(bbb.getId());
 			}
 		}
@@ -283,6 +297,36 @@ public class DetailedReport {
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Returns a list of all attestation presentation ids
+	 *
+	 * @return a list of {@link String} ids
+	 */
+	public List<String> getAttestationIds() {
+		List<String> result = new ArrayList<>();
+		List<?> tokens = jaxbDetailedReport.getSignatureOrTimestampOrEvidenceRecord();
+		for (Object token : tokens) {
+			if (token instanceof XmlAttestation) {
+				XmlAttestation xmlAttestation = (XmlAttestation) token;
+				result.add(xmlAttestation.getId());
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * This method returns the first attestation presentation id.
+	 *
+	 * @return the first attestation presentation id
+	 */
+	public String getFirstAttestationId() {
+		final List<String> attestationIds = getAttestationIds();
+		if (!attestationIds.isEmpty()) {
+			return attestationIds.get(0);
+		}
+		return null;
 	}
 
 	/**
@@ -507,6 +551,58 @@ public class DetailedReport {
 	}
 
 	/**
+	 * Gets attestation presentation validation indication for an attestation presentation with id
+	 *
+	 * @param attestationId {@link String}
+	 * @return {@link Indication}
+	 */
+	public Indication getAttestationValidationIndication(String attestationId) {
+		XmlValidationProcessAttestation attestationValidationById = getAttestationValidationById(attestationId);
+		if (attestationValidationById != null && attestationValidationById.getConclusion() != null) {
+			return attestationValidationById.getConclusion().getIndication();
+		}
+		return null;
+	}
+
+	/**
+	 * Gets attestation presentation validation subIndication for an attestation presentation with id
+	 *
+	 * @param attestationId {@link String}
+	 * @return {@link SubIndication}
+	 */
+	public SubIndication getAttestationValidationSubIndication(String attestationId) {
+		XmlValidationProcessAttestation attestationValidationById = getAttestationValidationById(attestationId);
+		if (attestationValidationById != null && attestationValidationById.getConclusion() != null) {
+			return attestationValidationById.getConclusion().getSubIndication();
+		}
+		return null;
+	}
+
+	private XmlValidationProcessAttestation getAttestationValidationById(String evidenceRecordId) {
+		XmlAttestation attestation = getXmlAttestationById(evidenceRecordId);
+		if (attestation != null) {
+			return attestation.getValidationProcessAttestation();
+		}
+		return null;
+	}
+
+	/**
+	 * Returns an {@code XmlAttestation} by the given id
+	 * Null if the attestation is not found
+	 *
+	 * @param attestationId {@link String} id of an attestation to get
+	 * @return {@link XmlAttestation}
+	 */
+	public XmlAttestation getXmlAttestationById(String attestationId) {
+		for (XmlAttestation xmlAttestation : getAttestations()) {
+			if (xmlAttestation.getId().equals(attestationId)) {
+				return xmlAttestation;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Gets long-term validation indication for a signature with id
 	 *
 	 * @param signatureId {@link String}
@@ -653,6 +749,28 @@ public class DetailedReport {
 	}
 
 	/**
+	 * Gets the final qualification result for an attestation presentation with id
+	 *
+	 * @param attestationId {@link String}
+	 * @return {@link AttestationQualification}
+	 */
+	public List<AttestationQualification> getAttestationQualifications(String attestationId) {
+		XmlValidationAttestationQualification attestationQualification = getXmlAttestationQualificationById(attestationId);
+		if (attestationQualification !=null) {
+			return attestationQualification.getAttestationQualification();
+		}
+		return null;
+	}
+
+	private XmlValidationAttestationQualification getXmlAttestationQualificationById(String attestationId) {
+		XmlAttestation attestation = getXmlAttestationById(attestationId);
+		if (attestation != null) {
+			return attestation.getValidationAttestationQualification();
+		}
+		return null;
+	}
+
+	/**
 	 * Returns an {@code XmlTimestamp} by the given id
 	 * Null if the timestamp is not found
 	 * 
@@ -751,6 +869,13 @@ public class DetailedReport {
 			if (element instanceof XmlSignature) {
 				result.add((XmlSignature) element);
 			}
+			if (element instanceof XmlAttestation) {
+				XmlAttestation xmlAttestation = (XmlAttestation) element;
+				result.addAll(xmlAttestation.getSignature());
+				if (xmlAttestation.getKeyBindingSignature() != null) {
+					result.add(xmlAttestation.getKeyBindingSignature());
+				}
+			}
 		}
 		return result;
 	}
@@ -780,6 +905,21 @@ public class DetailedReport {
 		for (Serializable element : jaxbDetailedReport.getSignatureOrTimestampOrEvidenceRecord()) {
 			if (element instanceof XmlEvidenceRecord) {
 				result.add((XmlEvidenceRecord) element);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Returns a list of all attestation presentations
+	 *
+	 * @return a list of {@link XmlAttestation}s
+	 */
+	public List<XmlAttestation> getAttestations() {
+		List<XmlAttestation> result = new ArrayList<>();
+		for (Serializable element : jaxbDetailedReport.getSignatureOrTimestampOrEvidenceRecord()) {
+			if (element instanceof XmlAttestation) {
+				result.add((XmlAttestation) element);
 			}
 		}
 		return result;
@@ -861,18 +1001,138 @@ public class DetailedReport {
 	}
 
 	private CertificateQualification getCertificateQualificationAtTime(ValidationTime validationTime, String certificateId) {
+		if (certificateId == null) {
+			return CertificateQualification.NA;
+		}
+
 		XmlCertificate certificate = getXmlCertificateById(certificateId);
 		if (certificate != null) {
-			List<XmlValidationCertificateQualification> validationCertificateQualifications = certificate.getValidationCertificateQualification();
-			if (validationCertificateQualifications != null) {
-				for (XmlValidationCertificateQualification validationCertificateQualification : validationCertificateQualifications) {
-					if (validationTime == validationCertificateQualification.getValidationTime()) {
-						return validationCertificateQualification.getCertificateQualification();
+			XmlCertificateQualificationProcess certificateQualificationProcess = certificate.getCertificateQualificationProcess();
+			if (certificateQualificationProcess != null) {
+				List<XmlValidationCertificateQualification> validationCertificateQualifications = certificateQualificationProcess.getValidationCertificateQualification();
+				if (validationCertificateQualifications != null) {
+					for (XmlValidationCertificateQualification validationCertificateQualification : validationCertificateQualifications) {
+						if (validationTime == validationCertificateQualification.getValidationTime()) {
+							return validationCertificateQualification.getCertificateQualification();
+						}
+					}
+				}
+			}
+
+		} else {
+			List<XmlSignature> signatures = getSignatures();
+			if (signatures != null && !signatures.isEmpty()) {
+				for (XmlSignature xmlSignature : signatures) {
+					XmlValidationSignatureQualification signatureQualification = xmlSignature.getValidationSignatureQualification();
+					if (signatureQualification != null && signatureQualification.getValidationCertificateQualification() != null) {
+						for (XmlValidationCertificateQualification certificateQualification : signatureQualification.getValidationCertificateQualification()) {
+							if (certificateId.equals(certificateQualification.getId()) && validationTime == certificateQualification.getValidationTime()) {
+								return certificateQualification.getCertificateQualification();
+							}
+						}
 					}
 				}
 			}
 		}
+
 		return CertificateQualification.NA;
+	}
+
+	/**
+	 * Gets the QWAC Profile of the given certificate, if the validation has been performed.
+	 * NOTE: applicable only on QWAC validation (see {@code eu.europa.esig.dss.validation.qwac.QWACValidator})
+	 *
+	 * @param certificateId {@link String}
+	 * @return {@link QWACProfile}
+	 */
+	public QWACProfile getCertificateQWACProfile(String certificateId) {
+		if (certificateId == null) {
+			return null;
+		}
+
+		XmlQWACProcess qwacProcess = null;
+
+		XmlCertificate xmlCertificate = getXmlCertificateById(certificateId);
+		if (xmlCertificate != null) {
+			qwacProcess = xmlCertificate.getQWACProcess();
+
+		} else {
+			List<XmlSignature> signatures = getSignatures();
+			if (signatures != null && !signatures.isEmpty()) {
+				for (XmlSignature xmlSignature : signatures) {
+					XmlValidationSignatureQualification signatureQualification = xmlSignature.getValidationSignatureQualification();
+					if (signatureQualification != null) {
+						if (signatureQualification.getQWACProcess() != null
+								&& certificateId.equals(signatureQualification.getQWACProcess().getId())) {
+							qwacProcess = signatureQualification.getQWACProcess();
+						}
+					}
+				}
+			}
+		}
+
+		return qwacProcess != null ? qwacProcess.getQWACType() : null;
+	}
+
+	/**
+	 * Gets certificate approval statuss obtained on TS 119 602 List(s) of Trusted Entities processing for
+	 * the certificate with the given identifier at the certificate issuance time
+	 *
+	 * @param certificateId {@link String} representing identifier of a certificate to get usages for
+	 * @return list of {@link CertificateApprovalStatus}s
+	 */
+	public List<CertificateApprovalStatus> getCertificateApprovalStatussAtIssuanceTime(String certificateId) {
+		return getCertificateApprovalStatussAtTime(certificateId, ValidationTime.CERTIFICATE_ISSUANCE_TIME);
+	}
+
+	/**
+	 * Gets certificate approval statuss obtained on TS 119 602 List(s) of Trusted Entities processing for
+	 * the certificate with the given identifier at the certificate validation time
+	 *
+	 * @param certificateId {@link String} representing identifier of a certificate to get usages for
+	 * @return list of {@link CertificateApprovalStatus}s
+	 */
+	public List<CertificateApprovalStatus> getCertificateApprovalStatussAtValidationTime(String certificateId) {
+		return getCertificateApprovalStatussAtTime(certificateId, ValidationTime.VALIDATION_TIME);
+	}
+
+	private List<CertificateApprovalStatus> getCertificateApprovalStatussAtTime(String certificateId, ValidationTime validationTime) {
+		if (certificateId == null) {
+			return Collections.emptyList();
+		}
+
+		final List<CertificateApprovalStatus> result = new ArrayList<>();
+
+		XmlCertificate certificate = getXmlCertificateById(certificateId);
+		if (certificate != null) {
+			XmlCertificateApprovalStatusProcess certificateApprovalStatusProcess = certificate.getCertificateApprovalStatusProcess();
+			if (certificateApprovalStatusProcess != null) {
+				List<XmlValidationCertificateApprovalStatus> validationCertificateApprovalStatuss = certificateApprovalStatusProcess.getValidationCertificateApprovalStatus();
+				if (validationCertificateApprovalStatuss != null) {
+					for (XmlValidationCertificateApprovalStatus validationCertificateApprovalStatus : validationCertificateApprovalStatuss) {
+						if (validationTime == validationCertificateApprovalStatus.getValidationTime()) {
+							CertificateApprovalStatus certificateApprovalStatus = buildFromXmlCertificateApprovalStatus(validationCertificateApprovalStatus.getCertificateApprovalStatus());
+							result.add(certificateApprovalStatus);
+						}
+					}
+				}
+			}
+		}
+
+		return result;
+	}
+
+	private CertificateApprovalStatus buildFromXmlCertificateApprovalStatus(XmlCertificateApprovalStatus xmlCertificateApprovalStatus) {
+		if (xmlCertificateApprovalStatus == null) {
+			return null;
+		}
+		CertificateApprovalStatus result = CertificateApprovalStatus.fromDefinition(xmlCertificateApprovalStatus.getListType(),
+				xmlCertificateApprovalStatus.getServiceTypeIdentifier(), xmlCertificateApprovalStatus.getServiceStatus());
+		if (result != null && result.getLabel() != null && CertificateApprovalStatusEnum.CERT_FOR_UNKNOWN != result) {
+			return result;
+		}
+		return CertificateApprovalStatus.create(CertificateApprovalStatusEnum.CERT_FOR_UNKNOWN.getLabel(), xmlCertificateApprovalStatus.getListType(),
+				xmlCertificateApprovalStatus.getServiceTypeIdentifier(), xmlCertificateApprovalStatus.getServiceStatus());
 	}
 
 	/**
@@ -886,28 +1146,39 @@ public class DetailedReport {
 		if (certificates == null || certificates.isEmpty()) {
 			throw new UnsupportedOperationException("Only supported in report for certificate");
 		}
+
+		// process cert chain for signatures
+		List<String> signatureIds = getSignatureIds();
 		List<XmlBasicBuildingBlocks> basicBuildingBlocks = jaxbDetailedReport.getBasicBuildingBlocks();
 		for (XmlBasicBuildingBlocks xmlBasicBuildingBlocks : basicBuildingBlocks) {
+			if (!signatureIds.contains(xmlBasicBuildingBlocks.getId())) {
+				continue; // skip for signature
+			}
+
 			XmlXCV xcv = xmlBasicBuildingBlocks.getXCV();
 			if (xcv != null) {
-				boolean trustAnchorReached = false;
 				List<XmlSubXCV> subXCV = xcv.getSubXCV();
 				for (XmlSubXCV xmlSubXCV : subXCV) {
-					if (xmlSubXCV.isTrustAnchor() != null && xmlSubXCV.isTrustAnchor()) {
-						trustAnchorReached = true;
-					}
 					if (certificateId.equals(xmlSubXCV.getId())) {
 						return xmlSubXCV.getConclusion();
 					}
 				}
-				if (trustAnchorReached) {
-					XmlConclusion xmlConclusion = new XmlConclusion();
-					xmlConclusion.setIndication(Indication.PASSED);
-					return xmlConclusion;
-				} else {
-					// if {@link SubX509CertificateValidation} is not executed and
-					// the certificate is in untrusted chain, return global XmlConclusion
-					return xcv.getConclusion();
+			}
+		}
+
+		// process other certificates (certificate validation only)
+		for (XmlBasicBuildingBlocks xmlBasicBuildingBlocks : basicBuildingBlocks) {
+			if (signatureIds.contains(xmlBasicBuildingBlocks.getId())) {
+				continue; // skip for signature
+			}
+
+			XmlXCV xcv = xmlBasicBuildingBlocks.getXCV();
+			if (xcv != null) {
+				List<XmlSubXCV> subXCV = xcv.getSubXCV();
+				for (XmlSubXCV xmlSubXCV : subXCV) {
+					if (certificateId.equals(xmlSubXCV.getId())) {
+						return xmlSubXCV.getConclusion();
+					}
 				}
 			}
 		}
@@ -932,6 +1203,10 @@ public class DetailedReport {
 		XmlEvidenceRecord evidenceRecordById = getXmlEvidenceRecordById(tokenId);
 		if (evidenceRecordById != null) {
 			return evidenceRecordById.getConclusion();
+		}
+		XmlAttestation attestationById = getXmlAttestationById(tokenId);
+		if (attestationById != null) {
+			return attestationById.getConclusion();
 		}
 		XmlBasicBuildingBlocks bbb = getBasicBuildingBlockById(tokenId);
 		if (bbb != null) {
@@ -1143,6 +1418,111 @@ public class DetailedReport {
 	 */
 	public List<Message> getCertificateQualificationInfosAtValidationTime(String certificateId) {
 		return getMessageCollector().getCertificateQualificationInfosAtValidationTime(certificateId);
+	}
+
+	/**
+	 * Returns a list of QWAC validation errors for a certificate with the given id at certificate issuance time
+	 * NOTE: applicable only on QWAC validation (see {@code eu.europa.esig.dss.validation.qwac.QWACValidator})
+	 *
+	 * @param certificateId {@link String} id of a certificate to get QWAC validation errors for
+	 * @return a list of {@link Message}s
+	 */
+	public List<Message> getQWACValidationErrors(String certificateId) {
+		return getMessageCollector().getQWACValidationErrors(certificateId);
+	}
+
+	/**
+	 * Returns a list of QWAC validation warnings for a certificate with the given id at certificate issuance time
+	 * NOTE: applicable only on QWAC validation (see {@code eu.europa.esig.dss.validation.qwac.QWACValidator})
+	 *
+	 * @param certificateId {@link String} id of a certificate to get QWAC validation warnings for
+	 * @return a list of {@link Message}s
+	 */
+	public List<Message> getQWACValidationWarnings(String certificateId) {
+		return getMessageCollector().getQWACValidationWarnings(certificateId);
+	}
+
+	/**
+	 * Returns a list of QWAC validation information messages for a certificate with the given id at certificate issuance time
+	 * NOTE: applicable only on QWAC validation (see {@code eu.europa.esig.dss.validation.qwac.QWACValidator})
+	 *
+	 * @param certificateId {@link String} id of a certificate to get QWAC validation information messages for
+	 * @return a list of {@link Message}s
+	 */
+	public List<Message> getQWACValidationInfos(String certificateId) {
+		return getMessageCollector().getQWACValidationInfos(certificateId);
+	}
+
+	/**
+	 * Returns a list of qualification validation errors for a certificate with
+	 * the given id at certificate issuance time for the given {@code certificateApprovalStatus}
+	 * NOTE: applicable only on certificate validation (see {@code eu.europa.esig.dss.validation.CertificateValidator})
+	 *
+	 * @param certificateId {@link String} id of a certificate to get qualification errors for
+	 * @return a list of {@link Message}s
+	 */
+	public List<Message> getCertificateApprovalStatusErrorsAtIssuanceTime(String certificateId, CertificateApprovalStatus certificateApprovalStatus) {
+		return getMessageCollector().getCertificateApprovalStatusErrorsAtIssuanceTime(certificateId, certificateApprovalStatus);
+	}
+
+	/**
+	 * Returns a list of qualification validation warnings for a certificate with
+	 * the given id at certificate issuance time for the given {@code certificateApprovalStatus}
+	 * NOTE: applicable only on certificate validation (see {@code eu.europa.esig.dss.validation.CertificateValidator})
+	 *
+	 * @param certificateId {@link String} id of a certificate to get qualification warnings for
+	 * @return a list of {@link Message}s
+	 */
+	public List<Message> getCertificateApprovalStatusWarningsAtIssuanceTime(String certificateId, CertificateApprovalStatus certificateApprovalStatus) {
+		return getMessageCollector().getCertificateApprovalStatusWarningsAtIssuanceTime(certificateId, certificateApprovalStatus);
+	}
+
+	/**
+	 * Returns a list of qualification validation information messages for a certificate with
+	 * the given id at certificate issuance time for the given {@code certificateApprovalStatus}
+	 * NOTE: applicable only on certificate validation (see {@code eu.europa.esig.dss.validation.CertificateValidator})
+	 *
+	 * @param certificateId {@link String} id of a certificate to get qualification information messages for
+	 * @return a list of {@link Message}s
+	 */
+	public List<Message> getCertificateApprovalStatusInfosAtIssuanceTime(String certificateId, CertificateApprovalStatus certificateApprovalStatus) {
+		return getMessageCollector().getCertificateApprovalStatusInfosAtIssuanceTime(certificateId, certificateApprovalStatus);
+	}
+
+	/**
+	 * Returns a list of qualification validation errors for a certificate with
+	 * the given id at validation time for the given {@code certificateApprovalStatus}
+	 * NOTE: applicable only on certificate validation (see {@code eu.europa.esig.dss.validation.CertificateValidator})
+	 *
+	 * @param certificateId {@link String} id of a certificate to get qualification errors for
+	 * @return a list of {@link Message}s
+	 */
+	public List<Message> getCertificateApprovalStatusErrorsAtValidationTime(String certificateId, CertificateApprovalStatus certificateApprovalStatus) {
+		return getMessageCollector().getCertificateApprovalStatusErrorsAtValidationTime(certificateId, certificateApprovalStatus);
+	}
+
+	/**
+	 * Returns a list of qualification validation warnings for a certificate with
+	 * the given id at validation time for the given {@code certificateApprovalStatus}
+	 * NOTE: applicable only on certificate validation (see {@code eu.europa.esig.dss.validation.CertificateValidator})
+	 *
+	 * @param certificateId {@link String} id of a certificate to get qualification warnings for
+	 * @return a list of {@link Message}s
+	 */
+	public List<Message> getCertificateApprovalStatusWarningsAtValidationTime(String certificateId, CertificateApprovalStatus certificateApprovalStatus) {
+		return getMessageCollector().getCertificateApprovalStatusWarningsAtValidationTime(certificateId, certificateApprovalStatus);
+	}
+
+	/**
+	 * Returns a list of qualification validation information messages for a certificate with
+	 * the given id at validation time for the given {@code certificateApprovalStatus}
+	 * NOTE: applicable only on certificate validation (see {@code eu.europa.esig.dss.validation.CertificateValidator})
+	 *
+	 * @param certificateId {@link String} id of a certificate to get qualification information messages for
+	 * @return a list of {@link Message}s
+	 */
+	public List<Message> getCertificateApprovalStatusInfosAtValidationTime(String certificateId, CertificateApprovalStatus certificateApprovalStatus) {
+		return getMessageCollector().getCertificateApprovalStatusInfosAtValidationTime(certificateId, certificateApprovalStatus);
 	}
 
 }

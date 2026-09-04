@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,7 +21,6 @@
 package eu.europa.esig.dss.pades.signature.suite;
 
 import eu.europa.esig.dss.alert.exception.AlertException;
-import eu.europa.esig.dss.cades.signature.CMSSignedDocument;
 import eu.europa.esig.dss.diagnostic.DiagnosticData;
 import eu.europa.esig.dss.diagnostic.SignatureWrapper;
 import eu.europa.esig.dss.diagnostic.TimestampWrapper;
@@ -30,13 +29,13 @@ import eu.europa.esig.dss.enumerations.Indication;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.enumerations.SubIndication;
 import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.DSSMessageDigest;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.signature.ExternalCMSService;
 import eu.europa.esig.dss.pades.signature.PAdESService;
-import eu.europa.esig.dss.model.DSSMessageDigest;
 import eu.europa.esig.dss.simplereport.SimpleReport;
 import eu.europa.esig.dss.test.PKIFactoryAccess;
 import eu.europa.esig.dss.utils.Utils;
@@ -52,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class CMSForPAdESGenerationServiceTest extends PKIFactoryAccess {
+class CMSForPAdESGenerationServiceTest extends PKIFactoryAccess {
 
     @Test
     void test() {
@@ -97,7 +96,7 @@ public class CMSForPAdESGenerationServiceTest extends PKIFactoryAccess {
         exception = assertThrows(AlertException.class, () ->
                 service.getDataToSign(messageDigest, parameters));
         assertTrue(exception.getMessage().contains("Error on signature creation"));
-        assertTrue(exception.getMessage().contains("is expired at signing time"));
+        assertTrue(exception.getMessage().contains("The signing certificate has expired"));
 
         parameters.setSigningCertificate(getSigningCert());
         exception = assertThrows(IllegalArgumentException.class, () ->
@@ -137,7 +136,7 @@ public class CMSForPAdESGenerationServiceTest extends PKIFactoryAccess {
                 exception.getMessage());
 
         parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
-        CMSSignedDocument cmsSignature = service.signMessageDigest(messageDigest, parameters, signatureValue);
+        DSSDocument cmsSignature = service.signMessageDigest(messageDigest, parameters, signatureValue);
         assertNotNull(cmsSignature);
         validate(cmsSignature, toSignDocument, SignatureLevel.CAdES_BES);
 

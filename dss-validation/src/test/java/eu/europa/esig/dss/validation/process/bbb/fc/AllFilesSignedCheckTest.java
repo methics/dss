@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -29,9 +29,10 @@ import eu.europa.esig.dss.diagnostic.jaxb.XmlManifestFile;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlSignature;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlSignatureScope;
 import eu.europa.esig.dss.enumerations.ASiCContainerType;
+import eu.europa.esig.dss.enumerations.Level;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.enumerations.SignatureScopeType;
-import eu.europa.esig.dss.policy.jaxb.Level;
+import eu.europa.esig.dss.policy.LevelConstraintWrapper;
 import eu.europa.esig.dss.policy.jaxb.MultiValuesConstraint;
 import eu.europa.esig.dss.validation.process.bbb.AbstractTestCheck;
 import eu.europa.esig.dss.validation.process.bbb.fc.checks.AllFilesSignedCheck;
@@ -45,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class AllFilesSignedCheckTest extends AbstractTestCheck {
 
 	@Test
-	void asicSValid() throws Exception {
+	void asicSValid() {
 		XmlSignature sig = new XmlSignature();
 		sig.setSignatureFormat(SignatureLevel.CAdES_BASELINE_B);
 		
@@ -57,7 +58,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 		constraint.setLevel(Level.FAIL);
 
 		XmlFC result = new XmlFC();
-		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, constraint);
+		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, new LevelConstraintWrapper(constraint));
 		afsc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();
@@ -66,7 +67,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 	}
 
 	@Test
-	void asicSNoFiles() throws Exception {
+	void asicSNoFiles() {
 		XmlSignature sig = new XmlSignature();
 		sig.setSignatureFormat(SignatureLevel.CAdES_BASELINE_B);
 		
@@ -77,7 +78,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 		constraint.setLevel(Level.FAIL);
 
 		XmlFC result = new XmlFC();
-		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, constraint);
+		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, new LevelConstraintWrapper(constraint));
 		afsc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();
@@ -86,7 +87,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 	}
 
 	@Test
-	void asicSMultipleFiles() throws Exception {
+	void asicSMultipleFiles() {
 		XmlSignature sig = new XmlSignature();
 		sig.setSignatureFormat(SignatureLevel.CAdES_BASELINE_B);
 		
@@ -98,7 +99,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 		constraint.setLevel(Level.FAIL);
 
 		XmlFC result = new XmlFC();
-		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, constraint);
+		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, new LevelConstraintWrapper(constraint));
 		afsc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();
@@ -107,7 +108,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 	}
 
 	@Test
-	void asicEWithCAdESValid() throws Exception {
+	void asicEWithCAdESValid() {
 		XmlSignature sig = new XmlSignature();
 		sig.setSignatureFormat(SignatureLevel.CAdES_BASELINE_B);
 		sig.setSignatureFilename("signature1");
@@ -125,7 +126,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 		constraint.setLevel(Level.FAIL);
 
 		XmlFC result = new XmlFC();
-		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, constraint);
+		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, new LevelConstraintWrapper(constraint));
 		afsc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();
@@ -134,7 +135,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 	}
 
 	@Test
-	void asicEWithCAdESAnotherManifest() throws Exception {
+	void asicEWithCAdESAnotherManifest() {
 		XmlSignature sig = new XmlSignature();
 		sig.setSignatureFormat(SignatureLevel.CAdES_BASELINE_B);
 		sig.setSignatureFilename("signature1");
@@ -152,7 +153,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 		constraint.setLevel(Level.FAIL);
 
 		XmlFC result = new XmlFC();
-		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, constraint);
+		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, new LevelConstraintWrapper(constraint));
 		afsc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();
@@ -161,7 +162,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 	}
 
 	@Test
-	void asicEWithCAdESNotMatchingContent() throws Exception {
+	void asicEWithCAdESNotMatchingContent() {
 		XmlSignature sig = new XmlSignature();
 		sig.setSignatureFormat(SignatureLevel.CAdES_BASELINE_B);
 		sig.setSignatureFilename("signature1");
@@ -179,7 +180,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 		constraint.setLevel(Level.FAIL);
 
 		XmlFC result = new XmlFC();
-		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, constraint);
+		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, new LevelConstraintWrapper(constraint));
 		afsc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();
@@ -188,7 +189,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 	}
 
 	@Test
-	void asicEWithXAdESValid() throws Exception {
+	void asicEWithXAdESValid() {
 		XmlSignature sig = new XmlSignature();
 		sig.setSignatureFormat(SignatureLevel.XAdES_BASELINE_B);
 		sig.setSignatureFilename("signature1");
@@ -220,7 +221,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 		constraint.setLevel(Level.FAIL);
 
 		XmlFC result = new XmlFC();
-		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, constraint);
+		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, new LevelConstraintWrapper(constraint));
 		afsc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();
@@ -229,7 +230,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 	}
 
 	@Test
-	void asicEWithXAdESInvalid() throws Exception {
+	void asicEWithXAdESInvalid() {
 		XmlSignature sig = new XmlSignature();
 		sig.setSignatureFormat(SignatureLevel.XAdES_BASELINE_B);
 		sig.setSignatureFilename("signature1");
@@ -261,7 +262,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 		constraint.setLevel(Level.FAIL);
 
 		XmlFC result = new XmlFC();
-		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, constraint);
+		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result, new SignatureWrapper(sig), xmlContainerInfo, new LevelConstraintWrapper(constraint));
 		afsc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();
@@ -270,7 +271,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 	}
 
 	@Test
-	void asicEWithXAdESSignedMimetype() throws Exception {
+	void asicEWithXAdESSignedMimetype() {
 		XmlSignature sig = new XmlSignature();
 		sig.setSignatureFormat(SignatureLevel.XAdES_BASELINE_B);
 		sig.setSignatureFilename("signature1");
@@ -299,7 +300,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 
 		XmlFC result = new XmlFC();
 		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result,
-				new SignatureWrapper(sig), xmlContainerInfo, constraint);
+				new SignatureWrapper(sig), xmlContainerInfo, new LevelConstraintWrapper(constraint));
 		afsc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();
@@ -308,7 +309,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 	}
 
 	@Test
-	void asicEWithXAdESSignedManifest() throws Exception {
+	void asicEWithXAdESSignedManifest() {
 		XmlSignature sig = new XmlSignature();
 		sig.setSignatureFormat(SignatureLevel.XAdES_BASELINE_B);
 		sig.setSignatureFilename("signature1");
@@ -338,7 +339,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 
 		XmlFC result = new XmlFC();
 		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result,
-				new SignatureWrapper(sig), xmlContainerInfo, constraint);
+				new SignatureWrapper(sig), xmlContainerInfo, new LevelConstraintWrapper(constraint));
 		afsc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();
@@ -347,7 +348,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 	}
 
 	@Test
-	void asicEWithXAdESNoManifest() throws Exception {
+	void asicEWithXAdESNoManifest() {
 		XmlSignature sig = new XmlSignature();
 		sig.setSignatureFormat(SignatureLevel.XAdES_BASELINE_B);
 		sig.setSignatureFilename("signature1");
@@ -371,7 +372,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 
 		XmlFC result = new XmlFC();
 		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result,
-				new SignatureWrapper(sig), xmlContainerInfo, constraint);
+				new SignatureWrapper(sig), xmlContainerInfo, new LevelConstraintWrapper(constraint));
 		afsc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();
@@ -380,7 +381,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 	}
 
 	@Test
-	void asicEWithXAdESNoManifestNotAllFilesCovered() throws Exception {
+	void asicEWithXAdESNoManifestNotAllFilesCovered() {
 		XmlSignature sig = new XmlSignature();
 		sig.setSignatureFormat(SignatureLevel.XAdES_BASELINE_B);
 		sig.setSignatureFilename("signature1");
@@ -404,7 +405,7 @@ class AllFilesSignedCheckTest extends AbstractTestCheck {
 
 		XmlFC result = new XmlFC();
 		AllFilesSignedCheck afsc = new AllFilesSignedCheck(i18nProvider, result,
-				new SignatureWrapper(sig), xmlContainerInfo, constraint);
+				new SignatureWrapper(sig), xmlContainerInfo, new LevelConstraintWrapper(constraint));
 		afsc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();

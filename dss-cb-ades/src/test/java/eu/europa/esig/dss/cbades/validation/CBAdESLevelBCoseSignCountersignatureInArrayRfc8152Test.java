@@ -1,0 +1,83 @@
+/**
+ * DSS - Digital Signature Services
+ * Copyright (C) 2015 European Commission, provided under the CEF programme
+ * <p>
+ * This file is part of the "DSS - Digital Signature Services" project.
+ * <p>
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * <p>
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * <p>
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+package eu.europa.esig.dss.cbades.validation;
+
+import eu.europa.esig.dss.enumerations.COSESignatureType;
+import eu.europa.esig.dss.diagnostic.DiagnosticData;
+import eu.europa.esig.dss.diagnostic.SignatureWrapper;
+import eu.europa.esig.dss.enumerations.SignatureLevel;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.FileDocument;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
+class CBAdESLevelBCoseSignCountersignatureInArrayRfc8152Test extends AbstractCBAdESTestValidation {
+
+    @Override
+    protected DSSDocument getSignedDocument() {
+        return new FileDocument("src/test/resources/validation/cb-ades-cosesign-countersignature-rfc8152-array.cose");
+    }
+
+    @Override
+    protected void checkStructureValidation(DiagnosticData diagnosticData) {
+        super.checkStructureValidation(diagnosticData);
+
+        List<SignatureWrapper> signatures = diagnosticData.getSignatures();
+        assertEquals(3, signatures.size());
+
+        int masterSigCounter = 0;
+        int counterSigCounter = 0;
+        for (SignatureWrapper signatureWrapper : signatures) {
+            if (!signatureWrapper.isCounterSignature()) {
+                assertEquals(COSESignatureType.COSE_SIGN, signatureWrapper.getCOSESignatureType());
+                ++masterSigCounter;
+            } else {
+                assertEquals(COSESignatureType.COSE_COUNTER_SIGNATURE, signatureWrapper.getCOSESignatureType());
+                ++counterSigCounter;
+            }
+        }
+        assertEquals(1, masterSigCounter);
+        assertEquals(2, counterSigCounter);
+    }
+
+    @Override
+    protected void checkSignatureLevel(DiagnosticData diagnosticData) {
+        super.checkSignatureLevel(diagnosticData);
+
+        List<SignatureWrapper> signatures = diagnosticData.getSignatures();
+        assertEquals(3, signatures.size());
+        for (SignatureWrapper signatureWrapper : signatures) {
+            assertEquals(SignatureLevel.CB_AdES_BASELINE_B, signatureWrapper.getSignatureFormat());
+        }
+    }
+
+    @Override
+    protected void checkNoDuplicateSignatures(DiagnosticData diagnosticData) {
+        List<SignatureWrapper> countersignatures = new ArrayList<>(diagnosticData.getAllCounterSignatures());
+        assertEquals(2, countersignatures.size());
+        assertNotEquals(countersignatures.get(0).getId(), countersignatures.get(1).getId());
+    }
+
+}

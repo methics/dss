@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -141,16 +141,16 @@ class ASiCECAdESCounterSignatureLevelLTATest extends AbstractASiCCAdESCounterSig
 	void counterSignLtaLevelTest() {
 		signatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_LTA);
 		counterSignatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_B);
-		Exception exception = assertThrows(IllegalInputException.class, () -> signAndVerify());
-		assertEquals("The counter signature is not possible! "
-				+ "Reason : a signature with a filename 'META-INF/signature001.p7s' is covered by another manifest.", exception.getMessage());
+		Exception exception = assertThrows(IllegalInputException.class, this::signAndVerify);
+		assertEquals("The modification of the signature is not possible! Reason : a signature " +
+				"with a filename 'META-INF/signature001.p7s' is covered by another manifest.", exception.getMessage());
 	}
 	
 	@Test
 	void tLevelCounterSignatureTest() {
 		signatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_LT);
 		counterSignatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_T);
-		Exception exception = assertThrows(UnsupportedOperationException.class, () -> signAndVerify());
+		Exception exception = assertThrows(UnsupportedOperationException.class, this::signAndVerify);
 		assertEquals("A counter signature with a level 'CAdES-BASELINE-T' is not supported! "
 				+ "Please, use CAdES-BASELINE-B", exception.getMessage());
 	}

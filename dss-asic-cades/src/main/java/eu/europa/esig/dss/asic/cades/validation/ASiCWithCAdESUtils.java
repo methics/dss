@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -26,8 +26,6 @@ import eu.europa.esig.dss.asic.common.validation.ASiCManifestParser;
 import eu.europa.esig.dss.enumerations.ASiCContainerType;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.utils.Utils;
-import eu.europa.esig.dss.model.ManifestEntry;
-import eu.europa.esig.dss.model.ManifestFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +65,8 @@ public class ASiCWithCAdESUtils {
 		} else if (ASiCContainerType.ASiC_E.equals(type)) {
 			// the manifest file is signed
 			List<DSSDocument> manifestDocuments = extractResult.getManifestDocuments();
-			if (manifestDocuments.size() == 1) {
+			List<DSSDocument> signatureDocuments = extractResult.getSignatureDocuments();
+			if (Utils.collectionSize(manifestDocuments) == 1 && Utils.collectionSize(signatureDocuments) == 1) {
 				return manifestDocuments.iterator().next();
 			}
 			// we need to check the manifest file and its digest
@@ -80,29 +79,6 @@ public class ASiCWithCAdESUtils {
 		}
 		LOG.warn("Unable to extract a signed document. Reason : Unknown asic container type.");
 		return null;
-	}
-	
-	/**
-	 * Checks if a document (e.g. a signature) with the given filename is covered by a manifest
-	 * 
-	 * @param manifestDocuments a list of manifest {@link DSSDocument}s extracted from the archive
-	 * @param filename {@link String} a filename of a document to check
-	 * @return TRUE if the document is covered by a manifest, FALSE otherwise
-	 */
-	public static boolean isCoveredByManifest(List<DSSDocument> manifestDocuments, String filename) {
-		if (Utils.isCollectionNotEmpty(manifestDocuments)) {
-			for (DSSDocument archiveManifest : manifestDocuments) {
-				ManifestFile manifestFile = ASiCManifestParser.getManifestFile(archiveManifest);
-				if (manifestFile != null) {
-					for (ManifestEntry entry : manifestFile.getEntries()) {
-						if (filename != null && filename.equals(entry.getUri())) {
-							return true;
-						}
-					}
-				}
-			}
-		}
-		return false;
 	}
 
 }

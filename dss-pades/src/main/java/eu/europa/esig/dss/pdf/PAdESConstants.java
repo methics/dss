@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -118,6 +118,8 @@ public final class PAdESConstants {
 	public static final String FONT_NAME = "Font";
 	/** 'ITXT' (iText identifier) */
 	public static final String ITEXT_NAME = "ITXT";
+	/** 'Kids' */
+	public static final String KIDS_NAME = "Kids";
 	/** 'Length' */
 	public static final String LENGTH_NAME = "Length";
 	/** 'Location' */
@@ -134,6 +136,8 @@ public final class PAdESConstants {
 	public static final String NAMES_NAME = "Names";
 	/** 'OutputIntents' */
 	public static final String OUTPUT_INTENTS_NAME = "OutputIntents";
+	/** 'P' (Page) */
+	public static final String PAGE_NAME = "P";
 	/** 'Parent' */
 	public static final String PARENT_NAME = "Parent";
 	/** 'P' (Permissions) */
@@ -144,8 +148,12 @@ public final class PAdESConstants {
 	public static final String PIECE_INFO_NAME = "PieceInfo";
 	/** 'Reason' */
 	public static final String REASON_NAME = "Reason";
+	/** 'Rect' (Annotation rectangle) */
+	public static final String RECT_NAME = "Rect";
 	/** 'Reference' */
 	public static final String REFERENCE_NAME = "Reference";
+	/** 'Resources' */
+	public static final String RESOURCES_NAME = "Resources";
 	/** 'Root' */
 	public static final String ROOT_NAME = "Root";
 	/** 'M' (Signing date) */
@@ -158,6 +166,16 @@ public final class PAdESConstants {
 	public static final String SIG_FLAGS_NAME = "SigFlags";
 	/** 'SigRef' */
 	public static final String SIG_REF_NAME = "SigRef";
+	/** 'StructTreeRoot' */
+	public static final String STRUCT_TREE_ROOT_NAME = "StructTreeRoot";
+	/** 'IDTree' */
+	public static final String STRUCT_TREE_ROOT_ID_TREE_NAME = "IDTree";
+	/** 'K' */
+	public static final String STRUCT_TREE_ROOT_K_NAME = "K";
+	/** 'ParentTree' */
+	public static final String STRUCT_TREE_ROOT_PARENT_TREE_NAME = "ParentTree";
+	/** 'ParentTreeNextKey' */
+	public static final String STRUCT_TREE_ROOT_PARENT_TREE_NEXT_KEY_NAME = "ParentTreeNextKey";
 	/** 'SubFilter' */
 	public static final String SUB_FILTER_NAME = "SubFilter";
 	/** 'Type' */
@@ -174,6 +192,8 @@ public final class PAdESConstants {
 	public static final String VALUE_NAME = "V";
 	/** 'Version' */
 	public static final String VERSION_NAME = "Version";
+	/** 'XObject' */
+	public static final String XOBJECT_NAME = "XObject";
 
 	/* Build properties dictionary */
 

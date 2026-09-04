@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -38,6 +38,7 @@ import eu.europa.esig.dss.xades.DSSXMLUtils;
 import eu.europa.esig.dss.xades.reference.XAdESReferenceValidation;
 import eu.europa.esig.dss.xades.validation.XAdESSignature;
 import eu.europa.esig.dss.xml.utils.DomUtils;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -98,7 +99,7 @@ public class XAdESSignatureScopeFinder extends AbstractSignatureScopeFinder impl
 					String manifestEntryReferenceName = getReferenceName(manifestEntry);
 					if (manifestEntryReferenceName != null && manifestEntry.isFound()) {
 						// try to get document digest from list of detached contents
-						SignatureScope detachedSignatureScopeResult = getFromDetachedContent(xadesSignature, transformations, getReferencedDocumentName(manifestEntry));
+						SignatureScope detachedSignatureScopeResult = getFromDetachedContent(xadesSignature, transformations, manifestEntry);
 						if (detachedSignatureScopeResult != null) {
 							manifestSignatureScope.addChildSignatureScope(detachedSignatureScopeResult);
 						} else if (manifestEntry.getDigest() != null) {
@@ -123,7 +124,7 @@ public class XAdESSignatureScopeFinder extends AbstractSignatureScopeFinder impl
 				}
 				
 			} else if (xadesReferenceValidation.isFound() && DomUtils.isElementReference(uri)) {
-				Element signedElement = DomUtils.getElementById(
+				Element signedElement = XPathUtils.getElementById(
 						xadesSignature.getSignatureElement().getOwnerDocument(), DomUtils.getId(uri));
 				if (signedElement != null) {
 					if (isEverythingCovered(xadesSignature, xmlIdOfSignedElement)) {
@@ -137,8 +138,7 @@ public class XAdESSignatureScopeFinder extends AbstractSignatureScopeFinder impl
 				
 			} else if (xadesReferenceValidation.isIntact() && Utils.isCollectionNotEmpty(xadesSignature.getDetachedContents())) {
 				// detached file (the signature must intact in order to be sure in the correctness of the provided file)
-				final String referencedDocumentName = getReferencedDocumentName(xadesReferenceValidation);
-				SignatureScope signatureScope = getFromDetachedContent(xadesSignature, transformations, referencedDocumentName);
+				SignatureScope signatureScope = getFromDetachedContent(xadesSignature, transformations, xadesReferenceValidation);
 				if (signatureScope != null) {
 					result.add(signatureScope);
 				}
@@ -153,19 +153,9 @@ public class XAdESSignatureScopeFinder extends AbstractSignatureScopeFinder impl
 		
 	}
 
-	private String getReferencedDocumentName(ReferenceValidation referenceValidation) {
-		if (Utils.isStringNotEmpty(referenceValidation.getDocumentName())) {
-			return referenceValidation.getDocumentName();
-		} else if (Utils.isStringNotEmpty(referenceValidation.getUri())) {
-			// used for a document extraction, empty URI is not acceptable
-			return DomUtils.getId(referenceValidation.getUri());
-		}
-		return null;
-	}
-
 	private String getReferenceName(ReferenceValidation referenceValidation) {
-		if (Utils.isStringNotEmpty(referenceValidation.getDocumentName())) {
-			return referenceValidation.getDocumentName();
+		if (referenceValidation.getDocument() != null && Utils.isStringNotEmpty(referenceValidation.getDocument().getName())) {
+			return referenceValidation.getDocument().getName();
 		} else if (Utils.isStringNotEmpty(referenceValidation.getId())) {
 			return DomUtils.getId(referenceValidation.getId());
 		} else if (referenceValidation.getUri() != null) { // URI can be empty ""
@@ -175,34 +165,38 @@ public class XAdESSignatureScopeFinder extends AbstractSignatureScopeFinder impl
 	}
 
 	private SignatureScope getFromDetachedContent(final XAdESSignature xadesSignature,
-												  final List<String> transformations, final String relatedDocumentName) {
-		List<DSSDocument> detachedContents = xadesSignature.getDetachedContents();
-		if (Utils.isCollectionNotEmpty(detachedContents)) {
-			for (DSSDocument detachedDocument : detachedContents) {
+												  final List<String> transformations, final ReferenceValidation xadesReferenceValidation) {
+		DSSDocument detachedDocument = xadesReferenceValidation.getDocument();
+		if (detachedDocument == null) {
+			return null;
+		}
 
-				// check the original detached file by its name (or if no name if provided, see {@link DetachedSignatureResolver})
-				if (detachedDocument.getName() == null && (relatedDocumentName == null && Utils.collectionSize(detachedContents) == 1)
-						|| (relatedDocumentName != null && relatedDocumentName.equals(detachedDocument.getName())) ) {
-					String fileName = detachedDocument.getName() != null ? detachedDocument.getName() : relatedDocumentName;
-					if (detachedDocument instanceof DigestDocument) {
-						DigestDocument digestDocument = (DigestDocument) detachedDocument;
-						return new DigestSignatureScope(fileName, digestDocument);
-	
-					} else if (Utils.isCollectionNotEmpty(transformations)) {
-						return new XmlFullSignatureScope(fileName, detachedDocument, transformations);
-	
-					} else if (isASiCSArchive(xadesSignature)) {
-						ContainerSignatureScope containerSignatureScope = new ContainerSignatureScope(relatedDocumentName, detachedDocument);
-						for (DSSDocument archivedDocument : xadesSignature.getContainerContents()) {
-							containerSignatureScope.addChildSignatureScope(new ContainerContentSignatureScope(archivedDocument));
-						}
-						return containerSignatureScope;
-	
-					} else {
-						return new FullSignatureScope(fileName, detachedDocument);
-					}
-				}
+		String fileName = detachedDocument.getName() != null ? detachedDocument.getName() : getReferencedDocumentName(xadesReferenceValidation);
+		if (detachedDocument instanceof DigestDocument) {
+			DigestDocument digestDocument = (DigestDocument) detachedDocument;
+			return new DigestSignatureScope(fileName, digestDocument);
+
+		} else if (Utils.isCollectionNotEmpty(transformations)) {
+			return new XmlFullSignatureScope(fileName, detachedDocument, transformations);
+
+		} else if (isASiCSArchive(xadesSignature)) {
+			ContainerSignatureScope containerSignatureScope = new ContainerSignatureScope(fileName, detachedDocument);
+			for (DSSDocument archivedDocument : xadesSignature.getContainerContents()) {
+				containerSignatureScope.addChildSignatureScope(new ContainerContentSignatureScope(archivedDocument));
 			}
+			return containerSignatureScope;
+
+		} else {
+			return new FullSignatureScope(fileName, detachedDocument);
+		}
+	}
+
+	private String getReferencedDocumentName(ReferenceValidation referenceValidation) {
+		if (referenceValidation.getDocument() != null && Utils.isStringNotEmpty(referenceValidation.getDocument().getName())) {
+			return referenceValidation.getDocument().getName();
+		} else if (Utils.isStringNotEmpty(referenceValidation.getUri())) {
+			// used for a document extraction, empty URI is not acceptable
+			return DomUtils.getId(referenceValidation.getUri());
 		}
 		return null;
 	}

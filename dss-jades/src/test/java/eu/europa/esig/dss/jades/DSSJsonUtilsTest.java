@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -22,6 +22,7 @@ package eu.europa.esig.dss.jades;
 
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
+import eu.europa.esig.dss.jades.validation.JWS;
 import eu.europa.esig.dss.model.DigestDocument;
 import eu.europa.esig.dss.model.FileDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
@@ -32,13 +33,20 @@ import org.jose4j.jws.EcdsaUsingShaAlgorithm;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DSSJsonUtilsTest {
-	
+
 	@Test
 	void isBase64UrlEncodedTest() {
 		assertTrue(DSSJsonUtils.isBase64UrlEncoded(""));
@@ -111,5 +119,34 @@ class DSSJsonUtilsTest {
 		assertFalse(DSSJsonUtils.isJsonDocument(new HTTPHeader("header", "ByeWorld!")));
 		assertFalse(DSSJsonUtils.isJsonDocument(new DigestDocument(DigestAlgorithm.SHA1, Utils.toBase64(DSSUtils.digest(DigestAlgorithm.SHA1, jsonDoc)))));
 	}
+
+    @Test
+    void validateAgainstJAdESSchemaInMultipleThreadTest() throws Exception {
+        FileDocument doc = new FileDocument("src/test/resources/validation/jades-lta.json");
+        JWSJsonSerializationParser parser = new JWSJsonSerializationParser(doc);
+        JWSJsonSerializationObject jwsObject = parser.parse();
+        assertNotNull(jwsObject);
+        assertFalse(jwsObject.getSignatures().isEmpty());
+
+        JWS jws = jwsObject.getSignatures().get(0);
+
+        List<String> expectedErrors = DSSJsonUtils.validateAgainstJAdESSchema(jws);
+
+        ExecutorService executor = Executors.newFixedThreadPool(20);
+        try {
+            List<Future<List<String>>> futures = new ArrayList<>();
+            for (int i = 0; i < 200; i++) {
+                futures.add(executor.submit(() -> DSSJsonUtils.validateAgainstJAdESSchema(jws)));
+            }
+
+            for (Future<List<String>> future : futures) {
+                List<String> errors = future.get();
+                assertNotNull(errors);
+                assertEquals(expectedErrors.size(), errors.size());
+            }
+        } finally {
+            executor.shutdown();
+        }
+    }
 
 }

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -38,6 +38,7 @@ import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigNamespace;
 import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigPath;
 import eu.europa.esig.dss.xml.utils.DomUtils;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -56,8 +57,8 @@ public class ASiCManifestParser {
     private static final Logger LOG = LoggerFactory.getLogger(ASiCManifestParser.class);
 
     static {
-        DomUtils.registerNamespace(XMLDSigNamespace.NS);
-        DomUtils.registerNamespace(ASiCManifestNamespace.NS);
+        XPathUtils.registerNamespace(XMLDSigNamespace.NS);
+        XPathUtils.registerNamespace(ASiCManifestNamespace.NS);
     }
 
     /**
@@ -113,7 +114,7 @@ public class ASiCManifestParser {
         }
         try {
             Document manifestDom = DomUtils.buildDOM(manifestDocument);
-            return DomUtils.getElement(manifestDom, ASiCManifestPath.ASIC_MANIFEST_PATH);
+            return XPathUtils.getElement(manifestDom, ASiCManifestPath.ASIC_MANIFEST_PATH);
         } catch (Exception e) {
             LOG.warn("Unable to analyze manifest file '{}' : {}", manifestDocument.getName(), e.getMessage());
             return null;
@@ -121,7 +122,7 @@ public class ASiCManifestParser {
     }
 
     private static String getLinkedSignatureName(Element root) {
-        return DomUtils.getValue(root, ASiCManifestPath.SIG_REFERENCE_URI_PATH);
+        return XPathUtils.getValue(root, ASiCManifestPath.SIG_REFERENCE_URI_PATH);
     }
 
     private static MimeType getMimeType(Element element) {
@@ -139,7 +140,7 @@ public class ASiCManifestParser {
     private static DigestAlgorithm getDigestAlgorithm(Element dataObjectReference) {
         String value = null;
         try {
-            value = DomUtils.getValue(dataObjectReference, XMLDSigPath.DIGEST_METHOD_ALGORITHM_PATH);
+            value = XPathUtils.getValue(dataObjectReference, XMLDSigPath.DIGEST_METHOD_ALGORITHM_PATH);
             return DigestAlgorithm.forXML(value);
         } catch (IllegalArgumentException e) {
             LOG.warn("Unable to extract DigestAlgorithm (value = {}). Reason : [{}]", value, e.getMessage());
@@ -149,7 +150,7 @@ public class ASiCManifestParser {
 
     private static byte[] getDigestValue(Element dataObjectReference) {
         try {
-            Element digestValueElement = DomUtils.getElement(dataObjectReference, XMLDSigPath.DIGEST_VALUE_PATH);
+            Element digestValueElement = XPathUtils.getElement(dataObjectReference, XMLDSigPath.DIGEST_VALUE_PATH);
             if (digestValueElement != null) {
                 String digest = digestValueElement.getTextContent();
                 if (Utils.isBase64Encoded(digest)) {
@@ -170,7 +171,7 @@ public class ASiCManifestParser {
         } else if (ASiCUtils.isEvidenceRecordManifest(manifestFilename)) {
             return ASiCManifestTypeEnum.EVIDENCE_RECORD;
         } else if (ASiCUtils.isManifest(manifestFilename)) {
-            Element sigReference = DomUtils.getElement(root, ASiCManifestPath.SIG_REFERENCE_PATH);
+            Element sigReference = XPathUtils.getElement(root, ASiCManifestPath.SIG_REFERENCE_PATH);
             if (sigReference != null) {
                 MimeType mimeType = getMimeType(sigReference);
                 return MimeTypeEnum.TST == mimeType ? ASiCManifestTypeEnum.TIMESTAMP : ASiCManifestTypeEnum.SIGNATURE;
@@ -181,7 +182,7 @@ public class ASiCManifestParser {
 
     private static List<ManifestEntry> parseManifestEntries(Element root) {
         List<ManifestEntry> entries = new ArrayList<>();
-        NodeList dataObjectReferences = DomUtils.getNodeList(root, ASiCManifestPath.DATA_OBJECT_REFERENCE_PATH);
+        NodeList dataObjectReferences = XPathUtils.getNodeList(root, ASiCManifestPath.DATA_OBJECT_REFERENCE_PATH);
         if (dataObjectReferences == null || dataObjectReferences.getLength() == 0) {
             LOG.warn("No DataObjectReference found in manifest file");
         } else {

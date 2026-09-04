@@ -6,9 +6,9 @@
 	xmlns:dss="http://dss.esig.europa.eu/validation/simple-certificate-report">
 	<xsl:output method="xml" indent="yes" />
 
-	<xsl:param name="rootUrlInTlBrowser">https://eidas.ec.europa.eu/efda/tl-browser/#/screen</xsl:param>
-	<xsl:param name="euTLSubDirectoryInTlBrowser">/tl</xsl:param>
-	<xsl:param name="tcTLSubDirectoryInTlBrowser">/tc-tl</xsl:param>
+    <xsl:param name="rootUrlInTlBrowser">https://eidas.ec.europa.eu/efda/trust-services/browse</xsl:param>
+    <xsl:param name="euTLSubDirectoryInTlBrowser">/eidas/tls/tl</xsl:param>
+    <xsl:param name="tcTLSubDirectoryInTlBrowser">/tc-tls/tl</xsl:param>
 	<xsl:param name="trustmarkSubDirectoryInTlBrowser">/trustmark</xsl:param>
 	<xsl:param name="euGenericTSLType">http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</xsl:param>
 
@@ -75,8 +75,10 @@
 				<fo:flow>
 					<xsl:attribute name="flow-name">xsl-region-body</xsl:attribute>
 					<xsl:attribute name="font-size">8pt</xsl:attribute>
-					
-					<xsl:apply-templates select="dss:Chain"/>
+
+					<xsl:apply-templates select="dss:ValidationPolicy"/>
+					<xsl:apply-templates select="dss:Certificate"/>
+					<xsl:apply-templates select="dss:ConnectionDetails"/>
 	    			
 					<fo:block>
 						<xsl:attribute name="id">theEnd</xsl:attribute>
@@ -88,142 +90,187 @@
 		</fo:root>
 		
 	</xsl:template>
-    
-    <xsl:template match="dss:Chain">
-    
-    	<xsl:for-each select="//dss:ChainItem">
+
+	<xsl:template match="dss:Chain">
+		<xsl:if test="dss:ChainItem">
 			<fo:block-container>
-				<xsl:attribute name="margin-top">4px</xsl:attribute>
+				<fo:block>
+					<xsl:attribute name="margin-top">7px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">2px</xsl:attribute>
+					<xsl:attribute name="font-size">8pt</xsl:attribute>
+
+					<xsl:attribute name="font-weight">bold</xsl:attribute>
+					Certificate chain:
+				</fo:block>
+			</fo:block-container>
+			<fo:block-container>
+				<fo:block>
+					<xsl:apply-templates />
+				</fo:block>
+			</fo:block-container>
+		</xsl:if>
+	</xsl:template>
+    
+    <xsl:template match="dss:Certificate|dss:ChainItem">
+
+		<fo:table table-layout="fixed">
+			<xsl:attribute name="margin-top">7px</xsl:attribute>
+			<xsl:attribute name="margin-bottom">5px</xsl:attribute>
+
+			<fo:table-body>
+				<xsl:attribute name="start-indent">0</xsl:attribute>
+				<xsl:attribute name="end-indent">0</xsl:attribute>
+
+				<fo:table-row>
+
+					<xsl:attribute name="font-weight">bold</xsl:attribute>
+
+					<xsl:attribute name="border-bottom-style">solid</xsl:attribute>
+					<xsl:attribute name="border-color">#004494</xsl:attribute>
+					<xsl:attribute name="border-width">1px</xsl:attribute>
+
+					<xsl:attribute name="margin-bottom">2px</xsl:attribute>
+
+					<fo:table-cell>
+						<fo:block>
+							<xsl:attribute name="font-weight">bold</xsl:attribute>
+
+							<xsl:text>Certificate: </xsl:text><xsl:value-of select="@Id"/>
+						</fo:block>
+					</fo:table-cell>
+				</fo:table-row>
+
+			</fo:table-body>
+		</fo:table>
+
+		<fo:block-container>
+			<xsl:attribute name="border-left-style">solid</xsl:attribute>
+			<xsl:attribute name="border-color">#004494</xsl:attribute>
+			<xsl:attribute name="border-width">1px</xsl:attribute>
+
+			<xsl:attribute name="margin-top">7px</xsl:attribute>
+			<xsl:attribute name="margin-bottom">5px</xsl:attribute>
+
+			<fo:block-container>
+				<xsl:attribute name="margin-left">10px</xsl:attribute>
+
 				<fo:block-container>
 					<xsl:attribute name="margin">0</xsl:attribute>
-					
+
 					<fo:block>
-						<xsl:attribute name="keep-with-next">always</xsl:attribute>
-						<xsl:attribute name="font-weight">bold</xsl:attribute>
-			       		
-			       		<xsl:attribute name="border-bottom-style">solid</xsl:attribute>
-			       		<xsl:attribute name="border-color">#004494</xsl:attribute>
-			       		<xsl:attribute name="border-width">1px</xsl:attribute>
-			       		
-						<xsl:attribute name="margin-bottom">2px</xsl:attribute>
-						
-						<xsl:text>Certificate: </xsl:text><xsl:value-of select="dss:id"/>
-			    	</fo:block>
-		    	</fo:block-container>
+						<xsl:attribute name="margin-top">5px</xsl:attribute>
+						<xsl:attribute name="margin-bottom">5px</xsl:attribute>
+						<xsl:attribute name="font-size">7pt</xsl:attribute>
+
+						<fo:table table-layout="fixed">
+							<fo:table-column>
+								<xsl:attribute name="column-width">27%</xsl:attribute>
+							</fo:table-column>
+							<fo:table-column>
+								<xsl:attribute name="column-width">73%</xsl:attribute>
+							</fo:table-column>
+
+							<fo:table-body>
+								<xsl:attribute name="start-indent">0</xsl:attribute>
+								<xsl:attribute name="end-indent">0</xsl:attribute>
+
+								<xsl:apply-templates select="dss:qualificationAtIssuance"/>
+								<xsl:apply-templates select="dss:qualificationDetailsAtIssuance"/>
+								<xsl:apply-templates select="dss:qualificationAtValidation"/>
+								<xsl:apply-templates select="dss:qualificationDetailsAtValidation"/>
+								<xsl:apply-templates select="dss:enactedMRA"/>
+								<xsl:apply-templates select="dss:qwacProfile"/>
+								<xsl:apply-templates select="dss:qwacDetails"/>
+								<xsl:apply-templates select="dss:certificateApprovalStatusAtIssuanceTime"/>
+								<xsl:apply-templates select="dss:certificateApprovalStatusAtValidationTime"/>
+
+								<fo:table-row>
+									<xsl:variable name="indicationText" select="dss:Indication/text()"/>
+									<xsl:variable name="indicationColor">
+										<xsl:choose>
+											<xsl:when test="$indicationText='PASSED'">green</xsl:when>
+											<xsl:when test="$indicationText='INDETERMINATE'">orange</xsl:when>
+											<xsl:when test="$indicationText='FAILED'">red</xsl:when>
+										</xsl:choose>
+									</xsl:variable>
+
+									<fo:table-cell>
+										<fo:block>
+											<xsl:attribute name="margin-top">1px</xsl:attribute>
+											<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+											<xsl:attribute name="font-weight">bold</xsl:attribute>
+											<xsl:text>Indication:</xsl:text>
+										</fo:block>
+									</fo:table-cell>
+									<fo:table-cell>
+										<fo:block>
+											<xsl:attribute name="margin-top">1px</xsl:attribute>
+											<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+											<xsl:attribute name="font-weight">bold</xsl:attribute>
+											<xsl:attribute name="font-size">7pt</xsl:attribute>
+
+											<xsl:attribute name="color"><xsl:value-of select="$indicationColor" /></xsl:attribute>
+											<xsl:variable name="subIndication"><xsl:value-of select="dss:SubIndication" /></xsl:variable>
+											<xsl:value-of select="$indicationText" /><xsl:if test="$subIndication != ''"> - <xsl:value-of select="dss:SubIndication" /></xsl:if>
+										</fo:block>
+									</fo:table-cell>
+								</fo:table-row>
+
+								<xsl:apply-templates select="dss:X509ValidationDetails" />
+
+								<xsl:apply-templates select="dss:subject" />
+								<xsl:apply-templates select="dss:commonName" />
+								<xsl:apply-templates select="dss:surname" />
+								<xsl:apply-templates select="dss:givenName" />
+								<xsl:apply-templates select="dss:pseudonym" />
+								<xsl:apply-templates select="dss:organizationName" />
+								<xsl:apply-templates select="dss:organizationUnit" />
+								<xsl:apply-templates select="dss:email" />
+								<xsl:apply-templates select="dss:locality" />
+								<xsl:apply-templates select="dss:state" />
+								<xsl:apply-templates select="dss:country" />
+								<xsl:apply-templates select="dss:issuerId" />
+								<xsl:apply-templates select="dss:notBefore" />
+								<xsl:apply-templates select="dss:notAfter" />
+
+								<xsl:apply-templates select="dss:keyUsages" />
+								<xsl:apply-templates select="dss:extendedKeyUsages" />
+								<xsl:apply-templates select="dss:ocspUrls" />
+								<xsl:apply-templates select="dss:crlUrls" />
+								<xsl:apply-templates select="dss:aiaUrls" />
+								<xsl:apply-templates select="dss:cpsUrls" />
+								<xsl:apply-templates select="dss:pdsUrls" />
+
+								<xsl:apply-templates select="dss:revocation" />
+
+								<xsl:apply-templates select="dss:trustAnchors" />
+								<xsl:apply-templates select="dss:trustStartDate" />
+								<xsl:apply-templates select="dss:trustSunsetDate" />
+
+							</fo:table-body>
+						</fo:table>
+
+						<xsl:apply-templates select="dss:Chain" />
+						<xsl:apply-templates select="dss:TLSBindingSignature" />
+
+					</fo:block>
+				</fo:block-container>
 			</fo:block-container>
-			
-			
-			<fo:block-container>
-	       		<xsl:attribute name="border-left-style">solid</xsl:attribute>
-	       		<xsl:attribute name="border-color">#004494</xsl:attribute>
-	       		<xsl:attribute name="border-width">1px</xsl:attribute>
-	       		
-				<xsl:attribute name="margin-top">7px</xsl:attribute>
-				<xsl:attribute name="margin-bottom">5px</xsl:attribute>
-	       		
-				<fo:block-container>
-					<xsl:attribute name="margin-left">10px</xsl:attribute>
-					
-					<fo:block-container>
-						<xsl:attribute name="margin">0</xsl:attribute>
-					
-						<fo:block>
-							<xsl:attribute name="margin-top">5px</xsl:attribute>
-							<xsl:attribute name="margin-bottom">5px</xsl:attribute>
-							<xsl:attribute name="font-size">7pt</xsl:attribute>
-							
-							<fo:table table-layout="fixed">
-								<fo:table-column>
-									<xsl:attribute name="column-width">27%</xsl:attribute>
-								</fo:table-column>
-								<fo:table-column>
-									<xsl:attribute name="column-width">73%</xsl:attribute>
-								</fo:table-column>
-								
-								<fo:table-body>
-									<xsl:attribute name="start-indent">0</xsl:attribute>
-									<xsl:attribute name="end-indent">0</xsl:attribute>
 
-									<xsl:apply-templates select="dss:qualificationAtIssuance"/>
-									<xsl:apply-templates select="dss:qualificationDetailsAtIssuance"/>
-									<xsl:apply-templates select="dss:qualificationAtValidation"/>
-									<xsl:apply-templates select="dss:qualificationDetailsAtValidation"/>
-									<xsl:apply-templates select="dss:enactedMRA"/>
-									
-									<fo:table-row>
-										<xsl:variable name="indicationText" select="dss:Indication/text()"/>
-										<xsl:variable name="indicationColor">
-								        	<xsl:choose>
-												<xsl:when test="$indicationText='PASSED'">green</xsl:when>
-												<xsl:when test="$indicationText='INDETERMINATE'">orange</xsl:when>
-												<xsl:when test="$indicationText='FAILED'">red</xsl:when>
-											</xsl:choose>
-								        </xsl:variable>
-        
-										<fo:table-cell>
-											<fo:block>
-												<xsl:attribute name="margin-top">1px</xsl:attribute>
-												<xsl:attribute name="margin-bottom">1px</xsl:attribute>
-												<xsl:attribute name="font-weight">bold</xsl:attribute>
-												<xsl:text>Indication:</xsl:text>
-											</fo:block>
-										</fo:table-cell>
-										<fo:table-cell>
-											<fo:block>
-												<xsl:attribute name="margin-top">1px</xsl:attribute>
-												<xsl:attribute name="margin-bottom">1px</xsl:attribute>
-											
-						       					<xsl:attribute name="font-weight">bold</xsl:attribute>
-												<xsl:attribute name="font-size">7pt</xsl:attribute>
-												
-						       					<xsl:attribute name="color"><xsl:value-of select="$indicationColor" /></xsl:attribute>
-						       					<xsl:variable name="subIndication"><xsl:value-of select="dss:SubIndication" /></xsl:variable>
-												<xsl:value-of select="$indicationText" /><xsl:if test="$subIndication != ''"> - <xsl:value-of select="dss:SubIndication" /></xsl:if>
-											</fo:block>
-										</fo:table-cell>
-									</fo:table-row>
-
-									<xsl:apply-templates select="dss:X509ValidationDetails" />
-
-									<xsl:apply-templates select="dss:subject" />
-									<xsl:apply-templates select="dss:commonName" />
-									<xsl:apply-templates select="dss:surname" />
-									<xsl:apply-templates select="dss:givenName" />
-									<xsl:apply-templates select="dss:pseudonym" />
-									<xsl:apply-templates select="dss:organizationName" />
-									<xsl:apply-templates select="dss:organizationUnit" />
-									<xsl:apply-templates select="dss:email" />
-									<xsl:apply-templates select="dss:locality" />
-									<xsl:apply-templates select="dss:state" />
-									<xsl:apply-templates select="dss:country" />
-									<xsl:apply-templates select="dss:issuerId" />
-									<xsl:apply-templates select="dss:notBefore" />
-									<xsl:apply-templates select="dss:notAfter" />
-
-									<xsl:apply-templates select="dss:keyUsages" />
-									<xsl:apply-templates select="dss:extendedKeyUsages" />
-									<xsl:apply-templates select="dss:ocspUrls" />
-									<xsl:apply-templates select="dss:crlUrls" />
-									<xsl:apply-templates select="dss:aiaUrls" />
-									<xsl:apply-templates select="dss:cpsUrls" />
-									<xsl:apply-templates select="dss:pdsUrls" />
-
-									<xsl:apply-templates select="dss:revocation" />
-									<xsl:apply-templates select="dss:trustAnchors" />
-			       					
-								</fo:table-body>
-							</fo:table>
-						
-				       	</fo:block>
-			       	</fo:block-container>
-		       	</fo:block-container>
-		       	
-	    	</fo:block-container>
-    	</xsl:for-each>
+		</fo:block-container>
 		
     </xsl:template>
 
-	<xsl:template match="dss:X509ValidationDetails">
+	<xsl:template match="dss:X509ValidationDetails|dss:AdESValidationDetails">
+		<xsl:variable name="label">
+			<xsl:choose>
+				<xsl:when test="name() = 'X509ValidationDetails'">X509 Validation Details</xsl:when>
+				<xsl:when test="name() = 'AdESValidationDetails'">AdES Validation Details</xsl:when>
+				<xsl:otherwise>?</xsl:otherwise>
+			</xsl:choose>
+		</xsl:variable>
+
 		<fo:table-row>
 			<xsl:attribute name="margin-top">1px</xsl:attribute>
 			<xsl:attribute name="margin-bottom">1px</xsl:attribute>
@@ -233,7 +280,7 @@
 					<xsl:attribute name="margin-bottom">1px</xsl:attribute>
 
 					<xsl:attribute name="font-weight">bold</xsl:attribute>
-					X509 Validation Details:
+					<xsl:value-of select="$label" />:
 				</fo:block>
 			</fo:table-cell>
 			<fo:table-cell>
@@ -246,7 +293,7 @@
 		</fo:table-row>
 	</xsl:template>
 
-	<xsl:template match="dss:qualificationDetailsAtIssuance|dss:qualificationDetailsAtValidation">
+	<xsl:template match="dss:qualificationDetailsAtIssuance|dss:qualificationDetailsAtValidation|dss:qwacDetails">
 		<fo:table-row>
 			<xsl:attribute name="margin-top">1px</xsl:attribute>
 			<xsl:attribute name="margin-bottom">1px</xsl:attribute>
@@ -261,6 +308,12 @@
 
 			</fo:table-cell>
 		</fo:table-row>
+	</xsl:template>
+
+	<xsl:template match="dss:Details">
+		<xsl:apply-templates select="dss:Error" />
+		<xsl:apply-templates select="dss:Warning" />
+		<xsl:apply-templates select="dss:Info" />
 	</xsl:template>
 
 	<xsl:template match="dss:Error|dss:Warning|dss:Info">
@@ -285,8 +338,7 @@
 	</xsl:template>
     
     <xsl:template match="dss:commonName|dss:surname|dss:givenName|dss:pseudonym|dss:organizationName|
-    		dss:organizationUnit|dss:email|dss:locality|dss:state|dss:country|
-    		dss:issuerId|dss:notBefore|dss:notAfter">
+    		dss:organizationUnit|dss:email|dss:locality|dss:state|dss:country|dss:issuerId">
 		 <xsl:variable name="label">
         	<xsl:choose>
 				<xsl:when test="name()='commonName'">Common name</xsl:when>
@@ -300,8 +352,6 @@
 				<xsl:when test="name()='state'">State</xsl:when>
 				<xsl:when test="name()='country'">Country</xsl:when>
 				<xsl:when test="name()='issuerId'">Issuer Id</xsl:when>
-				<xsl:when test="name()='notBefore'">Not Before</xsl:when>
-				<xsl:when test="name()='notAfter'">Not After</xsl:when>
 				<xsl:otherwise>?</xsl:otherwise>
 			</xsl:choose>
         </xsl:variable>
@@ -320,12 +370,44 @@
 				<fo:block>
 					<xsl:attribute name="margin-top">1px</xsl:attribute>
 					<xsl:attribute name="margin-bottom">1px</xsl:attribute>
-					
+
 					<xsl:value-of select="." />
 				</fo:block>
 			</fo:table-cell>
 		</fo:table-row>
     </xsl:template>
+
+	<xsl:template match="dss:notBefore|dss:notAfter|dss:trustStartDate|dss:trustSunsetDate">
+		<xsl:variable name="label">
+			<xsl:choose>
+				<xsl:when test="name()='notBefore'">Not Before</xsl:when>
+				<xsl:when test="name()='notAfter'">Not After</xsl:when>
+				<xsl:when test="name()='trustStartDate'">Trust start date</xsl:when>
+				<xsl:when test="name()='trustSunsetDate'">Trust sunset date</xsl:when>
+				<xsl:otherwise>?</xsl:otherwise>
+			</xsl:choose>
+		</xsl:variable>
+
+		<fo:table-row>
+			<fo:table-cell>
+				<fo:block>
+					<xsl:attribute name="margin-top">1px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+					<xsl:attribute name="font-weight">bold</xsl:attribute>
+					<xsl:value-of select="$label" /><xsl:text>:</xsl:text>
+				</fo:block>
+			</fo:table-cell>
+			<fo:table-cell>
+				<fo:block>
+					<xsl:attribute name="margin-top">1px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+					<xsl:call-template name="formatdate"><xsl:with-param name="DateTimeStr" select="."/></xsl:call-template>
+				</fo:block>
+			</fo:table-cell>
+		</fo:table-row>
+	</xsl:template>
     
     <xsl:template match="dss:keyUsages">
     	<xsl:if test="node() != ''">
@@ -437,7 +519,30 @@
 			</fo:table-cell>
 		</fo:table-row>
     </xsl:template>
-    
+
+	<xsl:template match="dss:qwacProfile">
+		<fo:table-row>
+			<fo:table-cell>
+				<fo:block>
+					<xsl:attribute name="margin-top">1px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+					<xsl:attribute name="font-weight">bold</xsl:attribute>
+					<xsl:text>QWAC Profile:</xsl:text>
+				</fo:block>
+			</fo:table-cell>
+			<fo:table-cell>
+				<fo:block>
+					<xsl:attribute name="margin-top">1px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+					<xsl:attribute name="font-size">7pt</xsl:attribute>
+					<xsl:attribute name="font-weight">bold</xsl:attribute>
+
+					<xsl:value-of select="." />
+				</fo:block>
+			</fo:table-cell>
+		</fo:table-row>
+	</xsl:template>
     
     <xsl:template match="dss:enactedMRA">
         
@@ -460,6 +565,76 @@
 			</fo:table-cell>
 		</fo:table-row>
     </xsl:template>
+
+	<xsl:template match="dss:certificateApprovalStatusAtIssuanceTime|dss:certificateApprovalStatusAtValidationTime">
+		<xsl:variable name="label">
+			<xsl:choose>
+				<xsl:when test="name()='certificateApprovalStatusAtIssuanceTime'">Approval statusissuance time</xsl:when>
+				<xsl:when test="name()='certificateApprovalStatusAtValidationTime'">Approval statusvalidation time</xsl:when>
+				<xsl:otherwise>?</xsl:otherwise>
+			</xsl:choose>
+		</xsl:variable>
+
+		<fo:table-row>
+			<fo:table-cell>
+				<fo:block>
+					<xsl:attribute name="margin-top">1px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+					<xsl:attribute name="font-weight">bold</xsl:attribute>
+					<xsl:value-of select="$label" /><xsl:text>:</xsl:text>
+				</fo:block>
+			</fo:table-cell>
+			<fo:table-cell>
+				<fo:block>
+					<xsl:attribute name="margin-top">1px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+					<xsl:attribute name="font-size">7pt</xsl:attribute>
+
+					<xsl:apply-templates select="dss:certificateApprovalStatus"/>
+				</fo:block>
+			</fo:table-cell>
+		</fo:table-row>
+	</xsl:template>
+
+	<xsl:template match="dss:certificateApprovalStatus">
+		<fo:table table-layout="fixed">
+			<fo:table-column>
+				<xsl:attribute name="column-width">100%</xsl:attribute>
+			</fo:table-column>
+			<fo:table-body>
+				<fo:table-row>
+					<fo:table-cell>
+						<fo:block>
+							<xsl:attribute name="margin-top">1px</xsl:attribute>
+							<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+							<xsl:attribute name="font-weight">bold</xsl:attribute>
+
+							<xsl:choose>
+								<xsl:when test="@label">
+									<xsl:value-of select="@label"/>
+								</xsl:when>
+								<xsl:otherwise>
+									<xsl:value-of select="dss:ServiceTypeIdentifier"/> - <xsl:value-of select="dss:ServiceStatus"/>
+								</xsl:otherwise>
+							</xsl:choose>
+						</fo:block>
+					</fo:table-cell>
+				</fo:table-row>
+				<fo:table-row>
+					<fo:table-cell>
+						<fo:block>
+							<xsl:attribute name="margin-top">1px</xsl:attribute>
+							<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+							<xsl:apply-templates select="dss:Details"/>
+						</fo:block>
+					</fo:table-cell>
+				</fo:table-row>
+			</fo:table-body>
+		</fo:table>
+	</xsl:template>
     
     <xsl:template match="dss:revocation">
     
@@ -592,5 +767,420 @@
 			</fo:table-row>
 		</xsl:if>
     </xsl:template>
+
+	<xsl:template match="dss:TLSBindingSignature">
+		<fo:block-container>
+			<fo:block>
+				<xsl:attribute name="margin-top">7px</xsl:attribute>
+				<xsl:attribute name="margin-bottom">2px</xsl:attribute>
+				<xsl:attribute name="font-size">8pt</xsl:attribute>
+
+				<xsl:attribute name="font-weight">bold</xsl:attribute>
+				TLS Certificate Binding signature:
+			</fo:block>
+		</fo:block-container>
+		<fo:block-container>
+			<fo:block>
+				<xsl:variable name="indicationText" select="dss:Indication/text()"/>
+				<xsl:variable name="idToken" select="@Id" />
+				<xsl:variable name="indicationColor">
+					<xsl:choose>
+						<xsl:when test="$indicationText='TOTAL_PASSED'">green</xsl:when>
+						<xsl:when test="$indicationText='PASSED'">green</xsl:when>
+						<xsl:when test="$indicationText='INDETERMINATE'">orange</xsl:when>
+						<xsl:when test="$indicationText='FAILED'">red</xsl:when>
+						<xsl:when test="$indicationText='TOTAL_FAILED'">red</xsl:when>
+					</xsl:choose>
+				</xsl:variable>
+
+				<fo:table table-layout="fixed">
+					<xsl:attribute name="id">tls-binding-signature</xsl:attribute>
+
+					<xsl:attribute name="margin-top">7px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">5px</xsl:attribute>
+
+					<fo:table-body>
+						<xsl:attribute name="start-indent">0</xsl:attribute>
+						<xsl:attribute name="end-indent">0</xsl:attribute>
+
+						<fo:table-row>
+
+							<xsl:attribute name="font-weight">bold</xsl:attribute>
+
+							<xsl:attribute name="border-bottom-style">solid</xsl:attribute>
+							<xsl:attribute name="border-color">#004494</xsl:attribute>
+							<xsl:attribute name="border-width">1px</xsl:attribute>
+
+							<xsl:attribute name="margin-bottom">2px</xsl:attribute>
+
+							<fo:table-cell>
+								<fo:block>
+									<xsl:attribute name="font-weight">bold</xsl:attribute>
+
+									<xsl:text>Signature: </xsl:text><xsl:value-of select="$idToken" />
+								</fo:block>
+							</fo:table-cell>
+						</fo:table-row>
+
+					</fo:table-body>
+				</fo:table>
+
+				<fo:block-container>
+					<xsl:attribute name="border-left-style">solid</xsl:attribute>
+					<xsl:attribute name="border-color">#004494</xsl:attribute>
+					<xsl:attribute name="border-width">1px</xsl:attribute>
+
+					<xsl:attribute name="margin-top">5px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">5px</xsl:attribute>
+
+					<fo:block-container>
+						<xsl:attribute name="margin-left">10px</xsl:attribute>
+						<fo:block-container>
+							<xsl:attribute name="margin">0</xsl:attribute>
+
+							<fo:table table-layout="fixed">
+								<xsl:attribute name="font-size">7pt</xsl:attribute>
+
+								<fo:table-column>
+									<xsl:attribute name="column-width">25%</xsl:attribute>
+								</fo:table-column>
+								<fo:table-column>
+									<xsl:attribute name="column-width">75%</xsl:attribute>
+								</fo:table-column>
+								<fo:table-body>
+
+									<xsl:if test="dss:Url">
+										<fo:table-row>
+											<xsl:attribute name="margin-top">1px</xsl:attribute>
+											<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+											<fo:table-cell>
+												<fo:block>
+													<xsl:attribute name="margin-top">1px</xsl:attribute>
+													<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+													<xsl:attribute name="font-weight">bold</xsl:attribute>
+													URL:
+												</fo:block>
+											</fo:table-cell>
+											<fo:table-cell>
+												<fo:block>
+													<xsl:attribute name="margin-top">1px</xsl:attribute>
+													<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+													<xsl:value-of select="dss:Url" />
+												</fo:block>
+											</fo:table-cell>
+										</fo:table-row>
+									</xsl:if>
+
+									<fo:table-row>
+										<xsl:attribute name="margin-top">1px</xsl:attribute>
+										<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+										<fo:table-cell>
+											<fo:block>
+												<xsl:attribute name="margin-top">1px</xsl:attribute>
+												<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+												<xsl:attribute name="font-weight">bold</xsl:attribute>
+												Indication:
+											</fo:block>
+										</fo:table-cell>
+										<fo:table-cell>
+											<fo:block>
+												<xsl:attribute name="margin-top">1px</xsl:attribute>
+												<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+												<xsl:attribute name="font-weight">bold</xsl:attribute>
+												<xsl:attribute name="color"><xsl:value-of select="$indicationColor" /></xsl:attribute>
+												<xsl:variable name="subIndication"><xsl:value-of select="dss:SubIndication" /></xsl:variable>
+												<xsl:value-of select="dss:Indication" /><xsl:if test="$subIndication != ''"> - <xsl:value-of select="dss:SubIndication" /></xsl:if>
+											</fo:block>
+										</fo:table-cell>
+									</fo:table-row>
+
+									<xsl:apply-templates select="dss:AdESValidationDetails" />
+
+									<xsl:if test="@SignatureFormat">
+										<fo:table-row>
+											<xsl:attribute name="margin-top">1px</xsl:attribute>
+											<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+											<fo:table-cell>
+												<fo:block>
+													<xsl:attribute name="margin-top">1px</xsl:attribute>
+													<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+													<xsl:attribute name="font-weight">bold</xsl:attribute>
+													Signature Format:
+												</fo:block>
+											</fo:table-cell>
+											<fo:table-cell>
+												<fo:block>
+													<xsl:attribute name="margin-top">1px</xsl:attribute>
+													<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+													<xsl:value-of select="@SignatureFormat" />
+												</fo:block>
+											</fo:table-cell>
+										</fo:table-row>
+									</xsl:if>
+
+									<fo:table-row>
+										<xsl:attribute name="margin-top">1px</xsl:attribute>
+										<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+										<fo:table-cell>
+											<fo:block>
+												<xsl:attribute name="margin-top">1px</xsl:attribute>
+												<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+												<xsl:attribute name="font-weight">bold</xsl:attribute>
+												On claimed time:
+											</fo:block>
+										</fo:table-cell>
+										<fo:table-cell>
+											<fo:block>
+												<xsl:attribute name="margin-top">1px</xsl:attribute>
+												<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+												<xsl:call-template name="formatdate">
+													<xsl:with-param name="DateTimeStr" select="dss:SigningTime"/>
+												</xsl:call-template>
+											</fo:block>
+										</fo:table-cell>
+									</fo:table-row>
+
+									<xsl:apply-templates select="dss:SignatureScope" />
+
+								</fo:table-body>
+							</fo:table>
+
+							<xsl:apply-templates select="dss:Chain" />
+
+						</fo:block-container>
+					</fo:block-container>
+				</fo:block-container>
+			</fo:block>
+		</fo:block-container>
+
+	</xsl:template>
+
+	<xsl:template match="dss:SignatureScope">
+		<fo:table-row>
+			<xsl:attribute name="margin-top">1px</xsl:attribute>
+			<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+			<xsl:attribute name="page-break-inside">avoid</xsl:attribute>
+
+			<fo:table-cell>
+				<fo:block>
+					<xsl:attribute name="margin-top">1px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+					<xsl:attribute name="font-weight">bold</xsl:attribute>
+					Signature scope:
+				</fo:block>
+			</fo:table-cell>
+			<fo:table-cell>
+				<fo:block>
+					<xsl:attribute name="margin-top">1px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+					<xsl:value-of select="@name" />	(<xsl:value-of select="@scope" />)
+				</fo:block>
+				<fo:block>
+					<xsl:attribute name="margin-top">1px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+					<xsl:value-of select="." />
+				</fo:block>
+			</fo:table-cell>
+		</fo:table-row>
+	</xsl:template>
+
+	<xsl:template match="dss:ConnectionDetails">
+		<fo:table table-layout="fixed">
+			<xsl:attribute name="margin-top">7px</xsl:attribute>
+
+			<fo:table-body>
+				<xsl:attribute name="start-indent">0</xsl:attribute>
+				<xsl:attribute name="end-indent">0</xsl:attribute>
+
+				<fo:table-row>
+					<fo:table-cell>
+						<fo:block>
+							<xsl:attribute name="keep-with-next">always</xsl:attribute>
+							<xsl:attribute name="font-weight">bold</xsl:attribute>
+
+							<xsl:attribute name="border-bottom-style">solid</xsl:attribute>
+							<xsl:attribute name="border-color">#004494</xsl:attribute>
+							<xsl:attribute name="border-width">1px</xsl:attribute>
+
+							<xsl:attribute name="margin-bottom">2px</xsl:attribute>
+
+							<xsl:attribute name="id">docInfo</xsl:attribute>
+							<xsl:text>Connection details</xsl:text>
+						</fo:block>
+					</fo:table-cell>
+				</fo:table-row>
+			</fo:table-body>
+		</fo:table>
+
+		<fo:block-container>
+			<xsl:attribute name="border-left-style">solid</xsl:attribute>
+			<xsl:attribute name="border-color">#004494</xsl:attribute>
+			<xsl:attribute name="border-width">1px</xsl:attribute>
+
+			<xsl:attribute name="margin-top">2px</xsl:attribute>
+			<xsl:attribute name="margin-bottom">2px</xsl:attribute>
+			<xsl:attribute name="font-size">7pt</xsl:attribute>
+
+			<fo:block-container>
+				<xsl:attribute name="margin-left">10px</xsl:attribute>
+				<fo:block-container>
+					<xsl:attribute name="margin">0</xsl:attribute>
+
+					<fo:table table-layout="fixed">
+						<xsl:attribute name="font-size">7pt</xsl:attribute>
+
+						<xsl:attribute name="page-break-inside">avoid</xsl:attribute>
+						<fo:table-column>
+							<xsl:attribute name="column-width">25%</xsl:attribute>
+						</fo:table-column>
+						<fo:table-column>
+							<xsl:attribute name="column-width">75%</xsl:attribute>
+						</fo:table-column>
+						<fo:table-body>
+							<xsl:if test="dss:Url">
+								<fo:table-row>
+									<xsl:attribute name="margin-top">1px</xsl:attribute>
+									<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+									<fo:table-cell>
+										<fo:block>
+											<xsl:attribute name="margin-top">1px</xsl:attribute>
+											<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+											<xsl:attribute name="font-weight">bold</xsl:attribute>
+											Connection URL:
+										</fo:block>
+									</fo:table-cell>
+									<fo:table-cell>
+										<fo:block>
+											<xsl:attribute name="margin-top">1px</xsl:attribute>
+											<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+											<xsl:value-of select="dss:Url"/>
+										</fo:block>
+									</fo:table-cell>
+								</fo:table-row>
+							</xsl:if>
+							<xsl:if test="dss:TLSCertificateBindingLink">
+								<fo:table-row>
+									<xsl:attribute name="margin-top">1px</xsl:attribute>
+									<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+									<fo:table-cell>
+										<fo:block>
+											<xsl:attribute name="margin-top">1px</xsl:attribute>
+											<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+											<xsl:attribute name="font-weight">bold</xsl:attribute>
+											TLS Certificate Binding Link URL:
+										</fo:block>
+									</fo:table-cell>
+									<fo:table-cell>
+										<fo:block>
+											<xsl:attribute name="margin-top">1px</xsl:attribute>
+											<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+											<xsl:value-of select="dss:TLSCertificateBindingLink"/>
+										</fo:block>
+									</fo:table-cell>
+								</fo:table-row>
+							</xsl:if>
+						</fo:table-body>
+					</fo:table>
+				</fo:block-container>
+			</fo:block-container>
+
+		</fo:block-container>
+
+	</xsl:template>
+
+	<xsl:template match="dss:ValidationPolicy">
+
+		<fo:block-container>
+			<xsl:attribute name="margin-top">4px</xsl:attribute>
+			<fo:block-container>
+				<xsl:attribute name="margin">0</xsl:attribute>
+
+				<fo:block>
+					<xsl:attribute name="keep-with-next">always</xsl:attribute>
+					<xsl:attribute name="font-weight">bold</xsl:attribute>
+
+					<xsl:attribute name="border-bottom-style">solid</xsl:attribute>
+					<xsl:attribute name="border-color">#004494</xsl:attribute>
+					<xsl:attribute name="border-width">1px</xsl:attribute>
+
+					<xsl:attribute name="margin-bottom">2px</xsl:attribute>
+
+					<xsl:attribute name="id">policy</xsl:attribute>
+					<xsl:text>Validation Policy: </xsl:text><xsl:value-of select="dss:PolicyName"/>
+				</fo:block>
+			</fo:block-container>
+		</fo:block-container>
+
+		<fo:block-container>
+			<xsl:attribute name="border-left-style">solid</xsl:attribute>
+			<xsl:attribute name="border-color">#004494</xsl:attribute>
+			<xsl:attribute name="border-width">1px</xsl:attribute>
+
+			<xsl:attribute name="margin-top">7px</xsl:attribute>
+			<xsl:attribute name="margin-bottom">5px</xsl:attribute>
+
+			<fo:block-container>
+				<xsl:attribute name="margin-left">10px</xsl:attribute>
+
+				<fo:block-container>
+					<xsl:attribute name="margin">0</xsl:attribute>
+
+					<fo:block>
+						<xsl:attribute name="margin-top">5px</xsl:attribute>
+						<xsl:attribute name="margin-bottom">5px</xsl:attribute>
+						<xsl:attribute name="font-size">7pt</xsl:attribute>
+
+						<xsl:value-of select="dss:PolicyDescription"/>
+					</fo:block>
+				</fo:block-container>
+			</fo:block-container>
+
+		</fo:block-container>
+
+	</xsl:template>
+
+	<xsl:template name="formatdate">
+		<xsl:param name="DateTimeStr" />
+
+		<xsl:variable name="date">
+			<xsl:value-of select="substring-before($DateTimeStr,'T')" />
+		</xsl:variable>
+
+		<xsl:variable name="after-T">
+			<xsl:value-of select="substring-after($DateTimeStr,'T')" />
+		</xsl:variable>
+
+		<xsl:variable name="time">
+			<xsl:value-of select="substring-before($after-T,'Z')" />
+		</xsl:variable>
+
+		<xsl:choose>
+			<xsl:when test="string-length($date) &gt; 0 and string-length($time) &gt; 0">
+				<xsl:value-of select="concat($date,' ', $time, ' (UTC)')" />
+			</xsl:when>
+			<xsl:when test="string-length($date) &gt; 0">
+				<xsl:value-of select="$date" />
+			</xsl:when>
+			<xsl:when test="string-length($time) &gt; 0">
+				<xsl:value-of select="$time" />
+			</xsl:when>
+			<xsl:otherwise>-</xsl:otherwise>
+		</xsl:choose>
+	</xsl:template>
 
 </xsl:stylesheet>

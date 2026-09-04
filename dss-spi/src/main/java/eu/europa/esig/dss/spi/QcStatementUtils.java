@@ -1,25 +1,26 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.spi;
 
+import eu.europa.esig.dss.enumerations.QCIdentMethod;
 import eu.europa.esig.dss.enumerations.QCType;
 import eu.europa.esig.dss.enumerations.RoleOfPspOid;
 import eu.europa.esig.dss.enumerations.SemanticsIdentifier;
@@ -27,6 +28,7 @@ import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.model.x509.extension.PSD2QcType;
 import eu.europa.esig.dss.model.x509.extension.PdsLocation;
 import eu.europa.esig.dss.model.x509.extension.QCLimitValue;
+import eu.europa.esig.dss.model.x509.extension.QCPSB;
 import eu.europa.esig.dss.model.x509.extension.QcStatements;
 import eu.europa.esig.dss.model.x509.extension.RoleOfPSP;
 import eu.europa.esig.dss.utils.Utils;
@@ -127,6 +129,12 @@ public class QcStatementUtils {
                     result.setQcSemanticsIdentifier(getQcSemanticsIdentifier(statementInfo));
                 } else if (isPsd2QcType(oid)) {
                     result.setPsd2QcType(getPsd2QcType(statementInfo));
+                } else if (isQcQSCDlegislation(oid)) {
+                    result.setQcQSCDLegislationCountryCodes(getQcLegislationCountryCodes(statementInfo));
+                } else if (isQcIdentMethod(oid)) {
+                    result.setQcIdentMethod(getQcIdentMethod(statementInfo));
+                } else if (isCertForPSB(oid)) {
+                    result.setQcPSB(getQcPSB(statementInfo));
                 } else {
                     LOG.warn("Not supported QcStatement with OID : '{}'", oid);
                     result.addOtherOid(oid);
@@ -224,6 +232,37 @@ public class QcStatementUtils {
      */
     public static boolean isPsd2QcType(String oid) {
         return OID.psd2_qcStatement.getId().equals(oid);
+    }
+
+    /**
+     * This method verifies of the given OID is a QcIdentMethod statement
+     *
+     * @param oid {@link String} to check
+     * @return TRUE if QcIdentMethod, FALSE otherwise
+     */
+    public static boolean isQcIdentMethod(String oid) {
+        return OID.id_etsi_qcs_QcIdentMethod.getId().equals(oid);
+    }
+
+    /**
+     * This method verifies of the given OID is a QcQSCDlegislation statement
+     *
+     * @param oid {@link String} to check
+     * @return TRUE if QcQSCDlegislation, FALSE otherwise
+     */
+    public static boolean isQcQSCDlegislation(String oid) {
+        return OID.id_etsi_qcs_QcQSCDlegislation.getId().equals(oid);
+    }
+
+    /**
+     * This method verifies of the given OID is for
+     * Public Sector Body's Electronic Attestation of Attributes (PSBEAA) provider certificate
+     *
+     * @param oid {@link String} to check
+     * @return TRUE if OID is a Cert for PSBEAA, FALSE otherwise
+     */
+    public static boolean isCertForPSB(String oid) {
+        return OID.id_etsi_qcs_QcPSB.getId().equals(oid);
     }
 
     private static QCStatement getQCStatement(ASN1Encodable qcStatement) {
@@ -430,6 +469,73 @@ public class QcStatementUtils {
         }
     }
 
+    private static QCIdentMethod getQcIdentMethod(ASN1Encodable statementInfo) {
+        try {
+            ASN1Sequence sequence = ASN1Sequence.getInstance(statementInfo);
+            if (sequence.size() != 1) {
+                LOG.warn("Sequence size of QCIdentMethod shall be equal to 1. Found : {}. Value is skipped.",sequence.size());
+                return null;
+            }
+            final ASN1Encodable e1 = sequence.getObjectAt(0);
+            if (e1 instanceof ASN1ObjectIdentifier) {
+                final ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier) e1;
+                return getQcIdentMethod(oid.getId());
+
+            } else {
+                LOG.warn("ASN1Sequence in QCIdentMethod does not contain ASN1ObjectIdentifier, but {}",
+                        e1.getClass().getName());
+            }
+
+        } catch (Exception e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.warn("Unable to extract QCIdentMethod : {}. Obtained binaries : '{}'",
+                        e.getMessage(), Utils.toBase64(DSSASN1Utils.getDEREncoded(statementInfo)));
+            } else {
+                LOG.warn("Unable to extract QCIdentMethod : {}", e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    /**
+     * This method returns a {@code QCIdentMethod} for the given OID
+     *
+     * @param oid {@link String} representing QcType OIDs
+     * @return {@link QCIdentMethod}
+     */
+    private static QCIdentMethod getQcIdentMethod(String oid) {
+        if (Utils.isStringNotBlank(oid)) {
+            return QCIdentMethod.fromOid(oid);
+        } else {
+            LOG.warn("Empty QCIdentMethod OID is skipped.");
+            return null;
+        }
+    }
+
+    private static QCPSB getQcPSB(ASN1Encodable statementInfo) {
+        try {
+            ASN1Sequence sequence = ASN1Sequence.getInstance(statementInfo);
+            if (sequence.size() != 3) {
+                LOG.warn("Sequence size of QCPSB shall be equal to 3. Found : {}. Value is skipped.",sequence.size());
+                return null;
+            }
+            final QCPSB qcPSB = new QCPSB();
+            qcPSB.setCountryOfLegislation(DSSASN1Utils.getString(sequence.getObjectAt(0)));
+            qcPSB.setAuthSourceIdentification(DSSASN1Utils.getString(sequence.getObjectAt(1)));
+            qcPSB.setLegislationIdentification(DSSASN1Utils.getString(sequence.getObjectAt(2)));
+            return qcPSB;
+
+        } catch (Exception e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.warn("Unable to extract QCPSB : {}. Obtained binaries : '{}'",
+                        e.getMessage(), Utils.toBase64(DSSASN1Utils.getDEREncoded(statementInfo)));
+            } else {
+                LOG.warn("Unable to extract QCPSB : {}", e.getMessage());
+            }
+        }
+        return null;
+    }
+
     /**
      * This method verifies whether the given {@code qcStatementOid} is present within the {@code QcStatements}
      *
@@ -456,6 +562,12 @@ public class QcStatementUtils {
             return qcStatements.getQcSemanticsIdentifier() != null;
         } else if (isPsd2QcType(qcStatementOid)) {
             return qcStatements.getPsd2QcType() != null;
+        } else if (isQcQSCDlegislation(qcStatementOid)) {
+            return Utils.isCollectionNotEmpty(qcStatements.getQcQSCDLegislationCountryCodes());
+        } else if (isQcIdentMethod(qcStatementOid)) {
+            return qcStatements.getQcIdentMethod() != null;
+        } else if (isCertForPSB(qcStatementOid)) {
+            return qcStatements.getQcPSB() != null;
         } else {
             return qcStatements.getOtherOids().contains(qcStatementOid);
         }
@@ -492,6 +604,21 @@ public class QcStatementUtils {
         List<String> qcLegislationCountryCodes = qcStatements.getQcLegislationCountryCodes();
         if (Utils.isCollectionNotEmpty(qcLegislationCountryCodes)) {
             return qcLegislationCountryCodes.contains(qcLegislation);
+        }
+        return false;
+    }
+
+    /**
+     * This method verifies whether a QcQSCDLegislation code is present within provided {@code QcStatements}
+     *
+     * @param qcStatements {@link QcStatements} to check QcQSCDLegislation from
+     * @param qcQSCDlegislation {@link String} representing a QcQSCDLegislation country code to be verified
+     * @return TRUE of the QcQSCDLegislation is present, FALSE otherwise
+     */
+    public static boolean isQcQSCDlegislationPresent(QcStatements qcStatements, String qcQSCDlegislation) {
+        List<String> qcQSCDlegislations = qcStatements.getQcQSCDLegislationCountryCodes();
+        if (Utils.isCollectionNotEmpty(qcQSCDlegislations)) {
+            return qcQSCDlegislations.contains(qcQSCDlegislation);
         }
         return false;
     }

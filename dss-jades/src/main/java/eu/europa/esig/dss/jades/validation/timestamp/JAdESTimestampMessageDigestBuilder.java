@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -141,7 +141,7 @@ public class JAdESTimestampMessageDigestBuilder implements TimestampMessageDiges
 		try {
 			DSSMessageDigestCalculator digestCalculator = new DSSMessageDigestCalculator(digestAlgorithm);
 			writeSignedDataBinaries(digestCalculator);
-			return digestCalculator.getMessageDigest();
+			return digestCalculator.getMessageDigest(digestAlgorithm);
 
 		} catch (Exception e) {
 			String errorMessage = timestampToken == null ? String.format(MESSAGE_IMPRINT_ERROR, e.getMessage()) :
@@ -285,7 +285,7 @@ public class JAdESTimestampMessageDigestBuilder implements TimestampMessageDiges
 						+ "The 'etsiU' components shall have a common format (Strings or Objects)!", JAdESHeaderParameterNames.SIG_R_TST);
 			}
 
-			final DSSMessageDigest messageDigest = digestCalculator.getMessageDigest();
+			final DSSMessageDigest messageDigest = digestCalculator.getMessageDigest(digestAlgorithm);
 			if (LOG.isTraceEnabled()) {
 				LOG.trace(MESSAGE_IMPRINT_MESSAGE, JAdESHeaderParameterNames.SIG_R_TST, messageDigest);
 			}
@@ -354,7 +354,7 @@ public class JAdESTimestampMessageDigestBuilder implements TimestampMessageDiges
 						+ "The 'etsiU' components shall have a common format (Strings or Objects)!", JAdESHeaderParameterNames.RFS_TST);
 			}
 
-			final DSSMessageDigest messageDigest = digestCalculator.getMessageDigest();
+			final DSSMessageDigest messageDigest = digestCalculator.getMessageDigest(digestAlgorithm);
 			if (LOG.isTraceEnabled()) {
 				LOG.trace(MESSAGE_IMPRINT_MESSAGE, JAdESHeaderParameterNames.RFS_TST, messageDigest);
 			}
@@ -457,7 +457,7 @@ public class JAdESTimestampMessageDigestBuilder implements TimestampMessageDiges
 						+ "The 'etsiU' components shall have a common format (Strings or Objects)!", JAdESHeaderParameterNames.ARC_TST);
 			}
 
-			final DSSMessageDigest messageDigest = digestCalculator.getMessageDigest();
+			final DSSMessageDigest messageDigest = digestCalculator.getMessageDigest(digestAlgorithm);
 			if (LOG.isTraceEnabled()) {
 				LOG.trace(MESSAGE_IMPRINT_MESSAGE, JAdESHeaderParameterNames.ARC_TST, messageDigest);
 			}

@@ -1,28 +1,29 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.jades.validation;
 
-import eu.europa.esig.dss.spi.exception.IllegalInputException;
+import eu.europa.esig.dss.enumerations.JWSSerializationType;
 import eu.europa.esig.dss.jades.DSSJsonUtils;
 import eu.europa.esig.dss.jades.JWSJsonSerializationObject;
+import eu.europa.esig.dss.spi.exception.IllegalInputException;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.lang.JoseException;
 
@@ -43,6 +44,11 @@ public class JWS extends JsonWebSignature implements Serializable {
 	 * The unprotected header map
 	 */
 	private Map<String, Object> unprotected;
+
+	/**
+	 * Stores a cached parsed payload as a Map, when applicable
+	 */
+	private Map<String, Object> decodedPayload;
 	
 	/**
 	 * The parent {@code JWSJsonSerializationObject}
@@ -158,6 +164,21 @@ public class JWS extends JsonWebSignature implements Serializable {
 	}
 
 	/**
+	 * Gets verified payload as a Map, when applicable
+	 *
+	 * @return a map representing a parsed JWS payload
+	 */
+	public Map<String, Object> getDecodedPayload() {
+		if (decodedPayload == null) {
+			String unverifiedPayload = getUnverifiedPayload();
+			if (unverifiedPayload != null) {
+				decodedPayload = DSSJsonUtils.parseJsonStringToMap(unverifiedPayload);
+			}
+		}
+		return decodedPayload;
+	}
+
+	/**
 	 * Gets the {@code JWSJsonSerializationObject}
 	 *
 	 * @return {@link JWSJsonSerializationObject}
@@ -173,6 +194,19 @@ public class JWS extends JsonWebSignature implements Serializable {
 	 */
 	public void setJwsJsonSerializationObject(JWSJsonSerializationObject jwsJsonSerializationObject) {
 		this.jwsJsonSerializationObject = jwsJsonSerializationObject;
+	}
+
+	/**
+	 * Gets the signature's serialization type (compact, flattened, etc.)
+	 *
+	 * @return {@link JWSSerializationType}
+	 */
+	public JWSSerializationType getJwsSerializationType() {
+		if (jwsJsonSerializationObject != null) {
+			return jwsJsonSerializationObject.getJWSSerializationType();
+		} else {
+			return JWSSerializationType.COMPACT_SERIALIZATION;
+		}
 	}
 	
 	/**

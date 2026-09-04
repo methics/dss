@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -46,7 +46,9 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -54,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -67,15 +70,12 @@ class OnlineOCSPSourceTest extends OnlineSourceTest {
 	private static CertificateToken goodUser;
 	private static CertificateToken goodUserOCSPWithReqCertId;
 	private static CertificateToken goodCa;
+	private static CertificateToken rootCa;
 	private static CertificateToken ed25519goodUser;
 	private static CertificateToken ed25519goodCa;
 
 	private static CertificateToken invalidSigGoodUser;
 	private static CertificateToken timeoutSigGoodUser;
-	
-	private static CertificateToken qtspUser;
-	private static CertificateToken qtspCa;
-	private static byte[] qtspOcsp;
 
 	@BeforeAll
 	static void init() {
@@ -86,16 +86,13 @@ class OnlineOCSPSourceTest extends OnlineSourceTest {
 		goodUser = DSSUtils.loadCertificate(dataLoader.get(ONLINE_PKI_HOST + "/crt/good-user.crt"));
 		goodUserOCSPWithReqCertId = DSSUtils.loadCertificate(dataLoader.get(ONLINE_PKI_HOST + "/crt/good-user-ocsp-certid-digest.crt"));
 		goodCa = DSSUtils.loadCertificate(dataLoader.get(ONLINE_PKI_HOST + "/crt/good-ca.crt"));
+		rootCa = DSSUtils.loadCertificate(dataLoader.get(ONLINE_PKI_HOST + "/crt/root-ca.crt"));
 
 		ed25519goodUser = DSSUtils.loadCertificate(dataLoader.get(ONLINE_PKI_HOST + "/crt/Ed25519-good-user.crt"));
 		ed25519goodCa = DSSUtils.loadCertificate(dataLoader.get(ONLINE_PKI_HOST + "/crt/Ed25519-good-ca.crt"));
 
 		invalidSigGoodUser = DSSUtils.loadCertificate(dataLoader.get(ONLINE_PKI_HOST + "/crt/good-user-ocsp-invalid-sig.crt"));
 		timeoutSigGoodUser = DSSUtils.loadCertificate(dataLoader.get(ONLINE_PKI_HOST + "/crt/good-user-ocsp-timeout.crt"));
-
-		qtspUser = DSSUtils.loadCertificate(new File("src/test/resources/sk_user.cer"));
-		qtspCa = DSSUtils.loadCertificate(new File("src/test/resources/sk_ca.cer"));
-		qtspOcsp = DSSUtils.toByteArray(new File("src/test/resources/sk_ocsp.bin"));
 	}
 
 	@Test
@@ -132,6 +129,14 @@ class OnlineOCSPSourceTest extends OnlineSourceTest {
 		OCSPToken ocspToken = ocspSource.getRevocationToken(goodUser, goodCa);
 		assertNotNull(ocspToken);
 		assertNotNull(ocspToken.getBasicOCSPResp());
+	}
+
+	@Test
+	void testNoOCSPUrl() {
+		OnlineOCSPSource ocspSource = new OnlineOCSPSource();
+		ocspSource.setDataLoader(new OCSPDataLoader());
+		OCSPToken ocspToken = ocspSource.getRevocationToken(goodCa, rootCa);
+		assertNull(ocspToken);
 	}
 
 	@Test
@@ -242,47 +247,57 @@ class OnlineOCSPSourceTest extends OnlineSourceTest {
 		OnlineOCSPSource ocspSource = new OnlineOCSPSource();
 		ocspSource.setAlertOnInvalidUpdateTime(new DSSExternalResourceExceptionAlert());
 		Exception exception = assertThrows(DSSExternalResourceException.class,
-				() -> ocspSource.getRevocationToken(certificateToken, rootToken));
+				() -> ocspSource.getRevocationToken(goodUser, goodCa));
 		assertTrue(exception.getMessage().contains("Obtained OCSP Response does not contain nextUpdate field!"));
 	}
 
 	@Test
 	void validNextUpdateTest() {
-		OnlineOCSPSource ocspSource = new OnlineOCSPSource();
-		OCSPToken ocspToken = ocspSource.getRevocationToken(qtspUser, qtspCa);
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.MONTH, 6);
+		OnlineOCSPSource ocspSource = new ThisAndNextUpdateOCSPSource(new Date(), calendar.getTime());
+		OCSPToken ocspToken = ocspSource.getRevocationToken(goodUser, goodCa);
 		assertNotNull(ocspToken);
 	}
 
 	@Test
 	void validNextUpdateEnforcedTest() {
-		OnlineOCSPSource ocspSource = new OnlineOCSPSource();
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.MONTH, 6);
+		OnlineOCSPSource ocspSource = new ThisAndNextUpdateOCSPSource(new Date(), calendar.getTime());
 		ocspSource.setAlertOnInvalidUpdateTime(new DSSExternalResourceExceptionAlert());
-		OCSPToken ocspToken = ocspSource.getRevocationToken(qtspUser, qtspCa);
+		OCSPToken ocspToken = ocspSource.getRevocationToken(goodUser, goodCa);
 		assertNotNull(ocspToken);
 	}
 
 	@Test
 	void invalidNextUpdateTest() {
-		OnlineOCSPSource ocspSource = new SubstituteOCSPSource(qtspOcsp);
-		OCSPToken ocspToken = ocspSource.getRevocationToken(qtspUser, qtspCa);
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.MONTH, -6);
+		OnlineOCSPSource ocspSource = new ThisAndNextUpdateOCSPSource(new Date(), calendar.getTime());
+		OCSPToken ocspToken = ocspSource.getRevocationToken(goodUser, goodCa);
 		assertNotNull(ocspToken);
 	}
 
 	@Test
 	void invalidNextUpdateEnforcedTest() {
-		OnlineOCSPSource ocspSource = new SubstituteOCSPSource(qtspOcsp);
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.MONTH, -6);
+		OnlineOCSPSource ocspSource = new ThisAndNextUpdateOCSPSource(new Date(), calendar.getTime());
 		ocspSource.setAlertOnInvalidUpdateTime(new DSSExternalResourceExceptionAlert());
 		Exception exception = assertThrows(DSSExternalResourceException.class,
-				() -> ocspSource.getRevocationToken(qtspUser, qtspCa));
+				() -> ocspSource.getRevocationToken(goodUser, goodCa));
 		assertTrue(exception.getMessage().contains("The current time"));
 	}
 
 	@Test
 	void invalidNextUpdateWithLargeToleranceTest() {
-		OnlineOCSPSource ocspSource = new SubstituteOCSPSource(qtspOcsp);
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.MONTH, -6);
+		OnlineOCSPSource ocspSource = new ThisAndNextUpdateOCSPSource(new Date(), calendar.getTime());
 		ocspSource.setAlertOnInvalidUpdateTime(new DSSExternalResourceExceptionAlert());
 		ocspSource.setNextUpdateTolerancePeriod(1000L * 60 * 60 * 24 * 365 * 20); // 20 years
-		OCSPToken ocspToken = ocspSource.getRevocationToken(qtspUser, qtspCa);
+		OCSPToken ocspToken = ocspSource.getRevocationToken(goodUser, goodCa);
 		assertNotNull(ocspToken);
 	}
 
@@ -428,29 +443,49 @@ class OnlineOCSPSourceTest extends OnlineSourceTest {
 
 	}
 
-	private static class SubstituteOCSPSource extends OnlineOCSPSource {
+	private static class ThisAndNextUpdateOCSPSource extends OnlineOCSPSource {
 
 		private static final long serialVersionUID = 9135834387628029175L;
 
-		private SubstituteOCSPSource(final byte[] ocspResponse) {
-			super(new SubstituteOCSPDataLoader(ocspResponse));
+		private ThisAndNextUpdateOCSPSource() {
+			this(null, null);
+		}
+
+		private ThisAndNextUpdateOCSPSource(final Date thisUpdate, final Date nextUpdate) {
+			super(new SubstituteOCSPDataLoader(thisUpdate, nextUpdate));
 		}
 
 	}
 
-	private static class SubstituteOCSPDataLoader extends CommonsDataLoader {
+	private static class SubstituteOCSPDataLoader extends OCSPDataLoader {
 
 		private static final long serialVersionUID = -7023354489321956369L;
-		
-		private final byte[] ocspResponse;
 
-		private SubstituteOCSPDataLoader(final byte[] ocspResponse) {
-			this.ocspResponse = ocspResponse;
+		private static final String DATE_FORMAT = "yyyy-MM-dd-HH-mm";
+		
+		private final Date thisUpdate;
+		private final Date nextUpdate;
+
+		private SubstituteOCSPDataLoader(final Date thisUpdate, final Date nextUpdate) {
+			this.thisUpdate = thisUpdate != null ? thisUpdate : new Date();
+			this.nextUpdate = nextUpdate;
 		}
 
 		@Override
 		public byte[] post(String url, byte[] content) {
-			return ocspResponse;
+			return super.post(getUrl(url), content);
+		}
+		
+		private String getUrl(String url) {
+			int lastSlash = url.lastIndexOf("/");
+			String base = url.substring(0, lastSlash);
+			String certId = url.substring(lastSlash + 1);
+			if (nextUpdate == null) {
+				return String.format("%s/%s/%s", base, DSSUtils.formatDateWithCustomFormat(thisUpdate, DATE_FORMAT), certId);
+			} else {
+				return String.format("%s/%s/%s/%s", base, DSSUtils.formatDateWithCustomFormat(thisUpdate, DATE_FORMAT),
+						DSSUtils.formatDateWithCustomFormat(nextUpdate, DATE_FORMAT), certId);
+			}
 		}
 		
 	}

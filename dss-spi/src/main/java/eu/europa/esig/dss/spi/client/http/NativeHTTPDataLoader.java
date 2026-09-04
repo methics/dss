@@ -1,25 +1,26 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.spi.client.http;
 
+import eu.europa.esig.dss.model.http.ResponseEnvelope;
 import eu.europa.esig.dss.spi.exception.DSSExternalResourceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +32,7 @@ import java.util.concurrent.Callable;
  * Implementation of native java DataLoader using the java.net.URL class.
  *
  */
-public class NativeHTTPDataLoader implements DataLoader {
+public class NativeHTTPDataLoader implements DataLoader, AdvancedDataLoader {
 
 	private static final long serialVersionUID = 4075489539157157286L;
 
@@ -121,36 +122,50 @@ public class NativeHTTPDataLoader implements DataLoader {
 	}
 
 	/**
-	 * Execute the request
-	 *
-	 * @param url {@link String}
-	 * @param method {@link HttpMethod}
-	 * @param content request content
-	 * @param refresh if enforce the refresh
-	 * @return response binaries
-	 */
-	protected byte[] request(String url, HttpMethod method, byte[] content, boolean refresh) {
-		try {
-			Callable<byte[]> task = createNativeDataLoaderCall(url, method, content, refresh);
-			return task.call();
-		} catch (DSSExternalResourceException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new DSSExternalResourceException(e);
-		}
-	}
-
-	/**
 	 * This method creates a task call to be executed by NativeHTTPDataLoader
 	 *
 	 * @param url {@link String} URL to call
 	 * @param method {@link HttpMethod} of the request
 	 * @param content byte array containing a body of the request, when required
 	 * @param refresh defined if the cache should be used
+	 * @param includeResponseDetails whether HTTP content information is to be included in the response object
+	 * @param includeResponseBody whether the response message body is to be included in the output response object
 	 * @return {@link Callable} task
 	 */
-	protected Callable<byte[]> createNativeDataLoaderCall(String url, HttpMethod method, byte[] content, boolean refresh) {
-		return new NativeDataLoaderCall(url, content, !refresh, maxInputSize, connectTimeout, readTimeout);
+	protected Callable<ResponseEnvelope> createNativeHTTPDataLoaderCall(String url, HttpMethod method, byte[] content,
+			boolean refresh, boolean includeResponseDetails, boolean includeResponseBody) {
+		NativeHTTPDataLoaderCall httpDataLoaderCall = new NativeHTTPDataLoaderCall(url, content);
+		httpDataLoaderCall.setUseCaches(!refresh);
+		httpDataLoaderCall.setMaxInputSize(maxInputSize);
+		httpDataLoaderCall.setConnectTimeout(connectTimeout);
+		httpDataLoaderCall.setReadTimeout(readTimeout);
+		httpDataLoaderCall.setIncludeResponseDetails(includeResponseDetails);
+		httpDataLoaderCall.setIncludeResponseBody(includeResponseBody);
+		return httpDataLoaderCall;
+	}
+
+	/**
+	 * Execute the request
+	 *
+	 * @param url {@link String}
+	 * @param method {@link HttpMethod}
+	 * @param content request content
+	 * @param refresh if enforce the refresh
+	 * @param includeResponseDetails whether HTTP content information is to be included in the response object
+	 * @param includeResponseBody whether the response message body is to be included in the output response object
+	 * @return response binaries
+	 */
+	protected ResponseEnvelope request(String url, HttpMethod method, byte[] content, boolean refresh,
+									   boolean includeResponseDetails, boolean includeResponseBody) {
+		try {
+			Callable<ResponseEnvelope> task = createNativeHTTPDataLoaderCall(
+					url, method, content, refresh, includeResponseDetails, includeResponseBody);
+			return task.call();
+		} catch (DSSExternalResourceException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new DSSExternalResourceException(e);
+		}
 	}
 
 	@Override
@@ -183,12 +198,42 @@ public class NativeHTTPDataLoader implements DataLoader {
 	 * @return binaries of the extracted data object
 	 */
 	public byte[] get(String url, boolean refresh) {
-		return request(url, HttpMethod.GET, null, refresh);
+		return request(url, HttpMethod.GET, null, refresh, false, true).getResponseBody();
 	}
 
 	@Override
 	public byte[] post(String url, byte[] content) {
-		return request(url, HttpMethod.POST, content, true);
+		return request(url, HttpMethod.POST, content, false, false, true).getResponseBody();
+	}
+
+	@Override
+	public ResponseEnvelope requestGet(String url) {
+		return request(url, HttpMethod.GET, null, false, true, true);
+	}
+
+	@Override
+	public ResponseEnvelope requestGet(String url, boolean includeResponseDetails) {
+		return request(url, HttpMethod.GET, null, false, includeResponseDetails, true);
+	}
+
+	@Override
+	public ResponseEnvelope requestGet(String url, boolean includeResponseDetails, boolean includeResponseBody) {
+		return request(url, HttpMethod.GET, null, false, includeResponseDetails, includeResponseBody);
+	}
+
+	@Override
+	public ResponseEnvelope requestPost(String url, byte[] content) {
+		return request(url, HttpMethod.POST, content, false, true, true);
+	}
+
+	@Override
+	public ResponseEnvelope requestPost(String url, byte[] content, boolean includeResponseDetails) {
+		return request(url, HttpMethod.POST, content, false, includeResponseDetails, true);
+	}
+
+	@Override
+	public ResponseEnvelope requestPost(String url, byte[] content, boolean includeResponseDetails, boolean includeResponseBody) {
+		return request(url, HttpMethod.POST, content, false, includeResponseDetails, includeResponseBody);
 	}
 
 	/**

@@ -20,6 +20,7 @@
 		</AcceptableMimeTypeFileContent>
 		<ManifestFilePresent Level="IGNORE" />
 		<SignedFilesPresent Level="IGNORE" />
+		<FilenameAdherence Level="IGNORE" />
 		<AllFilesSigned Level="IGNORE" />
 	</ContainerConstraints>
 	<PDFAConstraints>
@@ -95,6 +96,8 @@
 				</KeyUsage>
 				<PolicyTree Level="IGNORE" />
 				<NameConstraints Level="IGNORE" />
+				<AuthorityKeyIdentifierPresent Level="IGNORE" />
+				<NoRevAvail Level="IGNORE" />
 				<SupportedCriticalExtensions Level="IGNORE">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -139,6 +142,8 @@
 				</KeyUsage>
 				<PolicyTree Level="IGNORE" />
 				<NameConstraints Level="IGNORE" />
+				<AuthorityKeyIdentifierPresent Level="IGNORE" />
+				<SubjectKeyIdentifierPresent Level="IGNORE" />
 				<SupportedCriticalExtensions Level="IGNORE">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -173,8 +178,13 @@
 			<IssuerSerialMatch Level="IGNORE" />
 			<KeyIdentifierMatch Level="IGNORE" />
 			<SigningTime Level="IGNORE" />
-			<ContentType Level="IGNORE" value="1.2.840.113549.1.7.1" />
-			<ContentHints Level="IGNORE" value="*" />
+			<SigningTimeInCertRange Level="IGNORE" />
+			<ContentType Level="IGNORE">
+				<Id>1.2.840.113549.1.7.1</Id>
+			</ContentType>
+			<ContentHints Level="IGNORE">
+				<Id>*</Id>
+			</ContentHints>
 			<MessageDigestOrSignedPropertiesPresent Level="IGNORE" />
 			<EllipticCurveKeySize Level="IGNORE" />
 			<CommitmentTypeIndication Level="IGNORE">
@@ -233,6 +243,8 @@
 				</KeyUsage>
 				<PolicyTree Level="IGNORE" />
 				<NameConstraints Level="IGNORE" />
+				<AuthorityKeyIdentifierPresent Level="IGNORE" />
+				<NoRevAvail Level="IGNORE" />
 				<SupportedCriticalExtensions Level="IGNORE">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -275,6 +287,8 @@
 				</KeyUsage>
 				<PolicyTree Level="IGNORE" />
 				<NameConstraints Level="IGNORE" />
+				<AuthorityKeyIdentifierPresent Level="IGNORE" />
+				<SubjectKeyIdentifierPresent Level="IGNORE" />
 				<SupportedCriticalExtensions Level="IGNORE">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -309,8 +323,13 @@
 			<IssuerSerialMatch Level="IGNORE" />
 			<KeyIdentifierMatch Level="IGNORE" />
 			<SigningTime Level="IGNORE" />
-			<ContentType Level="IGNORE" value="1.2.840.113549.1.7.1" />
-			<ContentHints Level="IGNORE" value="*" />
+			<SigningTimeInCertRange Level="IGNORE" />
+			<ContentType Level="IGNORE">
+				<Id>1.2.840.113549.1.7.1</Id>
+			</ContentType>
+			<ContentHints Level="IGNORE">
+				<Id>*</Id>
+			</ContentHints>
 			<MessageDigestOrSignedPropertiesPresent Level="IGNORE" />
 			<EllipticCurveKeySize Level="IGNORE" />
 			<CommitmentTypeIndication Level="IGNORE">
@@ -361,6 +380,7 @@
 				</ExtendedKeyUsage>
 				<PolicyTree Level="IGNORE" />
 				<NameConstraints Level="IGNORE" />
+				<AuthorityKeyIdentifierPresent Level="IGNORE" />
 				<SupportedCriticalExtensions Level="IGNORE">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -397,6 +417,8 @@
 				</KeyUsage>
 				<PolicyTree Level="IGNORE" />
 				<NameConstraints Level="IGNORE" />
+				<AuthorityKeyIdentifierPresent Level="IGNORE" />
+				<SubjectKeyIdentifierPresent Level="IGNORE" />
 				<SupportedCriticalExtensions Level="IGNORE">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -430,9 +452,16 @@
 			<IssuerSerialMatch Level="IGNORE" />
 		</SignedAttributes>
 		<TSAGeneralNameContentMatch Level="IGNORE" />
+		<AtsHashIndex Level="IGNORE" />
+		<ContainerSignedAndTimestampedFilesCovered Level="IGNORE" />
 	</Timestamp>
 	<Revocation>
 		<UnknownStatus Level="IGNORE" />
+		<ThisUpdatePresent Level="IGNORE" />
+		<RevocationIssuerKnown Level="IGNORE" />
+		<RevocationIssuerValidAtProductionTime Level="IGNORE" />
+		<RevocationAfterCertificateIssuance Level="IGNORE" />
+		<RevocationHasInformationAboutCertificate Level="IGNORE" />
 		<OCSPResponderIdMatch Level="IGNORE" />
 		<SelfIssuedOCSP Level="IGNORE" />
 		<BasicSignatureConstraints>
@@ -455,6 +484,7 @@
 				<RevocationFreshness Level="IGNORE" Unit="DAYS" Value="0" />
 				<PolicyTree Level="IGNORE" />
 				<NameConstraints Level="IGNORE" />
+				<AuthorityKeyIdentifierPresent Level="IGNORE" />
 				<SupportedCriticalExtensions Level="IGNORE">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -488,6 +518,8 @@
 				</KeyUsage>
 				<PolicyTree Level="IGNORE" />
 				<NameConstraints Level="IGNORE" />
+				<AuthorityKeyIdentifierPresent Level="IGNORE" />
+				<SubjectKeyIdentifierPresent Level="IGNORE" />
 				<SupportedCriticalExtensions Level="IGNORE">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -518,6 +550,8 @@
 		<DataObjectIntact Level="IGNORE" />
 		<DataObjectFound Level="IGNORE" />
 		<DataObjectGroup Level="IGNORE" />
+		<SignedFilesCovered Level="IGNORE" />
+		<ContainerSignedAndTimestampedFilesCovered Level="IGNORE" />
 		<HashTreeRenewal Level="IGNORE" />
 		<Cryptographic />
 	</EvidenceRecord>
@@ -532,8 +566,8 @@
 		</AcceptableEncryptionAlgo>
 		<MiniPublicKeySize>
 			<Algo Size="1024">DSA</Algo>
-			<Algo Size="1024">RSA</Algo>
-			<Algo Size="1024">RSASSA-PSS</Algo>
+			<Algo Size="786">RSA</Algo>
+			<Algo Size="786">RSASSA-PSS</Algo>
 			<Algo Size="160">ECDSA</Algo>
 			<Algo Size="160">PLAIN-ECDSA</Algo>
 			<!-- 		<Algo Size="24">EdDSA</Algo> 		Not referenced in ETSI/SOGIS -->
@@ -553,47 +587,42 @@
 			<Algo>RIPEMD160</Algo>
 			<Algo>WHIRLPOOL</Algo>
 		</AcceptableDigestAlgo>
-		<AlgoExpirationDate Level="IGNORE" Format="yyyy" UpdateDate="2022" LevelAfterUpdate="IGNORE">
+		<AlgoExpirationDate Level="IGNORE" Format="yyyy-MM-dd" UpdateDate="2025-01-01" LevelAfterUpdate="IGNORE">
 			<!-- Digest algorithms -->
-			<!--		<Algo Date="2005">MD2</Algo> 		Not referenced in ETSI/SOGIS -->
-			<Algo Date="2005">MD5</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
-			<Algo Date="2009">SHA1</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.0.0 -->
-			<Algo Date="2026">SHA224</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029">SHA256</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029">SHA384</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029">SHA512</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<!--		<Algo Date="2026">SHA3-224</Algo> 		Not referenced in ETSI/SOGIS  -->
-			<Algo Date="2029">SHA3-256</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029">SHA3-384</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029">SHA3-512</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2011">RIPEMD160</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.0.0 -->
-			<Algo Date="2015">WHIRLPOOL</Algo> <!-- ETSI 119 312 V1.1.1 -->
+			<Algo Date="2004-08-01">MD5</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
+			<Algo Date="2012-08-01">SHA1</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Date="2029-01-01">SHA224</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo>SHA256</Algo> <!-- ETSI TS 119 312 v1.5.1 --> <!-- R -->
+			<Algo>SHA384</Algo> <!-- ETSI TS 119 312 v1.5.1 --> <!-- R -->
+			<Algo>SHA512</Algo> <!-- ETSI TS 119 312 v1.5.1 --> <!-- R -->
+			<Algo>SHA3-256</Algo> <!-- ETSI TS 119 312 v1.5.1 --> <!-- R -->
+			<Algo>SHA3-384</Algo> <!-- ETSI TS 119 312 v1.5.1 --> <!-- R -->
+			<Algo>SHA3-512</Algo> <!-- ETSI TS 119 312 v1.5.1 --> <!-- R -->
+			<Algo Date="2014-08-01">RIPEMD160</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Date="2020-12-01">WHIRLPOOL</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
 			<!-- end Digest algorithms -->
 			<!-- Encryption algorithms -->
-			<Algo Date="2013" Size="1024">DSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
-			<Algo Date="2026" Size="2048">DSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="3072">DSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2009" Size="1024">RSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.0.0 -->
-			<Algo Date="2016" Size="1536">RSA</Algo> <!-- ETSI 119 312 V1.1.1 -->
-			<Algo Date="2026" Size="1900">RSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="3000">RSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2009" Size="1024">RSASSA-PSS</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.0.0 -->
-			<Algo Date="2016" Size="1536">RSASSA-PSS</Algo> <!-- ETSI 119 312 V1.1.1 -->
-			<Algo Date="2026" Size="1900">RSASSA-PSS</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="3000">RSASSA-PSS</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2013" Size="160">ECDSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
-			<Algo Date="2013" Size="192">ECDSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
-			<Algo Date="2016" Size="224">ECDSA</Algo> <!-- ETSI 119 312 V1.1.1 -->
-			<Algo Date="2029" Size="256">ECDSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="384">ECDSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="512">ECDSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2013" Size="160">PLAIN-ECDSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
-			<Algo Date="2013" Size="192">PLAIN-ECDSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
-			<Algo Date="2016" Size="224">PLAIN-ECDSA</Algo> <!-- ETSI 119 312 V1.1.1 -->
-			<Algo Date="2029" Size="256">PLAIN-ECDSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="384">PLAIN-ECDSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="512">PLAIN-ECDSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<!-- 		<Algo Date="2026" Size="24">EdDSA</Algo> 		Not referenced in ETSI/SOGIS -->
+			<Algo Date="2015-12-01" Size="1024">DSA</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Date="2029-01-01" Size="1900">DSA</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Size="3000">DSA</Algo> <!-- ETSI TS 119 312 v1.5.1 --> <!-- R -->
+			<Algo Date="2010-08-01" Size="786">RSA</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Date="2019-10-01" Size="1024">RSA</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Date="2019-10-01" Size="1536">RSA</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Date="2029-01-01" Size="1900">RSA</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Date="2029-01-01" Size="3000">RSA</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Date="2010-08-01" Size="786">RSASSA-PSS</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Date="2019-10-01" Size="1024">RSASSA-PSS</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Date="2019-10-01" Size="1536">RSASSA-PSS</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Date="2029-01-01" Size="1900">RSASSA-PSS</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Size="3000">RSASSA-PSS</Algo> <!-- ETSI TS 119 312 v1.5.1 --> <!-- R -->
+			<Algo Date="2012-08-01" Size="160">ECDSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
+			<Algo Date="2012-08-01" Size="163">ECDSA</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Date="2021-10-01" Size="224">ECDSA</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Size="256">ECDSA</Algo> <!-- ETSI TS 119 312 v1.5.1 --> <!-- R -->
+			<Algo Date="2012-08-01" Size="160">PLAIN-ECDSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
+			<Algo Date="2012-08-01" Size="163">PLAIN-ECDSA</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Date="2021-10-01" Size="224">PLAIN-ECDSA</Algo> <!-- ETSI TS 119 312 v1.5.1 -->
+			<Algo Size="256">PLAIN-ECDSA</Algo> <!-- ETSI TS 119 312 v1.5.1 --> <!-- R -->
 			<!-- end Encryption algorithms -->
 		</AlgoExpirationDate>
 	</Cryptographic>
@@ -605,6 +634,10 @@
 		<TLFreshness Level="IGNORE" Unit="HOURS" Value="6" />
 		<TLNotExpired Level="IGNORE" />
 		<TLWellSigned Level="IGNORE" />
-		<TLVersion Level="IGNORE" value="5" />
+		<TLVersion Level="IGNORE">
+			<Id>5</Id>
+			<Id>6</Id>
+		</TLVersion>
+		<TLStructure Level="IGNORE" />
 	</eIDAS>
 </ConstraintsParameters>

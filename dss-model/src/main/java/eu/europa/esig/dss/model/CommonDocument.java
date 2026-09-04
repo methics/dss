@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -29,8 +29,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
+import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * This class implements the default methods.
@@ -42,7 +44,7 @@ public abstract class CommonDocument implements DSSDocument {
 	/**
 	 * Cached map of DigestAlgorithms and the corresponding digests for the document
 	 */
-	protected EnumMap<DigestAlgorithm, byte[]> digestMap = new EnumMap<>(DigestAlgorithm.class);
+	protected EnumMap<DigestAlgorithm, byte[]> digestMap = new DigestAlgorithmMap();
 
 	/**
 	 * The MimeType of the document
@@ -100,10 +102,9 @@ public abstract class CommonDocument implements DSSDocument {
 	}
 
 	@Override
-	@Deprecated
-	public String getDigest(final DigestAlgorithm digestAlgorithm) {
+	public Digest getDigest(final DigestAlgorithm digestAlgorithm) {
 		final byte[] digestBytes = getDigestValue(digestAlgorithm);
-		return Base64.getEncoder().encodeToString(digestBytes);
+		return new Digest(digestAlgorithm, digestBytes);
 	}
 
 	@Override
@@ -130,6 +131,77 @@ public abstract class CommonDocument implements DSSDocument {
 	public String toString() {
 		final String mimeTypeString = (mimeType == null) ? "" : mimeType.getMimeTypeString();
 		return "Name: " + name + " / MimeType: " + mimeTypeString;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		CommonDocument that = (CommonDocument) o;
+		return Objects.equals(mimeType, that.mimeType)
+				&& Objects.equals(name, that.name);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = Objects.hashCode(mimeType);
+		result = 31 * result + Objects.hashCode(name);
+		return result;
+	}
+
+	/**
+	 * This class is used for improved #equals and #hashCode method computation for the digest algorithm map
+	 *
+	 */
+	private static final class DigestAlgorithmMap extends EnumMap<DigestAlgorithm, byte[]> {
+
+		/**
+		 * Default constructor
+		 */
+		public DigestAlgorithmMap() {
+			super(DigestAlgorithm.class);
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o)
+				return true;
+			if (o instanceof DigestAlgorithmMap)
+				return equals((DigestAlgorithmMap) o);
+			return false;
+		}
+
+		private boolean equals(DigestAlgorithmMap o) {
+			if (this.size() != o.size()) {
+				return false;
+			}
+			for (Map.Entry<DigestAlgorithm, byte[]> entry : this.entrySet()) {
+				DigestAlgorithm digestAlgorithm = entry.getKey();
+				byte[] thisValue = entry.getValue();
+				byte[] oValue = o.get(digestAlgorithm);
+				if (!Arrays.equals(oValue, thisValue)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		@Override
+		public int hashCode() {
+			int h = 0;
+			for (Map.Entry<DigestAlgorithm, byte[]> entry : this.entrySet()) {
+				if (null != entry) {
+					h += entryHashCode(entry);
+				}
+			}
+			return h;
+		}
+
+		private int entryHashCode(Entry<DigestAlgorithm,byte[]> entry) {
+			return (entry.getKey().hashCode() ^ Arrays.hashCode(entry.getValue()));
+		}
+
 	}
 
 }

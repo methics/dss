@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -91,7 +91,7 @@ class XAdESServiceTest extends PKIFactoryAccess {
         
         signatureParameters.setGenerateTBSWithoutCertificate(true);
         exception = assertThrows(NullPointerException.class, () -> signAndValidate(documentToSign, signatureParameters));
-        assertEquals("Cannot create a SignatureBuilder. SignaturePackaging is not defined!", exception.getMessage());
+        assertEquals("SignaturePackaging shall be defined!", exception.getMessage());
         signatureParameters.setGenerateTBSWithoutCertificate(false);
 
 		certificateVerifier.setAlertOnNotYetValidCertificate(new SilentOnStatusAlert());
@@ -104,7 +104,7 @@ class XAdESServiceTest extends PKIFactoryAccess {
         
         signatureParameters.setSigningCertificate(getSigningCert());
         exception = assertThrows(NullPointerException.class, () -> signAndValidate(documentToSign, signatureParameters));
-        assertEquals("Cannot create a SignatureBuilder. SignaturePackaging is not defined!", exception.getMessage());
+        assertEquals("SignaturePackaging shall be defined!", exception.getMessage());
         
         signatureParameters.setSignaturePackaging(SignaturePackaging.ENVELOPING);
         exception = assertThrows(NullPointerException.class, () -> signAndValidate(documentToSign, signatureParameters));
@@ -215,6 +215,10 @@ class XAdESServiceTest extends PKIFactoryAccess {
 		assertEquals("SignatureParameters cannot be null!", exception.getMessage());
 
 		final List<DSSDocument> documents = Arrays.asList(documentToSign1, documentToSign2);
+		exception = assertThrows(IllegalArgumentException.class, () -> signAndValidate(documents, signatureParameters));
+		assertEquals("Signing Certificate is not defined! Set signing certificate or use method setGenerateTBSWithoutCertificate(true).", exception.getMessage());
+
+		signatureParameters.setSigningCertificate(getSigningCert());
 		exception = assertThrows(NullPointerException.class, () -> signAndValidate(documents, signatureParameters));
 		assertEquals("SignaturePackaging shall be defined!", exception.getMessage());
 
@@ -227,10 +231,6 @@ class XAdESServiceTest extends PKIFactoryAccess {
 		final List<DSSDocument> docsWithName = Arrays.asList(documentToSign1, documentToSign2);
 		exception = assertThrows(IllegalArgumentException.class, () -> signAndValidate(docsWithName, signatureParameters));
 		assertEquals("The documents to be signed shall have different names! The name 'doc' appears multiple times.", exception.getMessage());
-		
-		documentToSign2.setName("anotherDoc");
-		exception = assertThrows(IllegalArgumentException.class, () -> signAndValidate(documentToSign, signatureParameters));
-		assertEquals("Signing Certificate is not defined! Set signing certificate or use method setGenerateTBSWithoutCertificate(true).", exception.getMessage());
 
 		signatureParameters.setSigningCertificate(getSigningCert());
 		exception = assertThrows(NullPointerException.class, () -> signAndValidate(documentToSign, signatureParameters));

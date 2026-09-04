@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -29,6 +29,7 @@ import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
 import eu.europa.esig.dss.spi.client.http.DSSCacheFileLoader;
 import eu.europa.esig.dss.spi.client.http.IgnoreDataLoader;
 import eu.europa.esig.dss.spi.tsl.TrustedListsCertificateSource;
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource;
 import eu.europa.esig.dss.spi.x509.aia.DefaultAIASource;
@@ -38,18 +39,19 @@ import eu.europa.esig.dss.tsl.alerts.detections.LOTLLocationChangeDetection;
 import eu.europa.esig.dss.tsl.alerts.detections.OJUrlChangeDetection;
 import eu.europa.esig.dss.tsl.alerts.detections.TLExpirationDetection;
 import eu.europa.esig.dss.tsl.alerts.detections.TLSignatureErrorDetection;
+import eu.europa.esig.dss.tsl.alerts.detections.TSLSequenceNumberErrorDetection;
 import eu.europa.esig.dss.tsl.alerts.handlers.log.LogLOTLLocationChangeAlertHandler;
 import eu.europa.esig.dss.tsl.alerts.handlers.log.LogOJUrlChangeAlertHandler;
 import eu.europa.esig.dss.tsl.alerts.handlers.log.LogTLExpirationAlertHandler;
 import eu.europa.esig.dss.tsl.alerts.handlers.log.LogTLSignatureErrorAlertHandler;
-import eu.europa.esig.dss.tsl.cache.CacheCleaner;
+import eu.europa.esig.dss.tsl.alerts.handlers.log.LogTSLSequenceNumberErrorAlertHandler;
 import eu.europa.esig.dss.tsl.function.OfficialJournalSchemeInformationURI;
 import eu.europa.esig.dss.tsl.job.TLValidationJob;
 import eu.europa.esig.dss.tsl.sha2.Sha2FileCacheDataLoader;
 import eu.europa.esig.dss.tsl.source.LOTLSource;
-import eu.europa.esig.dss.tsl.sync.AcceptAllStrategy;
-import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.validation.SignedDocumentValidator;
+import eu.europa.esig.dss.validation.job.cache.CacheCleaner;
+import eu.europa.esig.dss.validation.job.sync.AcceptAllStrategy;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,9 +60,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class EuropeanLOTLSnippets {
+class EuropeanLOTLSnippets {
 	
-	private static Logger LOG = LoggerFactory.getLogger(EuropeanLOTLSnippets.class);
+	private static final Logger LOG = LoggerFactory.getLogger(EuropeanLOTLSnippets.class);
 
 	// tag::complete-european-lotl-config[]
 	// import eu.europa.esig.dss.model.DSSException;
@@ -85,15 +87,15 @@ public class EuropeanLOTLSnippets {
 	// import eu.europa.esig.dss.tsl.alerts.handlers.log.LogOJUrlChangeAlertHandler;
 	// import eu.europa.esig.dss.tsl.alerts.handlers.log.LogTLExpirationAlertHandler;
 	// import eu.europa.esig.dss.tsl.alerts.handlers.log.LogTLSignatureErrorAlertHandler;
-	// import eu.europa.esig.dss.tsl.cache.CacheCleaner;
 	// import eu.europa.esig.dss.tsl.function.OfficialJournalSchemeInformationURI;
 	// import eu.europa.esig.dss.tsl.job.TLValidationJob;
 	// import eu.europa.esig.dss.tsl.sha2.Sha2FileCacheDataLoader;
-	// import eu.europa.esig.dss.tsl.source.LOTLSource;
-	// import eu.europa.esig.dss.tsl.sync.AcceptAllStrategy;
+	// import eu.europa.esig.dss.tsl.source.LOTLSource;;
 	// import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 	// import eu.europa.esig.dss.spi.x509.aia.DefaultAIASource;
 	// import eu.europa.esig.dss.validation.SignedDocumentValidator;
+	// import eu.europa.esig.dss.validation.job.cache.CacheCleaner;
+	// import eu.europa.esig.dss.validation.job.sync.AcceptAllStrategy
 	// import java.io.File;
 	// import java.io.IOException;
 	// import java.util.Arrays;
@@ -103,7 +105,7 @@ public class EuropeanLOTLSnippets {
 	private static final String OJ_URL = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=uriserv:OJ.C_.2019.276.01.0001.01.ENG";
 	
 	@Test
-	public void test() {
+	void test() {
 		CommonCertificateVerifier commonCertificateVerifier = new CommonCertificateVerifier();
 		TLValidationJob job = job();
 		TrustedListsCertificateSource trustedListsCertificateSource = new TrustedListsCertificateSource();
@@ -126,14 +128,14 @@ public class EuropeanLOTLSnippets {
 		job.setOfflineDataLoader(offlineLoader());
 		job.setOnlineDataLoader(onlineLoader());
 		job.setTrustedListCertificateSource(trustedCertificateSource());
-		job.setSynchronizationStrategy(new AcceptAllStrategy());
+		job.setSynchronizationStrategy(new AcceptAllStrategy<>());
 		job.setCacheCleaner(cacheCleaner());
 
 		LOTLSource europeanLOTL = europeanLOTL();
 		job.setListOfTrustedListSources(europeanLOTL);
 
 		job.setLOTLAlerts(Arrays.asList(ojUrlAlert(europeanLOTL), lotlLocationAlert(europeanLOTL)));
-		job.setTLAlerts(Arrays.asList(tlSigningAlert(), tlExpirationDetection()));
+		job.setTLAlerts(Arrays.asList(tlSigningAlert(), tlExpirationAlert(), tslSequenceNumberAlert()));
 
 		return job;
 	}
@@ -143,11 +145,25 @@ public class EuropeanLOTLSnippets {
 	}
 
 	public LOTLSource europeanLOTL() {
+		// tag::eu-lotl-cert-source[]
+		// import eu.europa.esig.dss.tsl.source.LOTLSource;
+
 		LOTLSource lotlSource = new LOTLSource();
+
+		// end::eu-lotl-cert-source[]
 		lotlSource.setUrl(LOTL_URL);
+		// tag::eu-lotl-cert-source[]
 		lotlSource.setCertificateSource(officialJournalContentKeyStore());
+		// end::eu-lotl-cert-source[]
+		// tag::eu-lotl-ojeu[]
+		// import eu.europa.esig.dss.tsl.function.OfficialJournalSchemeInformationURI;
+
 		lotlSource.setSigningCertificatesAnnouncementPredicate(new OfficialJournalSchemeInformationURI(OJ_URL));
+		// end::eu-lotl-ojeu[]
+		// tag::eu-lotl-pivot[]
 		lotlSource.setPivotSupport(true);
+		// end::eu-lotl-pivot[]
+		lotlSource.setTLVersions(Arrays.asList(5, 6));
 		return lotlSource;
 	}
 
@@ -205,10 +221,16 @@ public class EuropeanLOTLSnippets {
 		return new TLAlert(signingDetection, handler);
 	}
 
-	public TLAlert tlExpirationDetection() {
+	public TLAlert tlExpirationAlert() {
 		TLExpirationDetection expirationDetection = new TLExpirationDetection();
 		LogTLExpirationAlertHandler handler = new LogTLExpirationAlertHandler();
 		return new TLAlert(expirationDetection, handler);
+	}
+
+	public TLAlert tslSequenceNumberAlert() {
+		TSLSequenceNumberErrorDetection tslSequenceNumberDetection = new TSLSequenceNumberErrorDetection();
+		LogTSLSequenceNumberErrorAlertHandler handler = new LogTSLSequenceNumberErrorAlertHandler();
+		return new TLAlert(tslSequenceNumberDetection, handler);
 	}
 
 	public LOTLAlert ojUrlAlert(LOTLSource source) {

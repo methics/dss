@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,17 +21,31 @@
 package eu.europa.esig.dss.validation.executor.signature;
 
 import eu.europa.esig.dss.detailedreport.DetailedReport;
+import eu.europa.esig.dss.diagnostic.AbstractTokenProxy;
 import eu.europa.esig.dss.diagnostic.CertificateRevocationWrapper;
 import eu.europa.esig.dss.diagnostic.CertificateWrapper;
 import eu.europa.esig.dss.diagnostic.DiagnosticData;
+import eu.europa.esig.dss.diagnostic.AttestationPayloadProxy;
+import eu.europa.esig.dss.diagnostic.AttestationWrapper;
 import eu.europa.esig.dss.diagnostic.EvidenceRecordWrapper;
 import eu.europa.esig.dss.diagnostic.RelatedRevocationWrapper;
 import eu.europa.esig.dss.diagnostic.RevocationWrapper;
 import eu.europa.esig.dss.diagnostic.SignatureWrapper;
 import eu.europa.esig.dss.diagnostic.TimestampWrapper;
+import eu.europa.esig.dss.diagnostic.claim.AddressClaimWrapper;
+import eu.europa.esig.dss.diagnostic.claim.AgeOverNNClaimWrapper;
+import eu.europa.esig.dss.diagnostic.claim.AttestedAttributesSubjectClaimIdWrapper;
+import eu.europa.esig.dss.diagnostic.claim.BiometricTemplateXXClaimWrapper;
+import eu.europa.esig.dss.diagnostic.claim.ClaimWrapper;
+import eu.europa.esig.dss.diagnostic.claim.DeviceKeyClaimWrapper;
+import eu.europa.esig.dss.diagnostic.claim.PlaceOfBirthClaimWrapper;
+import eu.europa.esig.dss.diagnostic.claim.StatusClaimWrapper;
+import eu.europa.esig.dss.diagnostic.claim.ValidityInfoClaimWrapper;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlLangAndValue;
+import eu.europa.esig.dss.diagnostic.jaxb.XmlTimestampedObject;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlTrustService;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlTrustServiceProvider;
+import eu.europa.esig.dss.enumerations.AttestationQualification;
 import eu.europa.esig.dss.enumerations.Indication;
 import eu.europa.esig.dss.enumerations.SignatureQualification;
 import eu.europa.esig.dss.enumerations.SubIndication;
@@ -39,14 +53,19 @@ import eu.europa.esig.dss.enumerations.TimestampQualification;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
 import eu.europa.esig.dss.jaxb.object.Message;
-import eu.europa.esig.dss.policy.ValidationPolicy;
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
 import eu.europa.esig.dss.simplereport.jaxb.XmlCertificate;
 import eu.europa.esig.dss.simplereport.jaxb.XmlCertificateChain;
 import eu.europa.esig.dss.simplereport.jaxb.XmlDetails;
+import eu.europa.esig.dss.simplereport.jaxb.XmlDisclosableClaim;
+import eu.europa.esig.dss.simplereport.jaxb.XmlAttestationLevel;
+import eu.europa.esig.dss.simplereport.jaxb.XmlAttestationPayload;
+import eu.europa.esig.dss.simplereport.jaxb.XmlAttestation;
 import eu.europa.esig.dss.simplereport.jaxb.XmlEvidenceRecord;
 import eu.europa.esig.dss.simplereport.jaxb.XmlEvidenceRecords;
 import eu.europa.esig.dss.simplereport.jaxb.XmlMessage;
 import eu.europa.esig.dss.simplereport.jaxb.XmlPDFAInfo;
+import eu.europa.esig.dss.simplereport.jaxb.XmlParametrizedDisclosableClaim;
 import eu.europa.esig.dss.simplereport.jaxb.XmlSemantic;
 import eu.europa.esig.dss.simplereport.jaxb.XmlSignature;
 import eu.europa.esig.dss.simplereport.jaxb.XmlSignatureLevel;
@@ -64,6 +83,7 @@ import eu.europa.esig.dss.validation.process.vpfswatsp.POEExtraction;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -152,9 +172,23 @@ public class SimpleReportBuilder {
 			addContainerType(simpleReport);
 		}
 
+		Set<String> attachedSignatureIds = new HashSet<>();
 		Set<String> attachedTimestampIds = new HashSet<>();
 		Set<String> attachedEvidenceRecordIds = new HashSet<>();
+		if (Utils.isCollectionNotEmpty(diagnosticData.getAttestations())) {
+			for (AttestationWrapper attestation : diagnosticData.getAttestations()) {
+				attachedSignatureIds.addAll(attestation.getAttestationSignatureIds());
+				if (attestation.getKeyBindingSignature() != null) {
+					attachedSignatureIds.add(attestation.getKeyBindingSignatureId());
+				}
+				simpleReport.getSignatureOrTimestampOrEvidenceRecord().add(getAttestation(attestation));
+			}
+		}
+
 		for (SignatureWrapper signature : diagnosticData.getSignatures()) {
+			if (attachedSignatureIds.contains(signature.getId())) {
+				continue;
+			}
 			attachedTimestampIds.addAll(signature.getTimestampIdsList());
 			attachedEvidenceRecordIds.addAll(signature.getEvidenceRecordIdsList());
 			attachedTimestampIds.addAll(signature.getEvidenceRecordTimestampIds());
@@ -170,7 +204,12 @@ public class SimpleReportBuilder {
 			attachedTimestampIds.addAll(timestamp.getEvidenceRecordTimestampIds());
 			Indication tstValidationIndication = detailedReport.getBasicTimestampValidationIndication(timestamp.getId());
 			if (tstValidationIndication != null) {
-				simpleReport.getSignatureOrTimestampOrEvidenceRecord().add(getXmlTimestamp(timestamp));
+				XmlTimestamp xmlTimestamp = getXmlTimestamp(timestamp);
+				if (isValidConclusion(timestamp.getId())) {
+					// perform extension period check only for detached timestamps
+					determineExtensionPeriod(xmlTimestamp);
+				}
+				simpleReport.getSignatureOrTimestampOrEvidenceRecord().add(xmlTimestamp);
 			}
 		}
 
@@ -305,7 +344,7 @@ public class SimpleReportBuilder {
 		}
 
 		if (container) {
-			xmlSignature.setFilename(signature.getSignatureFilename());
+			xmlSignature.setFilename(signature.getFilename());
 		}
 
 		Indication indication = detailedReport.getFinalIndication(signatureId);
@@ -402,12 +441,21 @@ public class SimpleReportBuilder {
 				certificate.setQualifiedName(getReadableCertificateName(certId));
 				if (isTrustAnchor(certId)) {
 					certificate.setTrusted(true);
+					certificate.setSunsetDate(getCertificateSunsetDate(certId));
 					certificate.setTrustAnchors(getXmlTrustAnchors(certId));
 				}
 				xmlCertificateChain.getCertificate().add(certificate);
 			}
 		}
 		return xmlCertificateChain;
+	}
+
+	private Date getCertificateSunsetDate(String certId) {
+		CertificateWrapper certificate = diagnosticData.getCertificateById(certId);
+		if (certificate != null) {
+			return certificate.getTrustSunsetDate();
+		}
+		return null;
 	}
 
 	private XmlTrustAnchors getXmlTrustAnchors(String certId) {
@@ -418,7 +466,7 @@ public class SimpleReportBuilder {
 				final XmlTrustAnchor trustAnchor = new XmlTrustAnchor();
 				if (trustServiceProvider.getTL() != null) {
 					trustAnchor.setCountryCode(trustServiceProvider.getTL().getCountryCode());
-					trustAnchor.setTSLType(trustServiceProvider.getTL().getTSLType());
+					trustAnchor.setTSLType(trustServiceProvider.getTL().getType());
 				}
 				trustAnchor.setTrustServiceProvider(getEnOrFirst(trustServiceProvider.getTSPNames()));
 				List<String> tspRegistrationIdentifiers = trustServiceProvider.getTSPRegistrationIdentifiers();
@@ -612,6 +660,10 @@ public class SimpleReportBuilder {
 			xmlEvidenceRecord.setAdESValidationDetails(validationDetails);
 		}
 
+		if (isValidConclusion(evidenceRecordId)) {
+			determineExtensionPeriod(xmlEvidenceRecord);
+		}
+
 		if (Utils.isCollectionNotEmpty(evidenceRecordWrapper.getEvidenceRecordScopes())) {
 			for (eu.europa.esig.dss.diagnostic.jaxb.XmlSignatureScope timestampScope : evidenceRecordWrapper.getEvidenceRecordScopes()) {
 				xmlEvidenceRecord.getEvidenceRecordScope().add(getXmlSignatureScope(timestampScope));
@@ -632,6 +684,11 @@ public class SimpleReportBuilder {
 			}
 		}
 
+		if (evidenceRecordWrapper.isEmbedded()) {
+			xmlEvidenceRecord.setEmbedded(true);
+			xmlEvidenceRecord.setParentId(evidenceRecordWrapper.getParent().getId());
+		}
+
 		return xmlEvidenceRecord;
 	}
 
@@ -645,16 +702,137 @@ public class SimpleReportBuilder {
 
 	private void determineExtensionPeriod(XmlSignature xmlSignature) {
 		SignatureWrapper signatureWrapper = diagnosticData.getSignatureById(xmlSignature.getId());
-		xmlSignature.setExtensionPeriodMin(getMinExtensionPeriod(signatureWrapper));
-		xmlSignature.setExtensionPeriodMax(getMaxExtensionPeriod(signatureWrapper));
+		List<TimestampWrapper> timestampList = getAllTimestampsForSignature(signatureWrapper);
+		xmlSignature.setExtensionPeriodMin(getMinExtensionPeriod(signatureWrapper, timestampList));
+		xmlSignature.setExtensionPeriodMax(getMaxExtensionPeriod(signatureWrapper, timestampList));
 	}
 
-	private Date getMinExtensionPeriod(SignatureWrapper signatureWrapper) {
+	private List<TimestampWrapper> getAllTimestampsForSignature(SignatureWrapper signatureWrapper) {
+		final List<TimestampWrapper> timestampList = new ArrayList<>(signatureWrapper.getAllTimestampsProducedAfterSignatureCreation());
+		timestampList.addAll(getEvidenceRecordTimestampsForTokenWithId(signatureWrapper.getId()));
+		return timestampList;
+	}
 
+	private void determineExtensionPeriod(XmlTimestamp xmlTimestamp) {
+		TimestampWrapper timestampWrapper = diagnosticData.getTimestampById(xmlTimestamp.getId());
+		List<TimestampWrapper> timestampList = getAllTimestampsForTimestamp(timestampWrapper);
+		xmlTimestamp.setExtensionPeriodMin(getMinExtensionPeriod(timestampWrapper, timestampList));
+		xmlTimestamp.setExtensionPeriodMax(getMaxExtensionPeriod(timestampWrapper, timestampList));
+	}
+
+	private List<TimestampWrapper> getAllTimestampsForTimestamp(TimestampWrapper timestampWrapper) {
+		final List<TimestampWrapper> timestampList = new ArrayList<>();
+
+		for (TimestampWrapper timestamp : diagnosticData.getTimestampList()) {
+			List<XmlTimestampedObject> timestampedObjects = timestamp.getTimestampedObjects();
+			if (containObjectWithId(timestampedObjects, timestampWrapper.getId())) {
+				timestampList.add(timestamp);
+			}
+		}
+
+		timestampList.addAll(getEvidenceRecordTimestampsForTokenWithId(timestampWrapper.getId()));
+
+		return timestampList;
+	}
+
+	private void determineExtensionPeriod(XmlEvidenceRecord xmlEvidenceRecord) {
+		EvidenceRecordWrapper evidenceRecordWrapper = diagnosticData.getEvidenceRecordById(xmlEvidenceRecord.getId());
+		List<TimestampWrapper> timestampList = getAllTimestampsForEvidenceRecord(evidenceRecordWrapper);
+		xmlEvidenceRecord.setExtensionPeriodMin(getMinExtensionPeriodForTimestampList(timestampList));
+		xmlEvidenceRecord.setExtensionPeriodMax(getMaxExtensionPeriodForTimestampList(timestampList));
+	}
+
+	private List<TimestampWrapper> getAllTimestampsForEvidenceRecord(EvidenceRecordWrapper evidenceRecordWrapper) {
+		final List<TimestampWrapper> timestampList = new ArrayList<>(evidenceRecordWrapper.getTimestampList());
+		timestampList.addAll(getEvidenceRecordTimestampsForTokenWithId(evidenceRecordWrapper.getId()));
+		return timestampList;
+	}
+
+	private List<TimestampWrapper> getEvidenceRecordTimestampsForTokenWithId(String tokenId) {
+		final List<TimestampWrapper> timestampList = new ArrayList<>();
+
+		for (EvidenceRecordWrapper evidenceRecord : diagnosticData.getEvidenceRecords()) {
+			if (!isValidConclusion(evidenceRecord.getId())) {
+				continue;
+			}
+
+			List<XmlTimestampedObject> coveredObjects = evidenceRecord.getCoveredObjects();
+			if (containObjectWithId(coveredObjects, tokenId)) {
+				timestampList.addAll(evidenceRecord.getTimestampList());
+			}
+		}
+
+		return timestampList;
+	}
+
+	private XmlAttestation getAttestation(AttestationWrapper attestationWrapper) {
+		XmlAttestation xmlAttestation = new XmlAttestation();
+
+		String attestationId = attestationWrapper.getId();
+		xmlAttestation.setId(attestationId);
+		xmlAttestation.setFilename(attestationWrapper.getFilename());
+
+		Indication indication = detailedReport.getFinalIndication(attestationId);
+		xmlAttestation.setIndication(indication);
+		finalIndications.add(indication);
+
+		SubIndication subIndication = detailedReport.getFinalSubIndication(attestationId);
+		if (subIndication != null) {
+			xmlAttestation.setSubIndication(subIndication);
+			finalSubIndications.add(subIndication);
+		}
+
+		List<AttestationQualification> attestationQualifications = detailedReport.getAttestationQualifications(attestationId);
+		if (Utils.isCollectionNotEmpty(attestationQualifications)) {
+			xmlAttestation.getAttestationLevel().addAll(getXmlAttestationLevels(attestationQualifications));
+		}
+
+		XmlDetails validationDetails = getAdESValidationDetails(attestationId);
+		if (isNotEmpty(validationDetails)) {
+			xmlAttestation.setAdESValidationDetails(validationDetails);
+		}
+
+		XmlDetails qualificationDetails = getQualificationDetails(attestationId);
+		if (isNotEmpty(qualificationDetails)) {
+			xmlAttestation.setQualificationDetails(qualificationDetails);
+		}
+
+		List<SignatureWrapper> signatures = attestationWrapper.getAttestationSignatures();
+		if (Utils.isCollectionNotEmpty(signatures)) {
+			for (SignatureWrapper signature : signatures) {
+				xmlAttestation.getAttestationSignature().add(getSignature(signature, false));
+			}
+		}
+		SignatureWrapper keyBindingSignature = attestationWrapper.getKeyBindingSignature();
+		if (keyBindingSignature != null) {
+			xmlAttestation.setKeyBindingSignature(getSignature(keyBindingSignature, false));
+		}
+
+		xmlAttestation.setAttestationPayload(buildXmlAttestationPayload(attestationWrapper));
+
+		return xmlAttestation;
+	}
+
+	private List<XmlAttestationLevel> getXmlAttestationLevels(List<AttestationQualification> attestationQualifications) {
+		if (Utils.isCollectionEmpty(attestationQualifications)) {
+			return Collections.emptyList();
+		}
+		final List<XmlAttestationLevel> result = new ArrayList<>();
+		for (AttestationQualification attestationQualification : attestationQualifications) {
+			XmlAttestationLevel xmlAttestationLevel = new XmlAttestationLevel();
+			xmlAttestationLevel.setValue(attestationQualification);
+			xmlAttestationLevel.setDescription(attestationQualification.getLabel());
+			result.add(xmlAttestationLevel);
+		}
+		return result;
+	}
+
+	private Date getMinExtensionPeriod(AbstractTokenProxy token, List<TimestampWrapper> timestampList) {
 		Date min = null;
-		List<List<CertificateWrapper>> chains = new ArrayList<>();
-		chains.add(signatureWrapper.getCertificateChain());
-		List<RelatedRevocationWrapper> relatedRevocations = signatureWrapper.foundRevocations().getRelatedRevocationData();
+
+		final List<List<CertificateWrapper>> chains = new ArrayList<>();
+		chains.add(token.getCertificateChain());
+		List<RelatedRevocationWrapper> relatedRevocations = getRelatedRevocations(token);
 		for (RevocationWrapper revocation : relatedRevocations) {
 			chains.add(revocation.getCertificateChain());
 		}
@@ -668,7 +846,24 @@ public class SimpleReportBuilder {
 			}
 		}
 
-		List<TimestampWrapper> timestampList = signatureWrapper.getTimestampList();
+		Date minExtensionPeriodForTimestampList = getMinExtensionPeriodForTimestampList(timestampList);
+		if (minExtensionPeriodForTimestampList != null && (min == null || min.before(minExtensionPeriodForTimestampList))) {
+			min = minExtensionPeriodForTimestampList;
+		}
+
+		return min;
+	}
+
+	private List<RelatedRevocationWrapper> getRelatedRevocations(AbstractTokenProxy token) {
+		// Returns a list of revocation data protected by a timestamp.
+		// Other revocation data do not need to be processed.
+		return token.foundRevocations().getRelatedRevocationData().stream()
+				.filter(r -> poe.getLowestPOE(r.getId()).isTokenProvided()).collect(Collectors.toList());
+	}
+
+	private Date getMinExtensionPeriodForTimestampList(List<TimestampWrapper> timestampList) {
+		Date min = null;
+
 		for (TimestampWrapper timestampWrapper : timestampList) {
 			Date certChainMin = getMinExtensionPeriodForChain(timestampWrapper.getCertificateChain(), timestampWrapper.getProductionTime());
 			if (certChainMin != null) {
@@ -684,9 +879,11 @@ public class SimpleReportBuilder {
 	private Date getMinExtensionPeriodForChain(List<CertificateWrapper> certificateChain, Date usageTime) {
 		Date min = null;
 		for (CertificateWrapper certificateWrapper : certificateChain) {
+			if (certificateWrapper.isTrusted() || certificateWrapper.isSelfSigned()) {
+				break;
+			}
 
-			if (!certificateWrapper.isTrusted() && !certificateWrapper.isSelfSigned() &&
-					Utils.isCollectionNotEmpty(certificateWrapper.getCertificateRevocationData())) {
+			if (Utils.isCollectionNotEmpty(certificateWrapper.getCertificateRevocationData())) {
 				Date lastTrustedUsage;
 				if (usageTime != null) {
 					lastTrustedUsage = usageTime;
@@ -733,29 +930,302 @@ public class SimpleReportBuilder {
 		return min;
 	}
 
-	private Date getMaxExtensionPeriod(SignatureWrapper signatureWrapper) {
-		Date max = null;
+	private Date getMaxExtensionPeriod(AbstractTokenProxy token, List<TimestampWrapper> timestampList) {
+		Date max;
 
-		CertificateWrapper signingCertificate = signatureWrapper.getSigningCertificate();
+		CertificateWrapper signingCertificate = token.getSigningCertificate();
 		if (signingCertificate != null) {
 			max = signingCertificate.getNotAfter();
+		} else {
+			return null;
 		}
 
-		List<TimestampWrapper> timestampList = signatureWrapper.getAllTimestampsProducedAfterSignatureCreation();
+		Date maxTimestampExtensionPeriod = getMaxExtensionPeriodForTimestampList(timestampList);
+		if (maxTimestampExtensionPeriod != null && maxTimestampExtensionPeriod.after(max)) {
+			max = maxTimestampExtensionPeriod;
+		}
+
+		return ensureMaxExtensionTimeIsAfterValidationTime(max);
+	}
+
+	private Date getMaxExtensionPeriodForTimestampList(List<TimestampWrapper> timestampList) {
+		Date max = null;
+
 		for (TimestampWrapper timestampWrapper : timestampList) {
-			if (!timestampWrapper.isSignatureValid()) {
+			if (!isValidConclusion(timestampWrapper.getId())) {
 				continue;
 			}
 			CertificateWrapper timestampSigningCertificate = timestampWrapper.getSigningCertificate();
-			List<SignatureWrapper> timestampedSignatures = timestampWrapper.getTimestampedSignatures();
-			if (timestampSigningCertificate != null && timestampedSignatures.contains(signatureWrapper)) {
-				if (timestampSigningCertificate.getNotAfter().after(max)) {
-					max = timestampSigningCertificate.getNotAfter();
-				}
+			if (timestampSigningCertificate != null && (max == null || timestampSigningCertificate.getNotAfter().after(max))) {
+				max = timestampSigningCertificate.getNotAfter();
 			}
 		}
 
-		return max;
+		return ensureMaxExtensionTimeIsAfterValidationTime(max);
+	}
+
+	private Date ensureMaxExtensionTimeIsAfterValidationTime(Date maxExtensionTime) {
+		if (maxExtensionTime == null) {
+			return null;
+		}
+		if (currentTime != null && currentTime.before(maxExtensionTime)) {
+			return maxExtensionTime;
+		}
+		return null;
+	}
+
+	private boolean isValidConclusion(String tokenId) {
+		Indication finalIndication = detailedReport.getFinalIndication(tokenId);
+		return Indication.TOTAL_PASSED == finalIndication || Indication.PASSED == finalIndication;
+	}
+
+	private boolean containObjectWithId(List<XmlTimestampedObject> timestampedObjects, String tokenId) {
+		return timestampedObjects.stream().anyMatch(o -> tokenId.equals(o.getToken().getId()));
+	}
+
+	private XmlAttestationPayload buildXmlAttestationPayload(AttestationWrapper attestationWrapper) {
+		XmlAttestationPayload xmlAttestationPayload = new XmlAttestationPayload();
+
+		AttestationPayloadProxy attestationPayloadProxy = attestationWrapper.getPayload();
+		xmlAttestationPayload.setIdentifier(getXmlDisclosableClaim(attestationPayloadProxy.getIdentifier()));
+		xmlAttestationPayload.setIssuer(getXmlDisclosableClaim(attestationPayloadProxy.getIssuer()));
+		xmlAttestationPayload.setSubject(getXmlDisclosableClaim(attestationPayloadProxy.getSubject()));
+		xmlAttestationPayload.setAudience(getXmlDisclosableClaim(attestationPayloadProxy.getAudience()));
+		xmlAttestationPayload.setExpiration(getXmlDisclosableClaim(attestationPayloadProxy.getExpiration()));
+		xmlAttestationPayload.setNotBefore(getXmlDisclosableClaim(attestationPayloadProxy.getNotBefore()));
+		xmlAttestationPayload.setIssuedAt(getXmlDisclosableClaim(attestationPayloadProxy.getIssuedAt()));
+		xmlAttestationPayload.setUpdatedAt(getXmlDisclosableClaim(attestationPayloadProxy.getUpdatedAt()));
+		xmlAttestationPayload.setUpdatedAt(getXmlDisclosableClaim(attestationPayloadProxy.getUpdatedAt()));
+		xmlAttestationPayload.setCategory(getXmlDisclosableClaim(attestationPayloadProxy.getCategory()));
+		xmlAttestationPayload.setVerifiableCredentialsType(getXmlDisclosableClaim(attestationPayloadProxy.getVerifiableCredentialsType()));
+		StatusClaimWrapper status = attestationPayloadProxy.getStatus();
+		if (status != null) {
+			xmlAttestationPayload.setStatusIndex(getXmlDisclosableClaim(status.getIndex(), status.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setStatusUri(getXmlDisclosableClaim(status.getUri(), status.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setStatusType(getXmlDisclosableClaim(status.getType(), status.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setStatusPurpose(getXmlDisclosableClaim(status.getPurpose(), status.isSelectivelyDisclosable()));
+		}
+		xmlAttestationPayload.setNonce(getXmlDisclosableClaim(attestationPayloadProxy.getNonce()));
+		DeviceKeyClaimWrapper attestationDeviceKey = attestationPayloadProxy.getDeviceKey();
+		if (attestationDeviceKey != null && attestationDeviceKey.getPublicKey() != null) {
+			xmlAttestationPayload.setDeviceKey(getXmlDisclosableClaim(attestationDeviceKey.getName(), attestationDeviceKey.isSelectivelyDisclosable(), Utils.toBase64(attestationDeviceKey.getPublicKey())));
+		}
+		xmlAttestationPayload.setVersion(getXmlDisclosableClaim(attestationPayloadProxy.getVersion()));
+		xmlAttestationPayload.setDocType(getXmlDisclosableClaim(attestationPayloadProxy.getDocType()));
+		ValidityInfoClaimWrapper attestationValidityInfo = attestationPayloadProxy.getValidityInfo();
+		if (attestationValidityInfo != null) {
+			xmlAttestationPayload.setIssuedAt(getXmlDisclosableClaim(attestationValidityInfo.getSigned(), attestationValidityInfo.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setNotBefore(getXmlDisclosableClaim(attestationValidityInfo.getValidFrom(), attestationValidityInfo.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setAdministrativeExpirationDate(getXmlDisclosableClaim(attestationValidityInfo.getValidUntil(), attestationValidityInfo.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setNextUpdate(getXmlDisclosableClaim(attestationValidityInfo.getExpectedUpdate(), attestationValidityInfo.isSelectivelyDisclosable()));
+		}
+		xmlAttestationPayload.setAdministrativeIssuanceDate(getXmlDisclosableClaim(attestationPayloadProxy.getAdministrativeIssuanceDate()));
+		xmlAttestationPayload.setAdministrativeExpirationDate(getXmlDisclosableClaim(attestationPayloadProxy.getAdministrativeExpirationDate()));
+		xmlAttestationPayload.setOneTimeUse(getXmlDisclosableClaim(attestationPayloadProxy.getOneTimeUse()));
+		xmlAttestationPayload.setShortLived(getXmlDisclosableClaim(attestationPayloadProxy.getShortLived()));
+		xmlAttestationPayload.setEvidence(getXmlDisclosableClaim(attestationPayloadProxy.getEvidence()));
+		if (attestationPayloadProxy.getAttestedAttributesSubject() != null) {
+			AttestedAttributesSubjectClaimIdWrapper subjectId = attestationPayloadProxy.getAttestedAttributesSubject().getSubjectId();
+			if (subjectId != null) {
+				if (subjectId.getText() != null) {
+					xmlAttestationPayload.setAttestedAttributesSubjectId(getXmlDisclosableClaim(subjectId));
+				}
+				if (subjectId.getFamilyName() != null) {
+					xmlAttestationPayload.setAttestedAttributesSubjectFamilyName(getXmlDisclosableClaim(subjectId.getFamilyName()));
+				}
+				if (subjectId.getGivenName() != null) {
+					xmlAttestationPayload.setAttestedAttributesSubjectGivenName(getXmlDisclosableClaim(subjectId.getGivenName()));
+				}
+				if (subjectId.getDocumentNumber() != null) {
+					xmlAttestationPayload.setAttestedAttributesSubjectDocumentNumber(getXmlDisclosableClaim(subjectId.getDocumentNumber()));
+				}
+			}
+			xmlAttestationPayload.setAttestedAttributesSubjectPseudonym(getXmlDisclosableClaim(attestationPayloadProxy.getAttestedAttributesSubject().getSubjectPseudonym()));
+			xmlAttestationPayload.setAttestedAttributes(getXmlDisclosableClaim(attestationPayloadProxy.getAttestedAttributesSubject().getAttributes()));
+		}
+
+		xmlAttestationPayload.setFullName(getXmlDisclosableClaim(attestationPayloadProxy.getFullName()));
+		xmlAttestationPayload.setGivenName(getXmlDisclosableClaim(attestationPayloadProxy.getGivenName()));
+		xmlAttestationPayload.setFamilyName(getXmlDisclosableClaim(attestationPayloadProxy.getFamilyName()));
+		xmlAttestationPayload.setMiddleName(getXmlDisclosableClaim(attestationPayloadProxy.getMiddleName()));
+		xmlAttestationPayload.setNickname(getXmlDisclosableClaim(attestationPayloadProxy.getNickname()));
+		xmlAttestationPayload.setShortName(getXmlDisclosableClaim(attestationPayloadProxy.getShortName()));
+		xmlAttestationPayload.setProfileUrl(getXmlDisclosableClaim(attestationPayloadProxy.getProfileUrl()));
+		xmlAttestationPayload.setPictureUrl(getXmlDisclosableClaim(attestationPayloadProxy.getPictureUrl()));
+		xmlAttestationPayload.setWebsiteUrl(getXmlDisclosableClaim(attestationPayloadProxy.getWebsiteUrl()));
+		xmlAttestationPayload.setEmail(getXmlDisclosableClaim(attestationPayloadProxy.getEmail()));
+		xmlAttestationPayload.setEmailVerified(getXmlDisclosableClaim(attestationPayloadProxy.getEmailVerified()));
+		xmlAttestationPayload.setGender(getXmlDisclosableClaim(attestationPayloadProxy.getGender()));
+		if (attestationPayloadProxy.getBirthdate() != null) {
+			xmlAttestationPayload.setBirthdate(getXmlDisclosableClaim(attestationPayloadProxy.getBirthdate().getBirthdate()));
+			xmlAttestationPayload.setBirthdateApproximateMask(getXmlDisclosableClaim(attestationPayloadProxy.getBirthdate().getApproximateMask()));
+		}
+		xmlAttestationPayload.setTimezone(getXmlDisclosableClaim(attestationPayloadProxy.getTimezone()));
+		xmlAttestationPayload.setLocale(getXmlDisclosableClaim(attestationPayloadProxy.getLocale()));
+		AddressClaimWrapper userAddress = attestationPayloadProxy.getAddress();
+		if (userAddress != null) {
+			xmlAttestationPayload.setAddressPostalAddress(getXmlDisclosableClaim(userAddress.getPostalAddress(), userAddress.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setAddressCity(getXmlDisclosableClaim(userAddress.getCity(), userAddress.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setAddressCountryName(getXmlDisclosableClaim(userAddress.getCountry(), userAddress.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setAddressPostalCode(getXmlDisclosableClaim(userAddress.getPostalCode(), userAddress.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setAddressStateOrProvince(getXmlDisclosableClaim(userAddress.getStateOrProvince(), userAddress.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setAddressStreetAddress(getXmlDisclosableClaim(userAddress.getStreetAddress(), userAddress.isSelectivelyDisclosable()));
+		}
+		xmlAttestationPayload.setPhoneNumber(getXmlDisclosableClaim(attestationPayloadProxy.getPhoneNumber()));
+		xmlAttestationPayload.setPhoneNumberVerified(getXmlDisclosableClaim(attestationPayloadProxy.getPhoneNumberVerified()));
+		PlaceOfBirthClaimWrapper userPlaceOfBirth = attestationPayloadProxy.getPlaceOfBirth();
+		if (userPlaceOfBirth != null) {
+			xmlAttestationPayload.setPlaceOfBirth(getXmlDisclosableClaim(userPlaceOfBirth, userPlaceOfBirth.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setPlaceOfBirthCity(getXmlDisclosableClaim(userPlaceOfBirth.getCity(), userPlaceOfBirth.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setPlaceOfBirthCountry(getXmlDisclosableClaim(userPlaceOfBirth.getCountry(), userPlaceOfBirth.isSelectivelyDisclosable()));
+			xmlAttestationPayload.setPlaceOfBirthRegion(getXmlDisclosableClaim(userPlaceOfBirth.getRegion(), userPlaceOfBirth.isSelectivelyDisclosable()));
+		}
+		xmlAttestationPayload.setNationalities(getXmlDisclosableClaim(attestationPayloadProxy.getNationalities()));
+		xmlAttestationPayload.setBirthFamilyName(getXmlDisclosableClaim(attestationPayloadProxy.getBirthFamilyName()));
+		xmlAttestationPayload.setBirthGivenName(getXmlDisclosableClaim(attestationPayloadProxy.getBirthGivenName()));
+		xmlAttestationPayload.setBirthMiddleName(getXmlDisclosableClaim(attestationPayloadProxy.getBirthMiddleName()));
+		xmlAttestationPayload.setSalutation(getXmlDisclosableClaim(attestationPayloadProxy.getSalutation()));
+		xmlAttestationPayload.setTitle(getXmlDisclosableClaim(attestationPayloadProxy.getTitle()));
+		xmlAttestationPayload.setMobilePhoneNumber(getXmlDisclosableClaim(attestationPayloadProxy.getMobilePhoneNumber()));
+		xmlAttestationPayload.setPseudonym(getXmlDisclosableClaim(attestationPayloadProxy.getPseudonym()));
+
+		xmlAttestationPayload.setIssuingCountry(getXmlDisclosableClaim(attestationPayloadProxy.getDocumentIssuingAuthorityCountry()));
+		xmlAttestationPayload.setIssuingAuthority(getXmlDisclosableClaim(attestationPayloadProxy.getDocumentIssuingAuthority()));
+		xmlAttestationPayload.setDocumentNumber(getXmlDisclosableClaim(attestationPayloadProxy.getDocumentNumber()));
+		xmlAttestationPayload.setPortrait(getXmlDisclosableClaim(attestationPayloadProxy.getPortrait()));
+		xmlAttestationPayload.setDrivingPrivileges(getXmlDisclosableClaim(attestationPayloadProxy.getDrivingPrivileges()));
+		xmlAttestationPayload.setUNDistinguishingSign(getXmlDisclosableClaim(attestationPayloadProxy.getDocumentIssuingAuthorityUNDistinguishingSign()));
+		xmlAttestationPayload.setPersonalAdministrativeNumber(getXmlDisclosableClaim(attestationPayloadProxy.getPersonalAdministrativeNumber()));
+		xmlAttestationPayload.setHeight(getXmlDisclosableClaim(attestationPayloadProxy.getHeight()));
+		xmlAttestationPayload.setWeight(getXmlDisclosableClaim(attestationPayloadProxy.getWeight()));
+		xmlAttestationPayload.setEyeColour(getXmlDisclosableClaim(attestationPayloadProxy.getEyeColour()));
+		xmlAttestationPayload.setHairColour(getXmlDisclosableClaim(attestationPayloadProxy.getHairColour()));
+		xmlAttestationPayload.setResidentPostalAddress(getXmlDisclosableClaim(attestationPayloadProxy.getResidentPostalAddress()));
+		xmlAttestationPayload.setPortraitCaptureDate(getXmlDisclosableClaim(attestationPayloadProxy.getPortraitCaptureDate()));
+		xmlAttestationPayload.setAgeInYears(getXmlDisclosableClaim(attestationPayloadProxy.getAgeInYears()));
+		xmlAttestationPayload.setAgeBirthYear(getXmlDisclosableClaim(attestationPayloadProxy.getAgeBirthYear()));
+		if (attestationPayloadProxy.getAgeEqualOrOver() != null) {
+			xmlAttestationPayload.getAgeOverNN().addAll(getXmlAgeOverNNClaims(attestationPayloadProxy.getAgeEqualOrOver().getAgeEqualOrOverList()));
+		}
+		xmlAttestationPayload.getAgeOverNN().addAll(getXmlAgeOverNNClaims(attestationPayloadProxy.getAgeOverList()));
+		xmlAttestationPayload.setIssuingJurisdiction(getXmlDisclosableClaim(attestationPayloadProxy.getDocumentIssuingAuthorityJurisdiction()));
+		xmlAttestationPayload.setResidentAddressCity(getXmlDisclosableClaim(attestationPayloadProxy.getResidentAddressCity()));
+		xmlAttestationPayload.setResidentAddressState(getXmlDisclosableClaim(attestationPayloadProxy.getResidentAddressState()));
+		xmlAttestationPayload.setResidentAddressPostalCode(getXmlDisclosableClaim(attestationPayloadProxy.getResidentAddressPostalCode()));
+		xmlAttestationPayload.setResidentAddressCountry(getXmlDisclosableClaim(attestationPayloadProxy.getResidentAddressCountry()));
+		xmlAttestationPayload.getBiometricTemplate().addAll(getBiometricTemplateXXClaims(attestationPayloadProxy.getBiometricTemplateList()));
+		xmlAttestationPayload.setSignatureUsualMark(getXmlDisclosableClaim(attestationPayloadProxy.getSignatureUsualMark()));
+		xmlAttestationPayload.setFingerprint(getXmlDisclosableClaim(attestationPayloadProxy.getFingerprint()));
+		xmlAttestationPayload.setBusinessName(getXmlDisclosableClaim(attestationPayloadProxy.getBusinessName()));
+		xmlAttestationPayload.setOrganizationName(getXmlDisclosableClaim(attestationPayloadProxy.getOrganizationName()));
+		xmlAttestationPayload.setBirthFullName(getXmlDisclosableClaim(attestationPayloadProxy.getBirthFullName()));
+		xmlAttestationPayload.setProfession(getXmlDisclosableClaim(attestationPayloadProxy.getProfession()));
+		xmlAttestationPayload.setRelationshipFather(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipFather()));
+		xmlAttestationPayload.setRelationshipMother(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipMother()));
+		xmlAttestationPayload.setRelationshipParent(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipParent()));
+		xmlAttestationPayload.setRelationshipSon(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipSon()));
+		xmlAttestationPayload.setRelationshipDaughter(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipDaughter()));
+		xmlAttestationPayload.setRelationshipBrother(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipBrother()));
+		xmlAttestationPayload.setRelationshipSister(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipSister()));
+		xmlAttestationPayload.setRelationshipSibling(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipSibling()));
+		xmlAttestationPayload.setRelationshipSpouse(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipSpouse()));
+		xmlAttestationPayload.setRelationshipFatherInLaw(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipFatherInLaw()));
+		xmlAttestationPayload.setRelationshipMotherInLaw(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipMotherInLaw()));
+		xmlAttestationPayload.setRelationshipParentInLaw(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipParentInLaw()));
+		xmlAttestationPayload.setRelationshipSonInLaw(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipSonInLaw()));
+		xmlAttestationPayload.setRelationshipDaughterInLaw(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipDaughterInLaw()));
+		xmlAttestationPayload.setRelationshipChildInLaw(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipChildInLaw()));
+		xmlAttestationPayload.setRelationshipParentalAuthority(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipParentalAuthority()));
+		xmlAttestationPayload.setRelationshipLegalRepresentative(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipLegalRepresentative()));
+		xmlAttestationPayload.setRelationshipAgent(getXmlDisclosableClaim(attestationPayloadProxy.getRelationshipAgent()));
+		xmlAttestationPayload.setDocumentType(getXmlDisclosableClaim(attestationPayloadProxy.getClaimedDocumentType()));
+
+		xmlAttestationPayload.setIssuingAuthorityRegistrationIdentifier(getXmlDisclosableClaim(attestationPayloadProxy.getIssuingAuthorityRegistrationIdentifier()));
+
+		xmlAttestationPayload.setTrustAnchorClaim(getXmlDisclosableClaim(attestationPayloadProxy.getTrustAnchor()));
+		xmlAttestationPayload.setResidentAddressStreet(getXmlDisclosableClaim(attestationPayloadProxy.getResidentAddressStreet()));
+		xmlAttestationPayload.setResidentAddressHouseNumber(getXmlDisclosableClaim(attestationPayloadProxy.getResidentAddressHouseNumber()));
+
+		List<ClaimWrapper> otherClaims = attestationWrapper.getOtherClaims();
+		if (Utils.isCollectionNotEmpty(otherClaims)) {
+			xmlAttestationPayload.getOtherClaim().addAll(otherClaims.stream().map(this::getXmlDisclosableClaim).collect(Collectors.toList()));
+		}
+
+		return xmlAttestationPayload;
+	}
+
+	private List<XmlParametrizedDisclosableClaim> getXmlAgeOverNNClaims(List<AgeOverNNClaimWrapper> claimWrappers) {
+		if (Utils.isCollectionEmpty(claimWrappers)) {
+			return Collections.emptyList();
+		}
+		return claimWrappers.stream().map(this::getXmlAgeOverNNClaim).collect(Collectors.toList());
+	}
+
+	private XmlParametrizedDisclosableClaim getXmlAgeOverNNClaim(AgeOverNNClaimWrapper ageOverNNClaim) {
+		XmlParametrizedDisclosableClaim xmlParametrizedDisclosableClaim = new XmlParametrizedDisclosableClaim();
+		xmlParametrizedDisclosableClaim.setName(ageOverNNClaim.getName());
+		xmlParametrizedDisclosableClaim.setDisclosure(ageOverNNClaim.isSelectivelyDisclosable());
+		xmlParametrizedDisclosableClaim.setParameter(String.valueOf(ageOverNNClaim.getAge()));
+		xmlParametrizedDisclosableClaim.setValue(ageOverNNClaim.getDisplayValue());
+		return xmlParametrizedDisclosableClaim;
+	}
+
+	private List<XmlParametrizedDisclosableClaim> getBiometricTemplateXXClaims(List<BiometricTemplateXXClaimWrapper> claimWrappers) {
+		if (Utils.isCollectionEmpty(claimWrappers)) {
+			return Collections.emptyList();
+		}
+		return claimWrappers.stream().map(this::getXmlBiometricTemplateXXClaim).collect(Collectors.toList());
+	}
+
+	private XmlParametrizedDisclosableClaim getXmlBiometricTemplateXXClaim(BiometricTemplateXXClaimWrapper biometricTemplateXXClaim) {
+		XmlParametrizedDisclosableClaim xmlParametrizedDisclosableClaim = new XmlParametrizedDisclosableClaim();
+		xmlParametrizedDisclosableClaim.setName(biometricTemplateXXClaim.getName());
+		xmlParametrizedDisclosableClaim.setDisclosure(biometricTemplateXXClaim.isSelectivelyDisclosable());
+		xmlParametrizedDisclosableClaim.setParameter(biometricTemplateXXClaim.getType());
+		xmlParametrizedDisclosableClaim.setValue(biometricTemplateXXClaim.getDisplayValue());
+		return xmlParametrizedDisclosableClaim;
+	}
+
+	private XmlDisclosableClaim getXmlDisclosableClaim(ClaimWrapper claimWrapper) {
+		return getXmlDisclosableClaim(claimWrapper, null);
+	}
+
+	private XmlDisclosableClaim getXmlDisclosableClaim(ClaimWrapper claimWrapper, Boolean selectivelyDisclosable) {
+		if (claimWrapper == null) {
+			return null;
+		}
+		Boolean isDisclosure = selectivelyDisclosable != null ? selectivelyDisclosable : claimWrapper.isSelectivelyDisclosable();
+		return getXmlDisclosableClaim(getNamePath(claimWrapper), isDisclosure, claimWrapper.getDisplayValue());
+	}
+
+	private XmlDisclosableClaim getXmlDisclosableClaim(String name, Boolean selectivelyDisclosable, String displayValue) {
+		XmlDisclosableClaim xmlDisclosableClaim = new XmlDisclosableClaim();
+		xmlDisclosableClaim.setName(name);
+		if (Utils.isTrue(selectivelyDisclosable)) {
+			xmlDisclosableClaim.setDisclosure(selectivelyDisclosable);
+		}
+		xmlDisclosableClaim.setValue(displayValue);
+		return xmlDisclosableClaim;
+	}
+
+	private String getNamePath(ClaimWrapper claimWrapper) {
+		ClaimWrapper parent = claimWrapper.getParent();
+		if (parent == null) {
+			return claimWrapper.getName();
+		}
+		final StringBuilder sb = new StringBuilder(claimWrapper.getName());
+		while (parent != null) {
+			if (parent.isList()) {
+				int position = parent.getWrapped().getEntry().indexOf(claimWrapper.getWrapped());
+				sb.insert(0, position + "/");
+			}
+			String parentName = parent.getName();
+			if (parentName != null) {
+				sb.insert(0, parentName + "/");
+			}
+			parent = parent.getParent();
+		}
+		return sb.toString();
 	}
 
 }

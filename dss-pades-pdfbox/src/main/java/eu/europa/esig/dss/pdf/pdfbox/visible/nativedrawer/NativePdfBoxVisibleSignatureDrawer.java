@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -26,6 +26,7 @@ import eu.europa.esig.dss.pades.DSSFont;
 import eu.europa.esig.dss.pades.PAdESUtils;
 import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.pdf.AnnotationBox;
 import eu.europa.esig.dss.pdf.pdfbox.PdfBoxUtils;
 import eu.europa.esig.dss.pdf.pdfbox.visible.AbstractPdfBoxSignatureDrawer;
 import eu.europa.esig.dss.pdf.pdfbox.visible.PdfBoxNativeFont;
@@ -33,8 +34,8 @@ import eu.europa.esig.dss.pdf.visible.DSSFontMetrics;
 import eu.europa.esig.dss.pdf.visible.ImageRotationUtils;
 import eu.europa.esig.dss.pdf.visible.ImageUtils;
 import eu.europa.esig.dss.pdf.visible.SignatureFieldDimensionAndPosition;
-import eu.europa.esig.dss.signature.resources.DSSResourcesHandler;
-import eu.europa.esig.dss.signature.resources.DSSResourcesHandlerBuilder;
+import eu.europa.esig.dss.spi.signature.resources.DSSResourcesHandler;
+import eu.europa.esig.dss.spi.signature.resources.DSSResourcesHandlerBuilder;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.io.IOUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -157,7 +158,7 @@ public class NativePdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignatureD
 			acroForm.getCOSObject().setDirect(true);
 			acroFormFields.add(signatureField);
 
-			PDRectangle rectangle = getPdRectangle(dimensionAndPosition, page);
+			PDRectangle rectangle = getPdRectangle(dimensionAndPosition);
 			widget.setRectangle(rectangle);
 
 			PDAppearanceDictionary appearance = PdfBoxUtils.createSignatureAppearanceDictionary(doc, rectangle);
@@ -394,18 +395,16 @@ public class NativePdfBoxVisibleSignatureDrawer extends AbstractPdfBoxSignatureD
 	 *
 	 * @param dimensionAndPosition {@link SignatureFieldDimensionAndPosition}
 	 *                             specifies widget size and position
-	 * @param page                 {@link PDPage} to place the widget on
 	 * @return {@link PDRectangle}
 	 */
-	private PDRectangle getPdRectangle(SignatureFieldDimensionAndPosition dimensionAndPosition, PDPage page) {
-		PDRectangle pageRect = page.getMediaBox();
-		PDRectangle pdRectangle = new PDRectangle();
-		pdRectangle.setLowerLeftX(dimensionAndPosition.getBoxX());
-		// because PDF starts to count from bottom
-		pdRectangle.setLowerLeftY(
-				pageRect.getHeight() - dimensionAndPosition.getBoxY() - dimensionAndPosition.getBoxHeight());
-		pdRectangle.setUpperRightX(dimensionAndPosition.getBoxX() + dimensionAndPosition.getBoxWidth());
-		pdRectangle.setUpperRightY(pageRect.getHeight() - dimensionAndPosition.getBoxY());
+	private PDRectangle getPdRectangle(SignatureFieldDimensionAndPosition dimensionAndPosition) {
+		AnnotationBox annotationBox = dimensionAndPosition.getAnnotationBox();
+
+		final PDRectangle pdRectangle = new PDRectangle();
+		pdRectangle.setLowerLeftX(annotationBox.getMinX());
+		pdRectangle.setLowerLeftY(annotationBox.getMinY());
+		pdRectangle.setUpperRightX(annotationBox.getMaxX());
+		pdRectangle.setUpperRightY(annotationBox.getMaxY());
 		return pdRectangle;
 	}
 

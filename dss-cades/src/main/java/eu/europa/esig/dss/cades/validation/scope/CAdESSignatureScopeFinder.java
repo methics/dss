@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -123,10 +123,10 @@ public class CAdESSignatureScopeFinder extends AbstractSignatureScopeFinder impl
 
         } else if (originalDocument instanceof DigestDocument) {
             DigestDocument digestDocument = (DigestDocument) originalDocument;
-            result.add(new DigestSignatureScope(fileName != null ? fileName : "Digest document", digestDocument));
+            result.add(new DigestSignatureScope(fileName, digestDocument));
 
         } else {
-            result.add(new FullSignatureScope(fileName != null ? fileName : "Full document", originalDocument));
+            result.add(new FullSignatureScope(fileName, originalDocument));
         }
         
         return result;
@@ -142,7 +142,8 @@ public class CAdESSignatureScopeFinder extends AbstractSignatureScopeFinder impl
         List<SignatureScope> result = new ArrayList<>();
         DSSDocument digestDocument = createDigestDocument(reference.getDigest());
         if (digestDocument != null) {
-            result.add(new FullSignatureScope("Full document", digestDocument));
+            String fileName = reference.getDocument() != null ? reference.getDocument().getName() : null;
+            result.add(new FullSignatureScope(fileName, digestDocument));
         }
         return result;
     }

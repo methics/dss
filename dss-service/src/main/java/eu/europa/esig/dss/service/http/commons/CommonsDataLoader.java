@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,10 +21,12 @@
 package eu.europa.esig.dss.service.http.commons;
 
 import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.http.ResponseEnvelope;
 import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
 import eu.europa.esig.dss.service.http.proxy.ProxyProperties;
 import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.spi.client.http.DataLoader;
+import eu.europa.esig.dss.spi.client.http.AdvancedDataLoader;
 import eu.europa.esig.dss.spi.client.http.Protocol;
 import eu.europa.esig.dss.spi.exception.DSSDataLoaderMultipleException;
 import eu.europa.esig.dss.spi.exception.DSSExternalResourceException;
@@ -50,18 +52,24 @@ import org.apache.hc.client5.http.impl.routing.DefaultProxyRoutePlanner;
 import org.apache.hc.client5.http.io.HttpClientConnectionManager;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.client5.http.routing.HttpRoutePlanner;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
 import org.apache.hc.client5.http.ssl.DefaultHostnameVerifier;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
+import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
+import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.apache.hc.core5.http.io.SocketConfig;
 import org.apache.hc.core5.http.io.entity.BufferedHttpEntity;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.InputStreamEntity;
 import org.apache.hc.core5.http.protocol.HttpContext;
+import org.apache.hc.core5.http.protocol.HttpCoreContext;
+import org.apache.hc.core5.reactor.ssl.SSLBufferMode;
 import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.apache.hc.core5.ssl.TrustStrategy;
 import org.apache.hc.core5.util.TimeValue;
@@ -75,6 +83,7 @@ import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -84,9 +93,12 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -100,7 +112,7 @@ import java.util.StringTokenizer;
  * proxy management through {@code ProxyPreferenceManager}. The authentication
  * is also supported.
  */
-public class CommonsDataLoader implements DataLoader {
+public class CommonsDataLoader implements DataLoader, AdvancedDataLoader {
 
 	private static final long serialVersionUID = -805432648564425522L;
 
@@ -162,6 +174,9 @@ public class CommonsDataLoader implements DataLoader {
 
 	/** Contains rules credentials for authentication to different resources */
 	private Map<HostConnection, UserCredentials> authenticationMap;
+
+	/** A list of preferred auth schemes, to be executed in the given order */
+	private List<String> targetPreferredAuthSchemes;
 
 	/**
 	 * Used SSL protocol
@@ -238,6 +253,12 @@ public class CommonsDataLoader implements DataLoader {
 	 * Default: {@code CommonsHttpClientResponseHandler}
 	 */
 	private transient HttpClientResponseHandler<byte[]> httpClientResponseHandler = new CommonsHttpClientResponseHandler();
+
+	/**
+	 * Collection of allowed host names for LDAP get request.
+	 * NOTE: if not defined, all host names are allowed.
+	 */
+	private Collection<String> ldapTrustedHostnames;
 
 	/**
 	 * The default constructor for CommonsDataLoader.
@@ -605,19 +626,6 @@ public class CommonsDataLoader implements DataLoader {
 	}
 
 	/**
-	 * Sets whether the preemptive authentication should be used.
-	 * When set to TRUE, the client sends authentication details (i.e. user credentials) within the initial request
-	 * to the remote host, instead of sending the credentials only after a request from the host.
-	 * Please note that the preemptive authentication should not be used over an insecure connection.
-	 * Default : FALSE (preemptive authentication is not used)
-	 *
-	 * @param preemptiveAuthentication whether the preemptive authentication should be used
-	 */
-	public void setPreemptiveAuthentication(boolean preemptiveAuthentication) {
-		this.preemptiveAuthentication = preemptiveAuthentication;
-	}
-
-	/**
 	 * Adds authentication credentials to the existing {@code authenticationMap}
 	 *
 	 * @param host
@@ -637,6 +645,39 @@ public class CommonsDataLoader implements DataLoader {
 		final HostConnection hostConnection = new HostConnection(host, port, scheme);
 		final UserCredentials userCredentials = new UserCredentials(login, password);
 		return addAuthentication(hostConnection, userCredentials);
+	}
+
+	/**
+	 * Gets the target preferred authentication scheme, to be called in the given order
+	 *
+	 * @return a list of {@link String}s
+	 */
+	public List<String> getTargetPreferredAuthSchemes() {
+		return targetPreferredAuthSchemes;
+	}
+
+	/**
+	 * Sets a list of target preferred authentication schemes,
+	 * to be executed on the given order on connection establishing
+	 * Default: "Bearer", "Digest", "Basic".
+	 *
+	 * @param targetPreferredAuthSchemes a list of {@link String}s
+	 */
+	public void setTargetPreferredAuthSchemes(List<String> targetPreferredAuthSchemes) {
+		this.targetPreferredAuthSchemes = targetPreferredAuthSchemes;
+	}
+
+	/**
+	 * Sets whether the preemptive authentication should be used.
+	 * When set to TRUE, the client sends authentication details (i.e. user credentials) within the initial request
+	 * to the remote host, instead of sending the credentials only after a request from the host.
+	 * Please note that the preemptive authentication should not be used over an insecure connection.
+	 * Default : FALSE (preemptive authentication is not used)
+	 *
+	 * @param preemptiveAuthentication whether the preemptive authentication should be used
+	 */
+	public void setPreemptiveAuthentication(boolean preemptiveAuthentication) {
+		this.preemptiveAuthentication = preemptiveAuthentication;
 	}
 
 	/**
@@ -740,9 +781,21 @@ public class CommonsDataLoader implements DataLoader {
 		this.httpClientResponseHandler = httpClientResponseHandler;
 	}
 
+	/**
+	 * Sets a collection of allowed host names to perform an LDAP get request.
+	 * The name of the host shall be defined in the complete form corresponding to the full domain name extracted
+	 * from an extracted LDAP URL.
+	 * E.g. "ldap.infonotary.com" for LDAP URL "ldap://ldap.infonotary.com/dc=identity-ca,dc=infonotary,dc=com".
+	 * NOTE: when not defined, all LDAP URLs will be accepted.
+	 *
+	 * @param ldapTrustedHostnames a collection of allowed host name {@link String}s
+	 */
+	public void setLdapTrustedHostnames(Collection<String> ldapTrustedHostnames) {
+		this.ldapTrustedHostnames = ldapTrustedHostnames;
+	}
+
 	@Override
 	public byte[] get(final String urlString) {
-
 		if (Protocol.isFileUrl(urlString)) {
 			return fileGet(urlString);
 		} else if (Protocol.isHttpUrl(urlString)) {
@@ -791,12 +844,17 @@ public class CommonsDataLoader implements DataLoader {
 	 * @return byte array
 	 */
 	protected byte[] ldapGet(String urlString) {
+		String host = DSSUtils.getHost(urlString);
+		if (ldapTrustedHostnames != null && !ldapTrustedHostnames.contains(host)) {
+			throw new DSSExternalResourceException(String.format(
+					"Cannot get data from URL [%s]. Reason : [Untrusted host name '%s']", urlString, host));
+		}
 
 		urlString = LdapURLUtils.encode(urlString);
 
-		final Hashtable<String, String> env = new Hashtable<>();
-		env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+		final Hashtable<String, String> env = initLdapContextEnvironment();
 		env.put(Context.PROVIDER_URL, urlString);
+
 		try {
 
 			// parse URL according to the template: 'ldap://host:port/DN?attributes?scope?filter?extensions'
@@ -829,6 +887,17 @@ public class CommonsDataLoader implements DataLoader {
 	}
 
 	/**
+	 * Creates an LDAP Context environment
+	 *
+	 * @return {@link Hashtable} containing a list of properties for the LDAP environment
+	 */
+	protected Hashtable<String, String> initLdapContextEnvironment() {
+		final Hashtable<String, String> env = new Hashtable<>();
+		env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+		return env;
+	}
+
+	/**
 	 * This method retrieves data using FTP protocol .
 	 *
 	 * @param urlString {@link String} url to retrieve data from
@@ -855,8 +924,8 @@ public class CommonsDataLoader implements DataLoader {
 
 	private URL getURL(String urlString) {
 		try {
-			return new URL(urlString);
-		} catch (MalformedURLException e) {
+			return URI.create(urlString).toURL();
+		} catch (MalformedURLException | IllegalArgumentException e) {
 			throw new DSSExternalResourceException("Unable to create URL instance", e);
 		}
 	}
@@ -869,56 +938,83 @@ public class CommonsDataLoader implements DataLoader {
 	 * @return {@code byte} array of obtained data or null
 	 */
 	protected byte[] httpGet(final String url) {
+		ResponseEnvelope responseEnvelope = requestGet(url);
+		return responseEnvelope.getResponseBody();
+	}
 
+	@Override
+	public ResponseEnvelope requestGet(String url) {
+		return requestGet(url, true);
+	}
+
+	@Override
+	public ResponseEnvelope requestGet(String url, boolean includeResponseDetails) {
+		return requestGet(url, includeResponseDetails, true);
+	}
+
+	@Override
+	public ResponseEnvelope requestGet(String url, boolean includeResponseDetails, boolean includeResponseBody) {
 		HttpGet httpRequest = null;
 		CloseableHttpClient client = null;
-
 		try {
 			httpRequest = getHttpRequest(url);
 			client = getHttpClient(url);
-			return execute(client, httpRequest);
+
+			return executeHttpRequest(client, httpRequest, includeResponseDetails, includeResponseBody);
 
 		} catch (URISyntaxException | IOException e) {
 			throw new DSSExternalResourceException(String.format("Unable to process GET call for url [%s]. Reason : [%s]", url, DSSUtils.getExceptionMessage(e)), e);
 
 		} finally {
 			closeQuietly(httpRequest, client);
-
 		}
 	}
 
 	@Override
 	public byte[] post(final String url, final byte[] content) {
+		ResponseEnvelope responseEnvelope = requestPost(url, content);
+		return responseEnvelope.getResponseBody();
+	}
 
+	@Override
+	public ResponseEnvelope requestPost(String url, final byte[] content) {
+		return requestPost(url, content, true);
+	}
+
+	@Override
+	public ResponseEnvelope requestPost(String url, byte[] content, boolean includeResponseDetails) {
+		return requestPost(url, content, includeResponseDetails, true);
+	}
+
+	@Override
+	public ResponseEnvelope requestPost(String url, final byte[] content, boolean includeResponseDetails,
+										boolean includeResponseBody) {
 		LOG.debug("Fetching data via POST from url {}", url);
 
-		HttpPost httpRequest = null;
+		final URI uri = URI.create(Utils.trim(url));
+		HttpPost httpRequest = new HttpPost(uri);
 		CloseableHttpClient client = null;
-		try {
-			final URI uri = URI.create(Utils.trim(url));
-			httpRequest = new HttpPost(uri);
 
-			// The length for the InputStreamEntity is needed, because some receivers (on the other side)
-			// need this information.
-			// To determine the length, we cannot read the content-stream up to the end and re-use it afterwards.
-			// This is because, it may not be possible to reset the stream (= go to position 0).
-			// So, the solution is to cache temporarily the complete content data (as we do not expect much here) in
-			// a byte-array.
-			final ByteArrayInputStream bis = new ByteArrayInputStream(content);
+		// The length for the InputStreamEntity is needed, because some receivers (on the other side)
+		// need this information.
+		// To determine the length, we cannot read the content-stream up to the end and re-use it afterwards.
+		// This is because, it may not be possible to reset the stream (= go to position 0).
+		// So, the solution is to cache temporarily the complete content data (as we do not expect much here) in
+		// a byte-array.
+		try (final ByteArrayInputStream bis = new ByteArrayInputStream(content);
+			 final HttpEntity httpEntity = new InputStreamEntity(bis, content.length, toContentType(contentType));
+			 final HttpEntity requestEntity = new BufferedHttpEntity(httpEntity)) {
 
-			final HttpEntity httpEntity = new InputStreamEntity(bis, content.length, toContentType(contentType));
-			final HttpEntity requestEntity = new BufferedHttpEntity(httpEntity);
 			httpRequest.setEntity(requestEntity);
 
 			client = getHttpClient(url);
-			return execute(client, httpRequest);
+			return executeHttpRequest(client, httpRequest, includeResponseDetails, includeResponseBody);
 
 		} catch (IOException e) {
 			throw new DSSExternalResourceException(String.format("Unable to process POST call for url [%s]. Reason : [%s]", url, e.getMessage()) , e);
 
 		} finally {
 			closeQuietly(httpRequest, client);
-
 		}
 	}
 
@@ -927,14 +1023,62 @@ public class CommonsDataLoader implements DataLoader {
 	 *
 	 * @param client {@link CloseableHttpClient}
 	 * @param httpRequest {@link HttpUriRequest}
+	 * @param includeResponseDetails whether the response details are to be included
+	 * @param includeResponseBody whether the response message body is to be included in the result
 	 * @return byte array representing the response's content
 	 * @throws IOException if an exception occurs
 	 */
-	protected byte[] execute(final CloseableHttpClient client, final HttpUriRequest httpRequest) throws IOException {
+	protected ResponseEnvelope executeHttpRequest(final CloseableHttpClient client, final HttpUriRequest httpRequest,
+												  boolean includeResponseDetails, boolean includeResponseBody) throws IOException {
 		final HttpHost targetHost = getHttpHost(httpRequest);
 		final HttpContext localContext = getHttpContext(targetHost);
-		final HttpClientResponseHandler<byte[]> responseHandler = getHttpClientResponseHandler();
-		return client.execute(targetHost, httpRequest, localContext, responseHandler);
+
+		final HttpClientResponseHandler<byte[]> responseHandler;
+		if (includeResponseBody) {
+			responseHandler = getHttpClientResponseHandler();
+		} else {
+			responseHandler = new NoSenseHttpClientResponseHandler();
+		}
+
+		final ResponseEnvelope responseEnvelope = new ResponseEnvelope();
+
+		byte[] bytes = client.execute(targetHost, httpRequest, localContext, responseHandler);
+		responseEnvelope.setResponseBody(bytes);
+
+		if (includeResponseDetails) {
+			if (localContext instanceof HttpCoreContext) {
+				HttpCoreContext httpCoreContext = (HttpCoreContext) localContext;
+				HttpResponse response = httpCoreContext.getResponse();
+				if (response != null) {
+					responseEnvelope.setHeaders(toHeadersMap(response.getHeaders()));
+				}
+				SSLSession sslSession = httpCoreContext.getSSLSession();
+				if (sslSession != null) {
+					responseEnvelope.setTLSCertificates(sslSession.getPeerCertificates());
+				}
+			}
+		}
+
+		return responseEnvelope;
+	}
+
+	/**
+	 * Reads {@code headers} to a {@code Map} of strings
+	 *
+	 * @param headers array of {@link Header}s
+	 * @return a map of headers
+	 */
+	protected Map<String, List<String>> toHeadersMap(Header[] headers) {
+		if (headers == null || headers.length == 0) {
+			return Collections.emptyMap();
+		}
+
+		final Map<String, List<String>> headersMap = new LinkedHashMap<>();
+		for (Header header : headers) {
+			List<String> values = headersMap.computeIfAbsent(header.getName(), k -> new ArrayList<>());
+			values.add(header.getValue());
+		}
+		return headersMap;
 	}
 
 	/**
@@ -997,9 +1141,14 @@ public class CommonsDataLoader implements DataLoader {
 		}
 	}
 
-	private HttpClientConnectionManager getConnectionManager() {
+	/**
+	 * Gets a configured {@code HttpClientConnectionManager}
+	 *
+	 * @return {@link HttpClientConnectionManager}
+	 */
+	protected HttpClientConnectionManager getConnectionManager() {
 		final PoolingHttpClientConnectionManagerBuilder builder = PoolingHttpClientConnectionManagerBuilder.create()
-				.setSSLSocketFactory(getConnectionSocketFactoryHttps())
+				.setTlsSocketStrategy(getTlsSocketStrategy())
 				.setDefaultSocketConfig(getSocketConfig())
 				.setMaxConnTotal(getConnectionsMaxTotal())
 				.setMaxConnPerRoute(getConnectionsMaxPerRoute());
@@ -1017,13 +1166,23 @@ public class CommonsDataLoader implements DataLoader {
 		return connectionManager;
 	}
 
-	private SocketConfig getSocketConfig() {
+	/**
+	 * Gets a configured {@code SocketConfig}
+	 *
+	 * @return {@link SocketConfig}
+	 */
+	protected SocketConfig getSocketConfig() {
 		SocketConfig.Builder socketConfigBuilder = SocketConfig.custom();
 		socketConfigBuilder.setSoTimeout(timeoutSocket);
 		return socketConfigBuilder.build();
 	}
 
-	private SSLConnectionSocketFactory getConnectionSocketFactoryHttps() {
+	/**
+	 * Gets a configured {@code SSLContextBuilder} containing an SSL connection trust configuration
+	 *
+	 * @return {@link SSLContextBuilder}
+	 */
+	protected SSLContextBuilder getSSLContextBuilder() {
 		try {
 			SSLContextBuilder sslContextBuilder = SSLContextBuilder.create();
 			sslContextBuilder.setProtocol(sslProtocol);
@@ -1048,14 +1207,23 @@ public class CommonsDataLoader implements DataLoader {
 					sslContextBuilder.loadTrustMaterial(sslKeyStore, trustStrategy);
 				}
 			}
-
-			SSLConnectionSocketFactoryBuilder sslConnectionSocketFactoryBuilder = new SSLConnectionSocketFactoryBuilder();
-			return sslConnectionSocketFactoryBuilder.setSslContext(sslContextBuilder.build())
-					.setTlsVersions(getSupportedSSLProtocols()).setCiphers(getSupportedSSLCipherSuites())
-					.setHostnameVerifier(getHostnameVerifier()).build();
-
+			return sslContextBuilder;
 		} catch (final Exception e) {
-			throw new IllegalArgumentException("Unable to configure the SSLContext/SSLConnectionSocketFactory", e);
+			throw new IllegalArgumentException("Unable to configure the SSLContext", e);
+		}
+	}
+
+	/**
+	 * Gets a configured {@code TlsSocketStrategy}
+	 *
+	 * @return {@link TlsSocketStrategy}
+	 */
+	protected TlsSocketStrategy getTlsSocketStrategy() {
+		try {
+			return new DefaultClientTlsStrategy(getSSLContextBuilder().build(), getSupportedSSLProtocols(),
+					getSupportedSSLCipherSuites(), SSLBufferMode.STATIC, getHostnameVerifier());
+		} catch (final Exception e) {
+			throw new IllegalArgumentException("Unable to configure the TLSSocketStrategy", e);
 		}
 	}
 
@@ -1124,14 +1292,8 @@ public class CommonsDataLoader implements DataLoader {
 
 		httpClientBuilder = configCredentials(httpClientBuilder, url);
 
-		final RequestConfig.Builder requestConfigBuilder = RequestConfig.custom()
-				.setConnectionRequestTimeout(timeoutConnectionRequest)
-				.setResponseTimeout(timeoutResponse)
-				.setConnectionKeepAlive(connectionKeepAlive)
-				.setRedirectsEnabled(redirectsEnabled);
-
 		httpClientBuilder.setConnectionManager(getConnectionManager())
-				.setDefaultRequestConfig(requestConfigBuilder.build())
+				.setDefaultRequestConfig(getRequestConfig())
 				.setRetryStrategy(retryStrategy);
 		
 		return httpClientBuilder;
@@ -1145,6 +1307,29 @@ public class CommonsDataLoader implements DataLoader {
 	 */
 	protected synchronized CloseableHttpClient getHttpClient(final String url) {
 		return getHttpClientBuilder(url).build();
+	}
+
+	/**
+	 * Gets a configured {@code RequestConfig.Builder}
+	 *
+	 * @return {@link RequestConfig.Builder}
+	 */
+	protected RequestConfig.Builder getRequestConfigBuilder() {
+		return RequestConfig.custom()
+				.setTargetPreferredAuthSchemes(targetPreferredAuthSchemes)
+				.setConnectionRequestTimeout(timeoutConnectionRequest)
+				.setResponseTimeout(timeoutResponse)
+				.setConnectionKeepAlive(connectionKeepAlive)
+				.setRedirectsEnabled(redirectsEnabled);
+	}
+
+	/**
+	 * Builds and gets a {@code RequestConfig}
+	 *
+	 * @return {@link RequestConfig}
+	 */
+	protected RequestConfig getRequestConfig() {
+		return getRequestConfigBuilder().build();
 	}
 
 	/**
@@ -1280,6 +1465,30 @@ public class CommonsDataLoader implements DataLoader {
 
 	private static ContentType toContentType(String contentTypeString) {
 		return Utils.isStringNotBlank(contentTypeString) ? ContentType.create(contentTypeString) : null;
+	}
+
+	/**
+	 * This class consumes the {@code ClassicHttpResponse} but does not process or return any content.
+	 * It is used to quickly process a response without a need to extract any data.
+	 */
+	private static class NoSenseHttpClientResponseHandler implements HttpClientResponseHandler<byte[]> {
+
+		/**
+		 * Default constructor
+		 */
+		protected NoSenseHttpClientResponseHandler() {
+			// empty
+		}
+
+		@Override
+		public byte[] handleResponse(ClassicHttpResponse classicHttpResponse) {
+			if (classicHttpResponse != null) {
+				EntityUtils.consumeQuietly(classicHttpResponse.getEntity());
+				Utils.closeQuietly(classicHttpResponse);
+			}
+			return DSSUtils.EMPTY_BYTE_ARRAY;
+		}
+
 	}
 
 }

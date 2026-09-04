@@ -1,0 +1,57 @@
+# This repository adheres to the publiccode.yml standard by including this
+# metadata file that makes public software easily discoverable.
+# More info at https://github.com/italia/publiccode.yml
+
+publiccodeYmlVersion: '0.2'
+applicationSuite: Digital Identity and Trust
+categories:
+  - e-signature
+description:
+  en:
+    documentation: |-
+      https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/doc/dss-documentation.html
+    features:
+      - Electronic signatures (XAdES, CAdES, PAdES, JAdES, CB-AdES and ASiC)
+      - Timestamps
+      - Revocation data (CRL and OCSP)
+      - Evidence Records (XMLERS and ERS)
+      - Attestations (EAA, PID, etc.)
+      - REST and SOAP webServices
+    genericName: DSS (Digital Signature Services)
+    longDescription: >
+      DSS (Digital Signature Services) is an open-source software library for electronic signature creation and validation. 
+      DSS supports the creation and verification of interoperable and secure electronic signatures in line with European 
+      legislation. In particular, DSS aims to follow the eIDAS Regulation and related standards closely. 
+      
+      DSS can be re-used in an IT solution for electronic signatures to ensure that signatures are created and verified in
+      line with European legislation and standards. DSS allows re-use in a variety of different ways: in an applet, in a
+      standalone application or in a server application. DSS can also be used as a reference implementation for IT
+      solutions which do not directly re-use it. Demos are also available to assist the use of DSS as a reference
+      implementation.
+      
+      The project is written in Java and issued under LGPL 2.1, a non-viral open source license.
+    shortDescription: |-
+      DSS is an open-source software library for electronic signature creation, augmentation and validation.
+developmentStatus: stable
+legal:
+  license: LGPL-2.1
+  mainCopyrightOwner: European Commission
+localisation:
+  availableLanguages:
+    - en
+  localisationReady: false
+maintenance:
+  contacts:
+    - name: David Naramski
+    - name: Aleksandr Beliakov
+    - name: Axel Abinet
+  type: internal
+name: DSS
+platforms:
+  - windows
+  - linux
+  - mac
+releaseDate: '2026-08-28'
+softwareType: library
+url: 'https://code.europa.eu/dit/dss.git'
+softwareVersion: '6.5'

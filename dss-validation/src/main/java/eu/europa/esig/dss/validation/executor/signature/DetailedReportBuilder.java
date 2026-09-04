@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -43,11 +43,11 @@ import eu.europa.esig.dss.diagnostic.TimestampWrapper;
 import eu.europa.esig.dss.enumerations.Context;
 import eu.europa.esig.dss.enumerations.Indication;
 import eu.europa.esig.dss.enumerations.SubIndication;
+import eu.europa.esig.dss.enumerations.ValidationLevel;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
-import eu.europa.esig.dss.policy.ValidationPolicy;
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
 import eu.europa.esig.dss.validation.executor.AbstractDetailedReportBuilder;
-import eu.europa.esig.dss.enumerations.ValidationLevel;
 import eu.europa.esig.dss.validation.process.qualification.signature.SignatureQualificationBlock;
 import eu.europa.esig.dss.validation.process.vpfbs.BasicSignatureValidationProcess;
 import eu.europa.esig.dss.validation.process.vpfltvd.ValidationProcessForSignaturesWithLongTermValidationData;
@@ -106,12 +106,8 @@ public class DetailedReportBuilder extends AbstractDetailedReportBuilder {
 	 *
 	 * @return {@link XmlDetailedReport}
 	 */
-	XmlDetailedReport build() {
+	public XmlDetailedReport build() {
 		XmlDetailedReport detailedReport = init();
-		
-		detailedReport.setValidationTime(currentTime);
-
-		List<XmlTLAnalysis> tlAnalysis = detailedReport.getTLAnalysis();
 
 		Map<String, XmlBasicBuildingBlocks> bbbs = executeAllBasicBuildingBlocks();
 		detailedReport.getBasicBuildingBlocks().addAll(bbbs.values());
@@ -119,6 +115,26 @@ public class DetailedReportBuilder extends AbstractDetailedReportBuilder {
 		// Init POE
 		final POEExtraction poe = new POEExtraction();
 		poe.init(diagnosticData, currentTime);
+
+		executeValidation(detailedReport, bbbs, poe);
+		
+		if (includeSemantics) {
+			collectIndications(detailedReport);
+			addSemantics(detailedReport);
+		}
+
+		return detailedReport;
+	}
+
+	/**
+	 * Performs validation for the given tokens
+	 *
+	 * @param detailedReport {@link XmlDetailedReport}
+	 * @param bbbs map of {@link XmlBasicBuildingBlocks}
+	 * @param poe {@link POEExtraction}
+	 */
+	protected void executeValidation(XmlDetailedReport detailedReport, Map<String, XmlBasicBuildingBlocks> bbbs, POEExtraction poe) {
+		List<XmlTLAnalysis> tlAnalysis = detailedReport.getTLAnalysis();
 
 		Set<String> attachedTimestamps = new HashSet<>();
 		Set<String> attachedEvidenceRecords = new HashSet<>();
@@ -181,7 +197,7 @@ public class DetailedReportBuilder extends AbstractDetailedReportBuilder {
 				}
 
 			}
-			
+
 			signatureAnalysis.setConclusion(getFinalConclusion(validation));
 
 			detailedReport.getSignatureOrTimestampOrEvidenceRecord().add(signatureAnalysis);
@@ -204,13 +220,6 @@ public class DetailedReportBuilder extends AbstractDetailedReportBuilder {
 				detailedReport.getSignatureOrTimestampOrEvidenceRecord().add(timestampValidations.get(timestamp.getId()));
 			}
 		}
-		
-		if (includeSemantics) {
-			collectIndications(detailedReport);
-			addSemantics(detailedReport);
-		}
-
-		return detailedReport;
 	}
 
 	private XmlValidationProcessBasicSignature executeBasicValidation(XmlSignature signatureAnalysis, SignatureWrapper signature,
@@ -269,21 +278,33 @@ public class DetailedReportBuilder extends AbstractDetailedReportBuilder {
 				process(diagnosticData.getTimestampList(), Context.TIMESTAMP, bbbs);
 				process(diagnosticData.getAllSignatures(), Context.SIGNATURE, bbbs);
 				process(diagnosticData.getAllCounterSignatures(), Context.COUNTER_SIGNATURE, bbbs);
+				process(diagnosticData.getAllKeyBindingSignatures(), Context.KEY_BINDING_SIGNATURE, bbbs);
+				process(diagnosticData.getAllAttestationRevocationTokens(), Context.ATTESTATION_REVOCATION, bbbs);
+				process(diagnosticData.getAllAttestations(), Context.ATTESTATION, bbbs);
 				break;
 			case LONG_TERM_DATA:
 				process(diagnosticData.getAllRevocationData(), Context.REVOCATION, bbbs);
 				process(diagnosticData.getNonEvidenceRecordTimestamps(), Context.TIMESTAMP, bbbs);
 				process(diagnosticData.getAllSignatures(), Context.SIGNATURE, bbbs);
 				process(diagnosticData.getAllCounterSignatures(), Context.COUNTER_SIGNATURE, bbbs);
+				process(diagnosticData.getAllKeyBindingSignatures(), Context.KEY_BINDING_SIGNATURE, bbbs);
+				process(diagnosticData.getAllAttestationRevocationTokens(), Context.ATTESTATION_REVOCATION, bbbs);
+				process(diagnosticData.getAllAttestations(), Context.ATTESTATION, bbbs);
 				break;
 			case TIMESTAMPS:
 				process(diagnosticData.getNonEvidenceRecordTimestamps(), Context.TIMESTAMP, bbbs);
 				process(diagnosticData.getAllSignatures(), Context.SIGNATURE, bbbs);
 				process(diagnosticData.getAllCounterSignatures(), Context.COUNTER_SIGNATURE, bbbs);
+				process(diagnosticData.getAllKeyBindingSignatures(), Context.KEY_BINDING_SIGNATURE, bbbs);
+				process(diagnosticData.getAllAttestationRevocationTokens(), Context.ATTESTATION_REVOCATION, bbbs);
+				process(diagnosticData.getAllAttestations(), Context.ATTESTATION, bbbs);
 				break;
 			case BASIC_SIGNATURES:
 				process(diagnosticData.getAllSignatures(), Context.SIGNATURE, bbbs);
 				process(diagnosticData.getAllCounterSignatures(), Context.COUNTER_SIGNATURE, bbbs);
+				process(diagnosticData.getAllKeyBindingSignatures(), Context.KEY_BINDING_SIGNATURE, bbbs);
+				process(diagnosticData.getAllAttestationRevocationTokens(), Context.ATTESTATION_REVOCATION, bbbs);
+				process(diagnosticData.getAllAttestations(), Context.ATTESTATION, bbbs);
 				break;
 			default:
 				throw new IllegalArgumentException("Unsupported validation level " + validationLevel);

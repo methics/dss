@@ -22,6 +22,7 @@ The following modules are provided with independent implementations:
 
 * DSS Utils;
 * DSS CRL Parser;
+* DSS CMS;
 * DSS PAdES.
 
 WARNING: At least one implementation shall be chosen.
@@ -63,6 +64,49 @@ If your integration requires `dss-crl-parser`, you will need to choose your impl
     <artifactId>dss-crl-parser-stream</artifactId>
 </dependency>
 ----
+
+[[dssCms]]
+==== DSS CMS
+
+Starting from the version `6.3`, DSS provides two implementations for handling of a Cryptographic Message Syntax (CMS) (RFC 5652, cf. <<R31>>) object. The modules define a logic on how the CMS signature objects are created, augmented and validated.
+
+The interfaces and common utility classes are present within the `dss-cms` module. The available implementations are:
+
+* `dss-cms-object`: contains a classic implementation for processing of a CMS signature, used in previous versions of DSS, based on `CMSSignedData` processing.
+* `dss-cms-stream`: provides an experimental implementation for processing of CMS signatures based on streams.
+
+One of the two implementations shall be added to the list of dependencies in order to perform a successful execution of some other DSS modules. The choice of the implementation impacts processing within `dss-cades`, `dss-pades-*` and `dss-asic-cades` modules.
+
+For instance, the `dss-cms-object` implementation may be added as below within a `pom.xml` file of your project:
+
+[source,xml,indent=0]
+.pom.xml
+----
+<dependency>
+    <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+    <artifactId>dss-cms-object</artifactId>
+</dependency>
+----
+
+===== DSS CMS Object
+
+This module operates with the `org.bouncycastle.cms.CMSSignedData` object and provides a complete functionality for working with CMS or CAdES signatures. As `CMSSignedData` object loads the data in memory, the implementation limits the possible size of an original document and/or a CMS signature, and can cause `OutOfMemoryError`. The implementation creates CMS signatures in a `DL` encoded format and keeps the original encoding of a CMS on augmentation.
+
+===== DSS CMS Stream
+
+The implementation does not require loading of the encapsulated content, thus allowing signing of large files (e.g. bigger than 2GB), as well as validation of large CMS documents. The implementation creates CMS signatures in a `BER` format (due to computing the CMS content "on the fly" without knowing final document size), as well as modifies the encoding of CMS signature to the `BER` format on the augmentation, regardless of the provided original encoding (i.e. `BER` or `DER`).
+
+WARNING: The `dss-cms-stream` implementation does not support augmentation of signatures containing a legacy `id-aa-ets-archiveTimestampV2` (OID: `1.2.840.113549.1.9.16.2.48`) unsigned property due to inability to keep the original encoding of CMS signatures on extension, which is required for the given archive timestamp type validation.
+
+In order to allow signing and/or augmentation of CAdES signatures encapsulating the original documents of a large size (e.g. more than 2GB), the <<DSSResourcesHandler>> should be configured within a `CAdESService` to switch processing from the default in-memory handling. An example of a configuration can be found below:
+
+[source,java,indent=0]
+.CAdES signing with TempFileResourcesHandlerBuilder
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/SignCAdESWithTempFileTest.java[tags=demo]
+----
+
+NOTE: The implementation `dss-cms-stream` is experimental. While it may provide a better performance as well as a possibility of large documents signing and validation, we advise implementers to carefully evaluate the produced results before switching to this implementation.
 
 [[dssPades]]
 ==== DSS PAdES
@@ -131,6 +175,19 @@ eu.europa.esig.dss.cookbook.example.CustomMimeTypeLoader
 
 This will load firstly the created class (`CustomMimeTypeLoader.java`) and after other available implementations (i.e. `MimeTypeEnumLoader` with default mimetypes).
 
+[[ServiceLoaderPolicy]]
+==== Validation Policy and Cryptographic Suite
+
+Starting from version `6.3`, DSS uses a `ServiceLoader` to load a validation policy, as well as a cryptographic suite.
+
+For a validation policy, DSS provides a single implementation, containing the default AdES validation policy. To enable the support of the default validation policy implementation, the `dss-policy-jaxb` module should be added in the list of the dependencies of the project.
+
+A custom validation policy can be provided by implementing a `ValidationPolicyFactory` class and by setting a reference to the corresponding implementation class within a `/META-INF/services/eu.europa.esig.dss.model.policy.ValidationPolicyFactory` file in the resources folder.
+
+For a cryptographic suite, an implementation of a `CryptographicSuiteFactory` interface is required, with DSS providing two implementations in modules `dss-policy-crypto-xml` and `dss-policy-crypto-json` for XML and JSON cryptographic suite, respectively.
+
+The list of supported or custom implementations of a `CryptographicSuiteFactory` should be added within the `/META-INF/services/eu.europa.esig.dss.model.policy.CryptographicSuiteFactory` file in the resources folder.
+
 === Multithreading
 
 DSS can be used in multi-threaded environments but some points need to be considered like resources sharing and caching. All operations are stateless and this fact requires to be maintained. Some resources can be shared, others are proper to an operation.
@@ -155,6 +212,7 @@ See section <<CachingUseCases>> of the Annex for complete examples of caching re
 DSS provides the following JAXB modules with a harmonized structure :
 
 * `dss-policy-jaxb` - defines validation policy JAXB model;
+* `dss-policy-crypto-xml` - defines XML cryptographic suite JAXB model;
 * `dss-diagnostic-jaxb` - defines Diagnostic Data JAXB model;
 * `dss-detailed-report-jaxb` - defines Detailed Report JAXB model;
 * `dss-simple-report-jaxb` - defines Simple Report JAXB model;
@@ -266,6 +324,44 @@ The `dss-diagnostic-jaxb` module contains an XSLT stylesheet that creates an SVG
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/SVGGenerationSnippet.java[tags=demo]
 ----
 
+[[securityProvider]]
+=== Security Provider
+
+DSS provides a configuration option of the default security provider used across the framework. The security provider is used to provide an implementation for performing certain cryptographic operations, such as encryption, signature validation, etc. The configuration class is called `DSSSecurityProvider` which contains the main logic for handling the providers.
+
+WARNING: This represents highly advanced settings and modification of the security provider may seriously impact the functioning of the application. Please do at your own risk.
+
+By default, DSS uses a `org.bouncycastle.jce.provider.BouncyCastleProvider` class as the primary security provider. To modify the main security provider, the following code can be used:
+
+[source,java,indent=0]
+.Set primary security provider
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/DSSSecurityProviderSnippetTest.java[tags=main-provider]
+----
+
+In certain cases, DSS allows processing using multiple security providers (available since DSS `6.4`), such as on tokens loading (certificates, OCSP responses, etc.). This can be helpful, when the main security provider is not able to load the token, but it is possible to execute the same process successfully using an alternative security provider. To provide a collection of alternative security providers, the following method can be used:
+
+[source,java,indent=0]
+.Set alternative security providers
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/DSSSecurityProviderSnippetTest.java[tags=alt-providers]
+----
+
+NOTE: The main and alternative providers may be set either using a `Provider` class instance or using a `String` provider's name (shall be discoverable in the classpath).
+
+In order to instantiate the security providers within the system's `java.security.Security` properties, the following code can be used:
+
+[source,java,indent=0]
+.Initialize security providers
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/DSSSecurityProviderSnippetTest.java[tags=init-providers]
+----
+
+This code will ensure that all security providers defined within the class instance, will be added at runtime within the system's `java.security.Security` properties. Please note that DSS does execute this method on its own when the use of security providers is required, therefore it is very unlikely you would ever need to call the method.
+
+NOTE: Once the security providers have been added within the system's `java.security.Security` properties, modifications of the `DSSSecurityProvider` class configuration will not result to a removal of the providers from the `java.security.Security` properties. If you need to remove certain providers, you have to do it using the `java.security.Security` class directly.
+
+
 [[xmlSecurities]]
 === XML securities
 
@@ -301,6 +397,22 @@ include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/XMLSecurit
 The class `XmlDefinerUtils` is a singleton, therefore all changes performed on the instance will have an impact to all calls of the related methods.
 
 See section <<Alerts>> in chapter Annex for more information on alerts.
+
+[[PdfMemoryUsageSetting]]
+=== PDF Memory Usage Setting
+
+Since DSS `6.2` it is possible to configure the memory usage on PDF reading. The feature is useful on document signing or validation, when a smart memory usage is crucial, for instance when processing big PDF files.
+
+The configuration can be done using a `PdfMemoryUsageSetting` class, as shown below:
+
+[source,java,indent=0]
+.PdfMemoryUsageSetting configuration
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/PAdESWithIPdfObjFactoryConfiguration.java[tags=pdf-memory-usage-setting]
+----
+
+NOTE: `PdfMemoryUsageSetting` is only supported in methods within `PAdESService` and `PDFDocumentValidator`.
+
 
 [[DSSResourcesHandler]]
 === DSS Resources Handler
@@ -343,11 +455,10 @@ Since DSS `6.1` a `DSSResourcesHandler` may also be used for ASiC creation, allo
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/SignASiCEWithXAdESWithTempFileTest.java[tags=demo]
 ----
 
-
 [[zipUtils]]
 === ZIP Utils
 
-For parsing and creation of ZIP archives a special class `ZipUtils` is provided. This is a singleton class, and its behavior can be customized using an implementation of `ZipContainerHandler` interface. An implementation of `ZipContainerHandler` can be provided in runtime and the defined class will be used on all calls of `ZipUtils` across DSS's code
+For parsing and creation of ZIP archives a special class `ZipUtils` is provided. This is a singleton class, and its behavior can be customized using an implementation of `ZipContainerHandler` interface. An implementation of `ZipContainerHandler` can be provided at runtime and the defined class will be used on all calls of `ZipUtils` across DSS's code
 
 By default, an instance of `SecureContainerHandler` is used, allowing to parse ZIP container securely, by reporting a presence of a ZIP-bomb (see https://unforgettable.dk/[42.zip]) and/or malicious documents within a given archive.
 

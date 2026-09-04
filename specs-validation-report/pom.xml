@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 		<artifactId>sd-dss</artifactId>
-		<version>6.1</version>
+		<version>6.5</version>
 	</parent>
 
 	<artifactId>specs-validation-report</artifactId>
@@ -26,7 +26,7 @@
 		</dependency>
 		<dependency>
 			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
-			<artifactId>specs-trusted-list</artifactId>
+			<artifactId>specs-trusted-list-v211</artifactId>
 		</dependency>
 
 		<dependency>
@@ -109,6 +109,22 @@
 						<configuration>
 							<target>
 								<delete dir="${basedir}/target/generated-sources/xjc/eu/europa/esig/xmldsig" />
+							</target>
+						</configuration>
+					</execution>
+					<execution>
+						<id>fix-jaxb-javadoc</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<replaceregexp match="\{@link byte\[\]\}" replace="{@code byte[]}" flags="g">
+									<fileset dir="${project.build.directory}/generated-sources/xjc">
+										<include name="**/*.java" />
+									</fileset>
+								</replaceregexp>
 							</target>
 						</configuration>
 					</execution>

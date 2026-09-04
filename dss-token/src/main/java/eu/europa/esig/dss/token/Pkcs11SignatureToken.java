@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -25,15 +25,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
-import java.io.IOException;
 import java.security.AuthProvider;
 import java.security.KeyStore;
 import java.security.KeyStore.PasswordProtection;
-import java.security.KeyStore.ProtectionParameter;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
@@ -313,32 +309,34 @@ public class Pkcs11SignatureToken extends AbstractKeyStoreTokenConnection {
 	protected KeyStore getKeyStore() throws DSSException {
 		try {
 			KeyStore keyStore = KeyStore.getInstance(SUN_PKCS11_KEYSTORE_TYPE, getProvider());
-			keyStore.load(new KeyStore.LoadStoreParameter() {
-
-				@Override
-				public ProtectionParameter getProtectionParameter() {
-					return new KeyStore.CallbackHandlerProtection(new CallbackHandler() {
-
-						@Override
-						public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-							for (Callback c : callbacks) {
-								if (c instanceof PasswordCallback) {
-									((PasswordCallback) c).setPassword(callback.getPassword());
-									return;
-								}
-							}
-							throw new DSSException("No password callback");
-						}
-					});
-				}
-			});
+			keyStore.load(() -> new KeyStore.CallbackHandlerProtection(callbacks -> {
+                for (Callback c : callbacks) {
+                    if (c instanceof PasswordCallback) {
+                        ((PasswordCallback) c).setPassword(callback.getPassword());
+                        return;
+                    }
+                }
+                throw new DSSException("No password callback");
+            }));
 			return keyStore;
 		} catch (Exception e) {
-			if ("CKR_PIN_INCORRECT".equals(e.getMessage())) {
+			String causeMessage = getErrorCauseCode(e);
+			if ("CKR_PIN_INCORRECT".equals(causeMessage)) {
 				throw new DSSException("Bad password for PKCS11", e);
+			} else if ("CKR_SLOT_ID_INVALID".equals(causeMessage)) {
+				throw new DSSException("Bad slot id for PKCS11", e);
 			}
-			throw new DSSException("Can't initialize Sun PKCS#11 security provider. Reason: " + e.getMessage(), e);
+			throw new DSSException(String.format("Can't initialize Sun PKCS#11 security provider. " +
+					"Provider returned error: '%s'. More: %s", causeMessage, e.getMessage()), e);
 		}
+	}
+
+	private String getErrorCauseCode(Exception e) {
+		Throwable ex = e;
+		while (ex.getCause() != null) {
+			ex = ex.getCause();
+		}
+		return ex.getMessage();
 	}
 
 	/**

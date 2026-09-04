@@ -1,0 +1,149 @@
+:sectnums:
+:sectnumlevels: 5
+:sourcetestdir: ../../../test/java
+:samplesdir: ../_samples
+:imagesdir: ../images/
+
+[[ListOfTrustedEntities]]
+== List of Trusted Entities
+
+Starting since the version `6.5` DSS provides a validation support of a List of Trusted Entities (LoTE) as defined in the ETSI TS 119 602 (cf. <<R33>>). The validation process of a LoTE is based on the algorithm specified in the ETSI TS 119 605 (cf. <<R39>>). For more information about LoTE, please see <<LoTE>> chapter.
+
+The architecture, as well as the user interfaces of the corresponding `dss-lote-validation` module are aligned with the logic of the <<TrustedLists>>, and will be easily understood should you already be familiar with the `TLValidationJob`.
+
+DSS provides two implementations allowing to validate a LoTE of the corresponding formats:
+
+* `dss-lote-validation-json` : Performs validation of a LoTE in the JSON format (examples: PID Providers List, Wallet Providers List, etc.);
+* `dss-lote-validation-xml` : Performs validation of a LoTE in the XML format (examples: Pub-EAA Providers List, etc.).
+
+Should you need a support of a LoTE of a format above, the corresponding module has to be added within a list of dependencies of your project.
+
+[[loteValidationJob]]
+=== Configuration of LoTE validation job
+
+The validation of a List of Trusted Entities (LOTE) is performed with the `LoTEValidationJob` class.
+Once the task is done, its result is stored in the `TrustedEntitiesCertificateSource`. The job uses 3 different caches (download, parsing and validation) and a state-machine to be efficient.
+
+Downloaded LoTEs are stored in the file system. That offers the possibility to run the validation job in offline mode consuming the cached entries. With online refresh LoTE can be loaded from the file system and/or from remote sources (e.g. from Internet).
+
+In the next sections the different configurations will be covered.
+
+==== LoTESource and LoLoTESource
+
+To provide a configuration for the LoTE to be downloaded, one of the classes below can be used:
+
+* `LoTESource` : provides configuration for a TS 119 602 List of Trusted Entities (cf. <<R33>>), containing a list of trusted entities to be processed;
+* `LoLoTESource` : provided a configuration for a list of TS 119 602 Lists of Trusted Entities, containing pointers to LoTEs to be processed.
+
+Several sources or their combinations can be injected in the `LoTEValidationJob`. The only constraint is the uniqueness of the LoTE or LoLoTE URL.
+
+[source,java,indent=0]
+.Multiple LoTESources and multiple LoLoTESources configuration
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/LoTEValidationJobSnippets.java[tags=job-config-sources]
+----
+
+===== List of Trusted Entities Source (LoTESource)
+
+A `LoTESource` allows quickly setting up a configuration for a List of Trusted Entities. The URL and the signing certificates for this list are mandatory. Optionally, predicates or/and filters can be configured to retrieve only a part of the trusted entities or trusted entity services.
+
+[source,java,indent=0]
+.LoTESource configuration
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/LoTEValidationJobSnippets.java[tags=pid-list-source]
+----
+
+===== List Of Lists Trusted Entities Source (LoLoTESource)
+
+A similar configuration is possible for a List of Lists Of Trusted Entities (LoLoTE) with a `LoLoTESource`. That requires an URL and a list of potential list signers. Some other parameters are also possible. By default, all listed LoTEs are loaded.
+
+[source,java,indent=0]
+.LoLoTESource configuration
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/LoTEValidationJobSnippets.java[tags=european-LoLoTE-source]
+----
+
+==== DSSFileLoader
+
+Please see <<DSSFileLoader>> from the <<TrustedLists>> section.
+
+==== SynchronizationStrategy
+
+Please see <<SynchronizationStrategy>> from the <<TrustedLists>> section.
+
+==== CacheCleaner
+
+Please see <<CacheCleaner>> from the <<TrustedLists>> section.
+
+==== Alerting from LoTE loading
+
+Please see <<AlertingTL>> from the <<TrustedLists>> section.
+
+==== LoTE filter predicates
+
+LoTE / LoLoTE predicates allow filtering of lists based on the OtherLoTEPointer type.
+
+DSS provides a configuration, but does not yet implement any predicates. It is up to the end-user to implement those.
+
+For information about the configuration, please see examples in <<LotlTlPredicates>> from the <<TrustedLists>> section.
+
+==== Trusted Entity predicates
+
+Trusted Entity predicates allow filtering of trusted entities. Unlike Trusted Service Provider predicate used in <<TrustedLists>>, the Trusted Entity predicates process filtering based on extracted POJO data objects, instead of JAXB generated objects based on the XSD schema.
+
+DSS provides a configuration, but does not yet implement any predicates. It is up to the end-user to implement those.
+
+==== Trusted Service predicates
+
+Trusted Service predicates allow filtering of trusted entity services. Unlike Trust Service predicate used in <<TrustedLists>>, the Trusted Entity Service predicates process filtering based on extracted POJO data objects, instead of JAXB generated objects based on the XSD schema.
+
+DSS provides a configuration, but does not yet implement any predicates. It is up to the end-user to implement those.
+
+==== Trust anchor validity predicates
+
+When specified, extracts SDI certificates only for the filtered services, time dependent. This setting allows specifying trust anchor certificate with a "sunset date" to be used during the validation process.
+
+[[LoTEKeystoreConfig]]
+==== List of Trusted Entities keystore configuration
+
+To validate the signature of a List of Trusted Entities (LoTE) or a List of Lists of Trusted Entities (LoLoTE), DSS requires a collection of signing certificate candidates. These certificates act as trust anchors for verifying the authenticity of the list.
+
+These certificates must be supplied in a form of `CertificateSource` and associated with the corresponding `LoTESource` or `LoLoTESource` instance:
+
+[source,java,indent=0]
+.LoTE signing-certificates configuration
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/LoTEValidationJobSnippets.java[tags=european-LoLoTE-keystore]
+----
+
+===== LoLoTE keystore configuration
+
+When using a `LoTEValidationJob` configured with a `LoLoTESource`, only the certificates for the initial LoLoTE should be provided, as shown above. Certificates required for validating referenced Lists of Trusted Entities are automatically extracted from the LoLoTE content.
+
+==== ExecutorService
+
+Please see <<ExecutorService>> from the <<TrustedLists>> section.
+
+==== The LoTE job refresh
+
+Please see <<TLRefresh>> from the <<TrustedLists>> section.
+
+==== LoTEValidationJobSummary
+
+The class `LoTEValidationJobSummary` contains all processed data about the download (time, error, etc.), the parsing (extracted information, parsing error, etc.) and the signature validation (signing certificate, signing time, etc.).
+
+[source,java,indent=0]
+.How to retrieve the information about the LoTEValidationJob process
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/snippets/LoTEValidationJobSnippets.java[tags=lote-summary]
+----
+
+=== Validation policy for a List of Trusted Entities
+
+An `eIDAS` XML node linked to the status of the <<TrustedLists>> and List of Trusted Entities is included in the DSS validation policy (see <<validationPolicy>> for more information). The following elements are contained in that node:
+
+* *LoTEFreshness*: Given that LoTEs may be too heavy to be downloaded at each validation, LoTEs are normally downloaded every few hours. However, it can happen that a download is not possible because the LoTE is not available or because there is a problem with the downloader on the signature validation algorithm side. For such situations, it is useful to display a message to indicate that the LoTE is not “fresh”. To achieve this, the LoTE freshness indicates that LoTEs were downloaded no later than the validation time minus the LoTE freshness time interval.
+* *LoTENotExpired*: The LoTE might be expired in case of an attack consisting in replacing the current LoTE by an older one. Using an old LoTE might bring problems. The expired LoTE could for example contain Certificate Authorities that are not present in the current LoTE. Thus, an expired LoTE should lead to a warning during the validation.
+* *LoTEWellSigned*: If the signature of the LoTE is not valid, the LoTE should be discarded. A non-valid LoTE signature might indicate that the content of that LoTE is "fake" and should not be trusted.
+* *LoTEVersion*: If the version of the LoTE does not correspond to the version indicated in the validation policy, the validation process fails.
+* *LoTEStructure*: If the structure of the LoTE does not correspond to the definition and XSD of the LoTE of the corresponding version, the validation of the check fails.

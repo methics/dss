@@ -1,10 +1,7 @@
 [source,http,options="nowrap"]
 ----
 HTTP/1.1 200 OK
-Vary: Origin
-Vary: Access-Control-Request-Method
-Vary: Access-Control-Request-Headers
-Date: Fri, 05 Jul 2024 13:40:41 GMT
+Date: Tue, 04 Aug 2026 12:28:48 GMT
 X-Content-Type-Options: nosniff
 X-XSS-Protection: 0
 Cache-Control: no-cache, no-store, max-age=0, must-revalidate
@@ -17,9 +14,9 @@ Content-Type: application/json
 Transfer-Encoding: chunked
 Keep-Alive: timeout=20
 Connection: keep-alive
-Content-Length: 440
+Content-Length: 488
 
 {
-  "bytes" : "MYIBNTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yNDA3MDUxMzQwNDBaMCQGBgQAjUUCATEaDBhhcHBsaWNhdGlvbi9vY3RldC1zdHJlYW0wKwYJKoZIhvcNAQk0MR4wHDALBglghkgBZQMEAgGhDQYJKoZIhvcNAQELBQAwLwYJKoZIhvcNAQkEMSIEIJHAxzmY8GYVX7g4boQnghEUZmKUx+CY+EZn1VYt9UPYMHcGCyqGSIb3DQEJEAIvMWgwZjBkMGIEIALz68oBYydCU7yAnSdJjdQbsDFtfmsGaWARXeFVWJ2cMD4wNKQyMDAxGzAZBgNVBAMMElJvb3RTZWxmU2lnbmVkRmFrZTERMA8GA1UECgwIRFNTLXRlc3QCBi7WFNe7Vw=="
+  "bytes" : "MYIBWTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yNjA4MDQxMjI4NDhaMCQGBgQAjUUCATEaDBhhcHBsaWNhdGlvbi9vY3RldC1zdHJlYW0wKwYJKoZIhvcNAQk0MR4wHDALBglghkgBZQMEAgGhDQYJKoZIhvcNAQELBQAwLwYJKoZIhvcNAQkEMSIEIJHAxzmY8GYVX7g4boQnghEUZmKUx+CY+EZn1VYt9UPYMIGaBgsqhkiG9w0BCRACLzGBijCBhzCBhDCBgQQgE6HOEglWOpAszskn8Np+VVOUfWtXhb++5o6+N1GeR5QwXTBYpFYwVDEUMBIGA1UEAwwLc2VsZi1zaWduZWQxHDAaBgNVBAoME0V1cm9wZWFuIENvbW1pc3Npb24xETAPBgNVBAsMCFBLSS1URVNUMQswCQYDVQQGEwJFVQIBAQ=="
 }
 ----

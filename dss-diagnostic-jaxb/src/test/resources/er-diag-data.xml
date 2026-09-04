@@ -218,6 +218,7 @@
         <EvidenceRecord Id="EVIDENCE-RECORD_good-tsa_20230905-0858">
             <DocumentName>evidence-record-5b5edd31-344d-4d66-8e95-79f9acaab566.xml</DocumentName>
             <Type>XML Evidence Record</Type>
+            <Origin>EXTERNAL</Origin>
             <StructuralValidation valid="true"/>
             <DigestMatchers>
                 <DigestMatcher type="EVIDENCE_RECORD_ARCHIVE_OBJECT" documentName="Signature-X-LT-5b5edd31-344d-4d66-8e95-79f9acaab566.xml">
@@ -269,6 +270,7 @@
         <EvidenceRecord Id="EVIDENCE-RECORD_UNKNOWN-SIGNER_20230905-0858">
             <DocumentName>evidence-record-5b5edd31-344d-4d66-8e95-79f9acaab566-broken.xml</DocumentName>
             <Type>XML Evidence Record</Type>
+            <Origin>EXTERNAL</Origin>
             <StructuralValidation valid="true"/>
             <DigestMatchers>
                 <DigestMatcher type="EVIDENCE_RECORD_ARCHIVE_OBJECT" documentName="Signature-X-LT-5b5edd31-344d-4d66-8e95-79f9acaab566.xml">
@@ -1931,7 +1933,7 @@
         <TrustedList Id="TL_EL_20230724-1230" parent="LOTL_EU_20230905-1200">
             <CountryCode>EL</CountryCode>
             <Url>https://www.eett.gr/tsl/EL-TSL.xml</Url>
-            <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
+            <Type>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</Type>
             <SequenceNumber>69</SequenceNumber>
             <Version>5</Version>
             <LastLoading>2023-09-20T06:47:22Z</LastLoading>
@@ -1942,7 +1944,7 @@
         <TrustedList Id="TL_LT_20230602-1038" parent="LOTL_EU_20230905-1200">
             <CountryCode>LT</CountryCode>
             <Url>https://elektroninisparasas.lt/LT-TSL.xml</Url>
-            <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
+            <Type>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</Type>
             <SequenceNumber>66</SequenceNumber>
             <Version>5</Version>
             <LastLoading>2023-09-20T06:47:23Z</LastLoading>
@@ -1953,7 +1955,7 @@
         <TrustedList Id="TL_AT_20230802-1600" parent="LOTL_EU_20230905-1200">
             <CountryCode>AT</CountryCode>
             <Url>https://www.signatur.rtr.at/currenttl.xml</Url>
-            <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
+            <Type>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</Type>
             <SequenceNumber>62</SequenceNumber>
             <Version>5</Version>
             <LastLoading>2023-09-20T06:47:26Z</LastLoading>
@@ -1964,7 +1966,7 @@
         <TrustedList Id="TL_LU_20230915-0620" parent="LOTL_EU_20230905-1200">
             <CountryCode>LU</CountryCode>
             <Url>https://trusted-list.lu/tsl.xml</Url>
-            <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
+            <Type>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</Type>
             <SequenceNumber>51</SequenceNumber>
             <Version>5</Version>
             <LastLoading>2023-09-20T06:47:22Z</LastLoading>
@@ -1975,7 +1977,7 @@
         <TrustedList Id="LOTL_EU_20230905-1200" LOTL="true">
             <CountryCode>EU</CountryCode>
             <Url>https://ec.europa.eu/tools/lotl/eu-lotl.xml</Url>
-            <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUlistofthelists</TSLType>
+            <Type>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUlistofthelists</Type>
             <SequenceNumber>331</SequenceNumber>
             <Version>5</Version>
             <LastLoading>2023-09-20T06:47:20Z</LastLoading>

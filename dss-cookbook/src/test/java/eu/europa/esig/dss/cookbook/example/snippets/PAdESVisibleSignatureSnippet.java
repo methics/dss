@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -24,12 +24,15 @@ import eu.europa.esig.dss.enumerations.ImageScaling;
 import eu.europa.esig.dss.enumerations.VisualSignatureAlignmentHorizontal;
 import eu.europa.esig.dss.enumerations.VisualSignatureAlignmentVertical;
 import eu.europa.esig.dss.enumerations.VisualSignatureRotation;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.SignatureFieldParameters;
 import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pades.SignatureImageTextParameters;
 import eu.europa.esig.dss.pdf.pdfbox.visible.PdfBoxNativeFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 
 import java.awt.Color;
 
@@ -129,11 +132,52 @@ public class PAdESVisibleSignatureSnippet {
 		SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
 		// tag::nativeFont[]
 		
-		textParameters.setFont(new PdfBoxNativeFont(PDType1Font.HELVETICA));
+		textParameters.setFont(new PdfBoxNativeFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA)));
 		
 		// end::nativeFont[]
 		// end::visibleSigParams[]
 		
+	}
+
+	public void dss65Migration() {
+		DSSDocument modifiedImage = new InMemoryDocument(); // blank sample
+
+		// tag::dss65Migration[]
+		// import eu.europa.esig.dss.pades.SignatureImageParameters;
+		// import eu.europa.esig.dss.enumerations.ImageScaling;
+
+		SignatureImageParameters imageParameters = new SignatureImageParameters();
+
+		// Option 1.
+		// Set alternative DPI.
+		// Hint: Use lower DPI to increase image size
+		// (quality loss) or bigger DPI value to downsize
+		// the image (better quality).
+		imageParameters.setDpi(144);
+
+		// Option 2.
+		// Zoom image.
+		// Value is provided in percentages relatively
+		// the original size (i.e. 100%).
+		// NOTE: Zoom will apply on text as well,
+		// when defined.
+		imageParameters.setZoom(50);
+
+		// Option 3.
+		// Stretch the image.
+		// Define the exact signature field dimensions and
+		// stretch the image in it.
+		imageParameters.setImageScaling(ImageScaling.ZOOM_AND_CENTER); // or ImageScaling.STRETCH
+
+		// Option 4.
+		// Modify the original image's dimensions or DPI.
+		imageParameters.setImage(modifiedImage);
+
+		// end::dss65Migration[]
+
+		// tag::pdfLegacyDpi[]
+		imageParameters.setLegacyDPIHandling(true);
+		// end::pdfLegacyDpi[]
 	}
 
 }

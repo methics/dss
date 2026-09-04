@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -39,26 +39,35 @@ public class CertificateToValidateDTO {
 	
 	/**
 	 * Allows to specify missing certificates in the chain.
-	 * 
+	 * <p>
 	 * OPTIONAL.
 	 */
 	private List<RemoteCertificate> certificateChain;
 	
 	/**
 	 * Allows to specify a validation time different from the current time.
-	 * 
+	 * <p>
 	 * OPTIONAL.
 	 */
 	private Date validationTime;
 
 	/**
 	 * The custom validation policy to use
+	 * <p>
+	 * OPTIONAL.
 	 */
 	private RemoteDocument policy;
+
+	/**
+	 * The custom cryptographic suite to use
+	 * <p>
+	 * OPTIONAL.
+	 */
+	private RemoteDocument cryptographicSuite;
 	
 	/**
 	 * Allows to specify the token extraction to follow
-	 * 
+	 * <p>
 	 * NONE by default
 	 */
 	private TokenExtractionStrategy tokenExtractionStrategy = TokenExtractionStrategy.NONE;
@@ -87,9 +96,7 @@ public class CertificateToValidateDTO {
 	 * @param validationTime {@link Date} the validation time
 	 */
 	public CertificateToValidateDTO(RemoteCertificate certificate, List<RemoteCertificate> certificateChain, Date validationTime) {
-		this.certificate = certificate;
-		this.certificateChain = certificateChain;
-		this.validationTime = validationTime;
+		this(certificate, certificateChain, validationTime, null);
 	}
 
 	/**
@@ -101,11 +108,8 @@ public class CertificateToValidateDTO {
 	 * @param tokenExtractionStrategy {@link TokenExtractionStrategy} for the DiagnosticData report
 	 */
 	public CertificateToValidateDTO(RemoteCertificate certificate, List<RemoteCertificate> certificateChain,
-									Date validationTime,  TokenExtractionStrategy tokenExtractionStrategy) {
-		this.certificate = certificate;
-		this.certificateChain = certificateChain;
-		this.validationTime = validationTime;
-		this.tokenExtractionStrategy = tokenExtractionStrategy;
+									Date validationTime, TokenExtractionStrategy tokenExtractionStrategy) {
+		this(certificate, certificateChain, validationTime, null, tokenExtractionStrategy);
 	}
 
 	/**
@@ -119,10 +123,27 @@ public class CertificateToValidateDTO {
 	 */
 	public CertificateToValidateDTO(RemoteCertificate certificate, List<RemoteCertificate> certificateChain,
 			Date validationTime, RemoteDocument policy, TokenExtractionStrategy tokenExtractionStrategy) {
+		this(certificate, certificateChain, validationTime, policy, null, tokenExtractionStrategy);
+	}
+
+	/**
+	 * The default constructor with a custom validation policy
+	 *
+	 * @param certificate {@link RemoteCertificate} to be validated
+	 * @param certificateChain a list of {@link RemoteCertificate}s representing the certificate chain
+	 * @param validationTime {@link Date} the validation time
+	 * @param policy {@link RemoteDocument}
+	 * @param cryptographicSuite {@link RemoteDocument} cryptographic suite
+	 * @param tokenExtractionStrategy {@link TokenExtractionStrategy} for the DiagnosticData report
+	 */
+	public CertificateToValidateDTO(RemoteCertificate certificate, List<RemoteCertificate> certificateChain,
+									Date validationTime, RemoteDocument policy, RemoteDocument cryptographicSuite,
+									TokenExtractionStrategy tokenExtractionStrategy) {
 		this.certificate = certificate;
 		this.certificateChain = certificateChain;
 		this.validationTime = validationTime;
 		this.policy = policy;
+		this.cryptographicSuite = cryptographicSuite;
 		this.tokenExtractionStrategy = tokenExtractionStrategy;
 	}
 
@@ -196,6 +217,24 @@ public class CertificateToValidateDTO {
 	 */
 	public void setPolicy(RemoteDocument policy) {
 		this.policy = policy;
+	}
+
+	/**
+	 * Gets a cryptographic suite document (to be applied globally)
+	 *
+	 * @return {@link RemoteDocument}
+	 */
+	public RemoteDocument getCryptographicSuite() {
+		return cryptographicSuite;
+	}
+
+	/**
+	 * Sets a cryptographic suite document (to be applied globally)
+	 *
+	 * @param cryptographicSuite {@link RemoteDocument}
+	 */
+	public void setCryptographicSuite(RemoteDocument cryptographicSuite) {
+		this.cryptographicSuite = cryptographicSuite;
 	}
 
 	/**

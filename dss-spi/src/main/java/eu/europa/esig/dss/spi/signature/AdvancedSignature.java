@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -22,7 +22,6 @@ package eu.europa.esig.dss.spi.signature;
 
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
-import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
 import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureForm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
@@ -43,6 +42,7 @@ import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.model.x509.revocation.crl.CRL;
 import eu.europa.esig.dss.model.x509.revocation.ocsp.OCSP;
 import eu.europa.esig.dss.spi.SignatureCertificateSource;
+import eu.europa.esig.dss.spi.attestation.Attestation;
 import eu.europa.esig.dss.spi.signature.identifier.SignatureIdentifier;
 import eu.europa.esig.dss.spi.validation.CertificateVerifier;
 import eu.europa.esig.dss.spi.x509.CandidatesForSigningCertificate;
@@ -66,17 +66,17 @@ public interface AdvancedSignature extends IdentifierBasedObject, Serializable {
 
 	/**
 	 * This method returns the signature filename (useful for ASiC and multiple signature files)
-	 * 
+	 *
 	 * @return the signature filename
 	 */
-	String getSignatureFilename();
+	String getFilename();
 
 	/**
 	 * This method allows to set the signature filename (useful in case of ASiC)
 	 *
-	 * @param signatureFilename {@link String}
+	 * @param filename {@link String}
 	 */
-	void setSignatureFilename(String signatureFilename);
+	void setFilename(String filename);
 
 	/**
 	 * Returns detached contents
@@ -124,6 +124,13 @@ public interface AdvancedSignature extends IdentifierBasedObject, Serializable {
 	void setManifestFile(ManifestFile manifestFile);
 
 	/**
+	 * Gets a signing certificate source, when provided
+	 *
+	 * @return {@link CertificateSource}
+	 */
+	CertificateSource getSigningCertificateSource();
+
+	/**
 	 * Set a certificate source which allows to find the signing certificate by kid
 	 * or certificate's digest
 	 * 
@@ -159,16 +166,6 @@ public interface AdvancedSignature extends IdentifierBasedObject, Serializable {
 	 * @return {@code DigestAlgorithm}
 	 */
 	DigestAlgorithm getDigestAlgorithm();
-
-	/**
-	 * Retrieves the mask generation function used for generating the signature.
-	 *
-	 * @return {@code MaskGenerationFunction}
-	 * @deprecated since DSS 6.1. Please use {@code #getEncryptionAlgorithm} method instead in order to determine
-	 *             mask generation function (i.e. EncryptionAlgorithm.RSA for none MGF, EncryptionAlgorithm.RSASSA_PSS for MGF1)
-	 */
-	@Deprecated
-	MaskGenerationFunction getMaskGenerationFunction();
 
 	/**
 	 * Returns the signing time included within the signature.
@@ -249,6 +246,13 @@ public interface AdvancedSignature extends IdentifierBasedObject, Serializable {
 	void initBaselineRequirementsChecker(CertificateVerifier certificateVerifier);
 
 	/**
+	 * Gets master signature
+	 *
+	 * @return {@code AdvancedSignature}
+	 */
+	AdvancedSignature getMasterSignature();
+
+	/**
 	 * This setter allows to indicate the master signature. It means that this is a countersignature.
 	 *
 	 * @param masterSignature
@@ -257,11 +261,18 @@ public interface AdvancedSignature extends IdentifierBasedObject, Serializable {
 	void setMasterSignature(final AdvancedSignature masterSignature);
 
 	/**
-	 * Gets master signature
+	 * Gets the attestation of an attestation issuing or key binding signature
 	 *
-	 * @return {@code AdvancedSignature}
+	 * @return {@link Attestation}
 	 */
-	AdvancedSignature getMasterSignature();
+	Attestation getAttestation();
+
+	/**
+	 * Sets attestation presentation of the attestation issuing or key binging signature
+	 *
+	 * @param attestation {@link Attestation}
+	 */
+	void setAttestation(Attestation attestation);
 	
 	/**
 	 * Checks if the current signature is a counter signature (i.e. has a Master signature)
@@ -269,6 +280,22 @@ public interface AdvancedSignature extends IdentifierBasedObject, Serializable {
 	 * @return TRUE if it is a counter signature, FALSE otherwise
 	 */
 	boolean isCounterSignature();
+
+	/**
+	 * Checks if the current signature is a key binding signature.
+	 * NOTE: Used for attestation tokens.
+	 *
+	 * @return TRUE if it is a key binding signature, FALSE otherwise
+	 */
+	boolean isKeyBindingSignature();
+
+	/**
+	 * Sets whether the current signature is a key binding signature.
+	 * NOTE: Used for attestation tokens.
+	 *
+	 * @param keyBindingSignature whether the current signature is a key binding signature
+	 */
+	void setKeyBindingSignature(boolean keyBindingSignature);
 
 	/**
 	 * This method returns the signing certificate token or null if there is no valid signing certificate. Note that to
@@ -335,6 +362,13 @@ public interface AdvancedSignature extends IdentifierBasedObject, Serializable {
 	 * @return mime type as {@code String}
 	 */
 	String getMimeType();
+
+	/**
+	 * Returns the value of the signature type protected header (JAdES, CB-AdES)
+	 *
+	 * @return {@code String}
+	 */
+	String getSignatureType();
 
 	/**
 	 * Returns the list of roles of the signer.
@@ -509,6 +543,13 @@ public interface AdvancedSignature extends IdentifierBasedObject, Serializable {
 	SignatureLevel getDataFoundUpToLevel();
 
 	/**
+	 * Checks if the signature is conformant to the corresponding AdES profile
+	 *
+	 * @return TRUE if the signature is AdES, FALSE otherwise
+	 */
+	boolean hasAdESProfile();
+
+	/**
 	 * Checks if the signature is conformant to AdES-BASELINE-B level
 	 *
 	 * @return TRUE if the B-level is present, FALSE otherwise
@@ -537,7 +578,7 @@ public interface AdvancedSignature extends IdentifierBasedObject, Serializable {
 	boolean hasLTAProfile();
 
 	/**
-	 * Checks the presence of signing certificate covered by the signature, what is the proof -BES profile existence
+	 * Checks the presence of signing certificate covered by the signature, what is the proof of the -BES profile existence
 	 *
 	 * @return true if BES Profile is detected
 	 */
@@ -545,14 +586,14 @@ public interface AdvancedSignature extends IdentifierBasedObject, Serializable {
 
 	/**
 	 * Checks the presence of SignaturePolicyIdentifier element in the signature,
-	 * what is the proof -EPES profile existence
+	 * what is the proof of the -EPES profile existence
 	 *
 	 * @return true if EPES Profile is detected
 	 */
 	boolean hasEPESProfile();
 
 	/**
-	 * Checks the presence of SignatureTimeStamp element in the signature, what is the proof -T profile existence
+	 * Checks the presence of SignatureTimeStamp element in the signature, what is the proof of the -T profile existence
 	 *
 	 * @return true if T Profile is detected
 	 */
@@ -560,32 +601,39 @@ public interface AdvancedSignature extends IdentifierBasedObject, Serializable {
 
 	/**
 	 * Checks the presence of CompleteCertificateRefs and CompleteRevocationRefs segments in the signature,
-	 * what is the proof -C profile existence
+	 * what is the proof of the -C profile existence
 	 *
 	 * @return true if C Profile is detected
 	 */
 	boolean hasCProfile();
 
 	/**
-	 * Checks the presence of SigAndRefsTimeStamp segment in the signature, what is the proof -X profile existence
+	 * Checks the presence of SigAndRefsTimeStamp segment in the signature, what is the proof of the -X profile existence
 	 *
 	 * @return true if the -X extension is present
 	 */
 	boolean hasXProfile();
 
 	/**
-	 * Checks the presence of CertificateValues/RevocationValues segment in the signature, what is the proof -XL profile existence
+	 * Checks the presence of CertificateValues/RevocationValues segment in the signature, what is the proof of the -XL profile existence
 	 *
 	 * @return true if the -XL extension is present
 	 */
 	boolean hasXLProfile();
 
 	/**
-	 * Checks the presence of ArchiveTimeStamp element in the signature, what is the proof -A profile existence
+	 * Checks the presence of ArchiveTimeStamp element in the signature, what is the proof of the -A profile existence
 	 *
 	 * @return true if the -A extension is present
 	 */
 	boolean hasAProfile();
+
+	/**
+	 * Checks the presence of SealingEvidenceRecord element in the signature, what is the proof of the -ERS profile existence
+	 *
+	 * @return true if the -A extension is present
+	 */
+	boolean hasERSProfile();
 	
 	/**
 	 * Checks if all certificate chains present in the signature are self-signed

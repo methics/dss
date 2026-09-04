@@ -1,26 +1,27 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.cades.validation.timestamp;
 
-import eu.europa.esig.dss.cades.CMSUtils;
+import eu.europa.esig.dss.cades.CAdESUtils;
+import eu.europa.esig.dss.cades.evidencerecord.CAdESEmbeddedEvidenceRecordHelper;
 import eu.europa.esig.dss.cades.validation.CAdESAttribute;
 import eu.europa.esig.dss.cades.validation.CAdESSignature;
 import eu.europa.esig.dss.cades.validation.CAdESSignedAttributes;
@@ -29,8 +30,12 @@ import eu.europa.esig.dss.crl.CRLBinary;
 import eu.europa.esig.dss.crl.CRLUtils;
 import eu.europa.esig.dss.enumerations.ArchiveTimestampType;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.EvidenceRecordIncorporationType;
+import eu.europa.esig.dss.enumerations.EvidenceRecordOrigin;
 import eu.europa.esig.dss.enumerations.TimestampType;
 import eu.europa.esig.dss.enumerations.TimestampedObjectType;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.identifier.EncapsulatedRevocationTokenIdentifier;
 import eu.europa.esig.dss.model.identifier.Identifier;
 import eu.europa.esig.dss.model.x509.CertificateToken;
@@ -39,6 +44,12 @@ import eu.europa.esig.dss.model.x509.revocation.ocsp.OCSP;
 import eu.europa.esig.dss.spi.DSSASN1Utils;
 import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.spi.SignatureCertificateSource;
+import eu.europa.esig.dss.spi.signature.AdvancedSignature;
+import eu.europa.esig.dss.spi.validation.SignatureProperties;
+import eu.europa.esig.dss.spi.validation.analyzer.evidencerecord.EvidenceRecordAnalyzer;
+import eu.europa.esig.dss.spi.validation.analyzer.evidencerecord.EvidenceRecordAnalyzerFactory;
+import eu.europa.esig.dss.spi.validation.timestamp.SignatureTimestampIdentifierBuilder;
+import eu.europa.esig.dss.spi.validation.timestamp.SignatureTimestampSource;
 import eu.europa.esig.dss.spi.x509.CMSCRLSource;
 import eu.europa.esig.dss.spi.x509.CMSCertificateSource;
 import eu.europa.esig.dss.spi.x509.CMSOCSPSource;
@@ -49,22 +60,17 @@ import eu.europa.esig.dss.spi.x509.revocation.crl.OfflineCRLSource;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPRef;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPResponseBinary;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OfflineOCSPSource;
+import eu.europa.esig.dss.spi.x509.tsp.TimestampSource;
 import eu.europa.esig.dss.spi.x509.tsp.TimestampToken;
 import eu.europa.esig.dss.spi.x509.tsp.TimestampedReference;
 import eu.europa.esig.dss.utils.Utils;
-import eu.europa.esig.dss.spi.signature.AdvancedSignature;
-import eu.europa.esig.dss.spi.validation.SignatureProperties;
-import eu.europa.esig.dss.spi.validation.timestamp.SignatureTimestampIdentifierBuilder;
-import eu.europa.esig.dss.spi.validation.timestamp.SignatureTimestampSource;
-import eu.europa.esig.dss.spi.x509.tsp.TimestampSource;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
-import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.esf.CrlListID;
 import org.bouncycastle.asn1.esf.CrlOcspRef;
@@ -91,8 +97,6 @@ import java.util.List;
 
 import static eu.europa.esig.dss.spi.OID.attributeCertificateRefsOid;
 import static eu.europa.esig.dss.spi.OID.attributeRevocationRefsOid;
-import static eu.europa.esig.dss.spi.OID.id_aa_er_external;
-import static eu.europa.esig.dss.spi.OID.id_aa_er_internal;
 import static eu.europa.esig.dss.spi.OID.id_aa_ets_archiveTimestampV2;
 import static eu.europa.esig.dss.spi.OID.id_aa_ets_archiveTimestampV3;
 import static eu.europa.esig.dss.spi.OID.id_aa_ets_sigPolicyStore;
@@ -124,7 +128,7 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 
 	@Override
 	protected CAdESTimestampMessageDigestBuilder getTimestampMessageImprintDigestBuilder(DigestAlgorithm digestAlgorithm) {
-		return new CAdESTimestampMessageDigestBuilder(signature, certificateSource, digestAlgorithm);
+		return new CAdESTimestampMessageDigestBuilder(signature, digestAlgorithm);
 	}
 
 	@Override
@@ -236,6 +240,18 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 	}
 
 	@Override
+	protected boolean isAnyValidationData(CAdESAttribute unsignedAttribute) {
+		// not applicable for CAdES
+		return false;
+	}
+
+	@Override
+	protected boolean isValidationDataReferences(CAdESAttribute unsignedAttribute) {
+		// not applicable for CAdES
+		return false;
+	}
+
+	@Override
 	protected boolean isCounterSignature(CAdESAttribute unsignedAttribute) {
 		return CMSAttributes.counterSignature.equals(unsignedAttribute.getASN1Oid());
 	}
@@ -247,8 +263,7 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 
 	@Override
 	protected boolean isEvidenceRecord(CAdESAttribute unsignedAttribute) {
-		return id_aa_er_internal.equals(unsignedAttribute.getASN1Oid()) ||
-				id_aa_er_external.equals(unsignedAttribute.getASN1Oid());
+		return unsignedAttribute.isEvidenceRecord();
 	}
 
 	@Override
@@ -266,11 +281,47 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 	}
 
 	@Override
-	protected List<EvidenceRecord> makeEvidenceRecords(CAdESAttribute signatureAttribute, List<TimestampedReference> references) {
-		if (signatureAttribute != null) {
-			LOG.warn("Embedded evidence records are not supported! The unsigned attribute is skipped.");
+	protected List<EvidenceRecord> makeEvidenceRecords(CAdESAttribute unsignedAttribute, List<TimestampedReference> references) {
+		final List<EvidenceRecord> result = new ArrayList<>();
+		ASN1Set attrValues = unsignedAttribute.getAttrValues();
+		for (int i = 0; i < attrValues.size(); i++)
+		{
+			EvidenceRecord evidenceRecord = createEvidenceRecord(unsignedAttribute, attrValues.getObjectAt(i), i);
+			if (evidenceRecord != null) {
+				result.add(evidenceRecord);
+			}
 		}
-		return Collections.emptyList();
+		return result;
+	}
+
+	private EvidenceRecord createEvidenceRecord(CAdESAttribute unsignedAttribute, ASN1Encodable erASN1Encodable, int orderWithinAttribute) {
+		try {
+			byte[] erEncoded = DSSASN1Utils.getDEREncoded(erASN1Encodable);
+			DSSDocument erDocument = new InMemoryDocument(erEncoded);
+			EvidenceRecordAnalyzer evidenceRecordAnalyzer = EvidenceRecordAnalyzerFactory.fromDocument(erDocument);
+			evidenceRecordAnalyzer.setEvidenceRecordOrigin(EvidenceRecordOrigin.SIGNATURE);
+
+			EvidenceRecordIncorporationType incorporationType = CAdESUtils.getEvidenceRecordIncorporationType(unsignedAttribute.getASN1Oid());
+			evidenceRecordAnalyzer.setEvidenceRecordIncorporationType(incorporationType);
+
+			final CAdESEmbeddedEvidenceRecordHelper embeddedEvidenceRecordHelper = new CAdESEmbeddedEvidenceRecordHelper(signature, unsignedAttribute);
+			if (EvidenceRecordIncorporationType.EXTERNAL_EVIDENCE_RECORD == incorporationType) {
+				if (Utils.collectionSize(signature.getDetachedContents()) == 1) {
+					embeddedEvidenceRecordHelper.setDetachedContents(signature.getDetachedContents());
+				} else {
+					LOG.warn("Detached document has not been provided to the validation of an external-evidence-record!");
+				}
+			}
+			embeddedEvidenceRecordHelper.setOrderOfAttribute(getAttributeOrder(unsignedAttribute));
+			embeddedEvidenceRecordHelper.setOrderWithinAttribute(orderWithinAttribute);
+
+			evidenceRecordAnalyzer.setEmbeddedEvidenceRecordHelper(embeddedEvidenceRecordHelper);
+			return evidenceRecordAnalyzer.getEvidenceRecord();
+
+		} catch (Exception e) {
+			LOG.warn("Unable to build an embedded evidence record. Reason : {}", e.getMessage(), e);
+			return null;
+		}
 	}
 
 	@Override
@@ -284,18 +335,20 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 		List<TimestampedReference> timestampedReferences = new ArrayList<>();
 		addReferences(timestampedReferences, getSignatureTimestampReferences());
 
-		final ASN1Sequence atsHashIndex = CMSUtils.getAtsHashIndex(timestampToken.getUnsignedAttributes());
+		final AttributeTable unsignedAttributes = timestampToken.getUnsignedAttributes();
+		final ASN1ObjectIdentifier atsHashIndexVersionIdentifier = CAdESUtils.getAtsHashIndexVersionIdentifier(unsignedAttributes);
+		final ASN1Sequence atsHashIndex = CAdESUtils.getAtsHashIndexByVersion(unsignedAttributes, atsHashIndexVersionIdentifier);
 		if (atsHashIndex != null) {
 			final DigestAlgorithm digestAlgorithm = getHashIndexDigestAlgorithm(atsHashIndex);
 
-			final ASN1Sequence certsHashIndex = CMSUtils.getCertificatesHashIndex(atsHashIndex);
-			final ASN1Sequence crlHashIndex = CMSUtils.getCRLHashIndex(atsHashIndex);
+			final ASN1Sequence certsHashIndex = CAdESUtils.getCertificatesHashIndex(atsHashIndex);
+			final ASN1Sequence crlHashIndex = CAdESUtils.getCRLHashIndex(atsHashIndex);
 			addReferences(timestampedReferences, getSignedDataCertificateReferences(certsHashIndex, digestAlgorithm));
 			addReferences(timestampedReferences, getSignedDataRevocationReferences(crlHashIndex, digestAlgorithm));
 
-			final ASN1Sequence unsignedAttrsHashIndex = CMSUtils.getUnsignedAttributesHashIndex(atsHashIndex);
-			addReferences(timestampedReferences,
-					getUnsignedAttributesReferences(unsignedAttrsHashIndex, digestAlgorithm, previousTimestamps));
+			final ASN1Sequence unsignedAttrsHashIndex = CAdESUtils.getUnsignedAttributesHashIndex(atsHashIndex);
+			addReferences(timestampedReferences, getUnsignedAttributesReferences(
+					atsHashIndexVersionIdentifier, unsignedAttrsHashIndex, digestAlgorithm, previousTimestamps));
 		}
 		timestampToken.getTimestampedReferences().addAll(timestampedReferences);
 	}
@@ -347,7 +400,7 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 	}
 
 	private List<CRLBinary> getSignedDataCRLBinaries(final List<DEROctetString> crlsHashList,
-																final DigestAlgorithm digestAlgorithm) {
+													 final DigestAlgorithm digestAlgorithm) {
 		List<CRLBinary> crlBinaries = new ArrayList<>();
 
 		OfflineCRLSource signatureCRLSource = signature.getCRLSource();
@@ -401,28 +454,28 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 	 */
 	private boolean isOCSPResponsePresent(OCSPResponseBinary binary, List<DEROctetString> crlsHashList,
 										  DigestAlgorithm digestAlgorithm) {
+		ASN1ObjectIdentifier objectIdentifier = binary.getAsn1ObjectIdentifier();
 		if (OCSPObjectIdentifiers.id_pkix_ocsp_basic.equals(binary.getAsn1ObjectIdentifier())) {
-			return isOCSPDigestValueMatch(binary.getBasicOCSPRespContent(), binary.getAsn1ObjectIdentifier(), crlsHashList, digestAlgorithm);
+			return isOCSPDigestValueMatch(binary.getBasicOCSPRespContent(), objectIdentifier, crlsHashList, digestAlgorithm);
 		} else  {
-			// CMSObjectIdentifiers.id_ri_ocsp_response case
-			return isOCSPDigestValueMatch(binary.getBinaries(), binary.getAsn1ObjectIdentifier(), crlsHashList, digestAlgorithm) ||
-					isOCSPDigestValueMatch(binary.getBasicOCSPRespContent(), binary.getAsn1ObjectIdentifier(), crlsHashList, digestAlgorithm);
+			// OCSPObjectIdentifiers.id_ri_ocsp_response case
+			if (objectIdentifier == null) {
+				objectIdentifier = OCSPObjectIdentifiers.id_pkix_ocsp_response;
+			}
+			return isOCSPDigestValueMatch(binary.getBinaries(), objectIdentifier, crlsHashList, digestAlgorithm) ||
+					isOCSPDigestValueMatch(binary.getBasicOCSPRespContent(), objectIdentifier, crlsHashList, digestAlgorithm);
 		}
 	}
 
 	private boolean isOCSPDigestValueMatch(byte[] binaries, ASN1ObjectIdentifier objectIdentifier,
 										   List<DEROctetString> crlsHashList, DigestAlgorithm digestAlgorithm) {
-		// Compute DERTaggedObject with the same algorithm how it was created
-		// See: org.bouncycastle.cms.CMSUtils getOthersFromStore()
-		OtherRevocationInfoFormat otherRevocationInfoFormat = new OtherRevocationInfoFormat(
-				objectIdentifier, DSSASN1Utils.toASN1Primitive(binaries));
-		// false value specifies an implicit encoding method
-		DERTaggedObject derTaggedObject = new DERTaggedObject(false, 1, otherRevocationInfoFormat);
-		return isDigestValuePresent(DSSUtils.digest(digestAlgorithm, DSSASN1Utils.getDEREncoded(derTaggedObject)), crlsHashList);
+		byte[] encoded = CAdESUtils.getSignedDataEncodedOCSPResponse(binaries, objectIdentifier);
+		return isDigestValuePresent(DSSUtils.digest(digestAlgorithm, encoded), crlsHashList);
 	}
 	
-	private List<TimestampedReference> getUnsignedAttributesReferences(final ASN1Sequence unsignedAttrsHashIndex,
-			final DigestAlgorithm digestAlgorithm, final List<TimestampToken> previousTimestamps) {
+	private List<TimestampedReference> getUnsignedAttributesReferences(
+			final ASN1ObjectIdentifier atsHashIndexVersionIdentifier, final ASN1Sequence unsignedAttrsHashIndex,
+            final DigestAlgorithm digestAlgorithm, final List<TimestampToken> previousTimestamps) {
 		final List<TimestampedReference> references = new ArrayList<>();
 
 		final List<DEROctetString> timestampUnsignedAttributesHashesList = DSSASN1Utils
@@ -430,8 +483,7 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 		
 		final SignatureProperties<CAdESAttribute> unsignedSignatureProperties = getUnsignedSignatureProperties();
 		for (CAdESAttribute unsignedAttribute : unsignedSignatureProperties.getAttributes()) {
-			List<byte[]> octets = CMSUtils.getATSHashIndexV3OctetString(unsignedAttribute.getASN1Oid(),
-					unsignedAttribute.getAttrValues());
+            List<byte[]> octets = CAdESUtils.getOctetStringForAtsHashIndex(unsignedAttribute.getAttribute(), atsHashIndexVersionIdentifier);
 			for (byte[] bytes : octets) {
 				final byte[] digest = DSSUtils.digest(digestAlgorithm, bytes);
 				DEROctetString derDigest = new DEROctetString(digest);
@@ -481,10 +533,12 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 	private List<TimestampedReference> getReferencesFromMatchingTimestamp(CAdESAttribute unsignedAttribute,
 			final List<TimestampToken> previousTimestamps) {
 		ASN1Encodable asn1Object = unsignedAttribute.getASN1Object();
-		byte[] derEncoded = DSSASN1Utils.getDEREncoded(asn1Object);
-		for (TimestampToken timestampToken : previousTimestamps) {
-			if (Arrays.equals(derEncoded, timestampToken.getEncoded())) {
-				return getReferencesFromTimestamp(timestampToken, certificateSource, crlSource, ocspSource);
+		if (asn1Object != null) {
+			byte[] derEncoded = DSSASN1Utils.getDEREncoded(asn1Object);
+			for (TimestampToken timestampToken : previousTimestamps) {
+				if (Arrays.equals(derEncoded, timestampToken.getEncoded())) {
+					return getReferencesFromTimestamp(timestampToken, certificateSource, crlSource, ocspSource);
+				}
 			}
 		}
 		return Collections.emptyList();
@@ -515,7 +569,7 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 	private DigestAlgorithm getHashIndexDigestAlgorithm(ASN1Sequence atsHashIndex) {
 		AlgorithmIdentifier algorithmIdentifier = DSSASN1Utils.getAlgorithmIdentifier(atsHashIndex);
 		return algorithmIdentifier != null ? 
-				DigestAlgorithm.forOID(algorithmIdentifier.getAlgorithm().getId()) : CMSUtils.DEFAULT_ARCHIVE_TIMESTAMP_HASH_ALGO;
+				DigestAlgorithm.forOID(algorithmIdentifier.getAlgorithm().getId()) : CAdESUtils.DEFAULT_ARCHIVE_TIMESTAMP_HASH_ALGO;
 	}
 	
 	private boolean isDigestValuePresent(final byte[] digestValue, final List<DEROctetString> hashList) {
@@ -526,9 +580,15 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 	protected List<CertificateRef> getCertificateRefs(CAdESAttribute unsignedAttribute) {
 		List<CertificateRef> certRefs = new ArrayList<>();
 		ASN1Sequence seq = (ASN1Sequence) unsignedAttribute.getASN1Object();
-		for (int ii = 0; ii < seq.size(); ii++) {
-			OtherCertID otherCertId = OtherCertID.getInstance(seq.getObjectAt(ii));
-			certRefs.add(DSSASN1Utils.getCertificateRef(otherCertId));
+		if (seq != null) {
+			for (int ii = 0; ii < seq.size(); ii++) {
+				try {
+					OtherCertID otherCertId = OtherCertID.getInstance(seq.getObjectAt(ii));
+					certRefs.add(DSSASN1Utils.getCertificateRef(otherCertId));
+				} catch (Exception e) {
+					LOG.warn("Unable to parse encapsulated OtherCertID : {}", e.getMessage());
+				}
+			}
 		}
 		return certRefs;
 	}
@@ -537,12 +597,14 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 	protected List<CRLRef> getCRLRefs(CAdESAttribute unsignedAttribute) {
 		List<CRLRef> refs = new ArrayList<>();
 		ASN1Sequence seq = (ASN1Sequence) unsignedAttribute.getASN1Object();
-		for (int ii = 0; ii < seq.size(); ii++) {
-			final CrlOcspRef otherRefId = CrlOcspRef.getInstance(seq.getObjectAt(ii));
-			final CrlListID otherCrlIds = otherRefId.getCrlids();
-			if (otherCrlIds != null) {
-				for (final CrlValidatedID id : otherCrlIds.getCrls()) {
-					refs.add(new CRLRef(id));
+		if (seq != null) {
+			for (int ii = 0; ii < seq.size(); ii++) {
+				final CrlOcspRef otherRefId = CrlOcspRef.getInstance(seq.getObjectAt(ii));
+				final CrlListID otherCrlIds = otherRefId.getCrlids();
+				if (otherCrlIds != null) {
+					for (final CrlValidatedID id : otherCrlIds.getCrls()) {
+						refs.add(new CRLRef(id));
+					}
 				}
 			}
 		}
@@ -553,12 +615,14 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 	protected List<OCSPRef> getOCSPRefs(CAdESAttribute unsignedAttribute) {
 		List<OCSPRef> refs = new ArrayList<>();
 		ASN1Sequence seq = (ASN1Sequence) unsignedAttribute.getASN1Object();
-		for (int i = 0; i < seq.size(); i++) {
-			final CrlOcspRef otherCertId = CrlOcspRef.getInstance(seq.getObjectAt(i));
-			final OcspListID ocspListID = otherCertId.getOcspids();
-			if (ocspListID != null) {
-				for (final OcspResponsesID ocspResponsesID : ocspListID.getOcspResponses()) {
-					refs.add(new OCSPRef(ocspResponsesID));
+		if (seq != null) {
+			for (int i = 0; i < seq.size(); i++) {
+				final CrlOcspRef otherCertId = CrlOcspRef.getInstance(seq.getObjectAt(i));
+				final OcspListID ocspListID = otherCertId.getOcspids();
+				if (ocspListID != null) {
+					for (final OcspResponsesID ocspResponsesID : ocspListID.getOcspResponses()) {
+						refs.add(new OCSPRef(ocspResponsesID));
+					}
 				}
 			}
 		}
@@ -569,17 +633,19 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 	protected List<Identifier> getEncapsulatedCertificateIdentifiers(CAdESAttribute unsignedAttribute) {
 		List<Identifier> certificateIdentifiers = new ArrayList<>();
 		ASN1Sequence seq = (ASN1Sequence) unsignedAttribute.getASN1Object();
-		for (int ii = 0; ii < seq.size(); ii++) {
-			try {
-				final Certificate cs = Certificate.getInstance(seq.getObjectAt(ii));
-				CertificateToken certificateToken = DSSUtils.loadCertificate(cs.getEncoded());
-				certificateIdentifiers.add(certificateToken.getDSSId());
-			} catch (Exception e) {
-				String errorMessage = "Unable to parse an encapsulated certificate : {}";
-				if (LOG.isDebugEnabled()) {
-					LOG.warn(errorMessage, e.getMessage(), e);
-				} else {
-					LOG.warn(errorMessage, e.getMessage());
+		if (seq != null) {
+			for (int ii = 0; ii < seq.size(); ii++) {
+				try {
+					final Certificate cs = Certificate.getInstance(seq.getObjectAt(ii));
+					CertificateToken certificateToken = DSSUtils.loadCertificate(cs.getEncoded());
+					certificateIdentifiers.add(certificateToken.getDSSId());
+				} catch (Exception e) {
+					String errorMessage = "Unable to parse an encapsulated certificate : {}";
+					if (LOG.isDebugEnabled()) {
+						LOG.warn(errorMessage, e.getMessage(), e);
+					} else {
+						LOG.warn(errorMessage, e.getMessage());
+					}
 				}
 			}
 		}
@@ -589,9 +655,11 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 	@Override
 	protected List<CRLBinary> getEncapsulatedCRLIdentifiers(CAdESAttribute unsignedAttribute) {
 		ASN1Encodable asn1Object = unsignedAttribute.getASN1Object();
-		RevocationValues revocationValues = DSSASN1Utils.getRevocationValues(asn1Object);
-		if (revocationValues != null) {
-			return buildCRLIdentifiers(revocationValues.getCrlVals());
+		if (asn1Object != null) {
+			RevocationValues revocationValues = DSSASN1Utils.getRevocationValues(asn1Object);
+			if (revocationValues != null) {
+				return buildCRLIdentifiers(revocationValues.getCrlVals());
+			}
 		}
 		return Collections.emptyList();
 	}
@@ -624,9 +692,11 @@ public class CAdESTimestampSource extends SignatureTimestampSource<CAdESSignatur
 	@Override
 	protected List<OCSPResponseBinary> getEncapsulatedOCSPIdentifiers(CAdESAttribute unsignedAttribute) {
 		ASN1Encodable asn1Object = unsignedAttribute.getASN1Object();
-		RevocationValues revocationValues = DSSASN1Utils.getRevocationValues(asn1Object);
-		if (revocationValues != null) {
-			return buildOCSPIdentifiers(DSSASN1Utils.toBasicOCSPResps(revocationValues.getOcspVals()));
+		if (asn1Object != null) {
+			RevocationValues revocationValues = DSSASN1Utils.getRevocationValues(asn1Object);
+			if (revocationValues != null) {
+				return buildOCSPIdentifiers(DSSASN1Utils.toBasicOCSPResps(revocationValues.getOcspVals()));
+			}
 		}
 		return Collections.emptyList();
 	}

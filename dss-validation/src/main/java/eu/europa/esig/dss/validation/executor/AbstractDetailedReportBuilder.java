@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -22,15 +22,18 @@ package eu.europa.esig.dss.validation.executor;
 
 import eu.europa.esig.dss.detailedreport.jaxb.XmlBasicBuildingBlocks;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlDetailedReport;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlLoTEAnalysis;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlTLAnalysis;
 import eu.europa.esig.dss.diagnostic.AbstractTokenProxy;
 import eu.europa.esig.dss.diagnostic.DiagnosticData;
+import eu.europa.esig.dss.diagnostic.jaxb.XmlListOfTrustedEntities;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlTrustedList;
 import eu.europa.esig.dss.enumerations.Context;
 import eu.europa.esig.dss.i18n.I18nProvider;
-import eu.europa.esig.dss.policy.ValidationPolicy;
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.validation.process.bbb.BasicBuildingBlocks;
+import eu.europa.esig.dss.validation.process.qualification.trust.LoTEValidationBlock;
 import eu.europa.esig.dss.validation.process.qualification.trust.TLValidationBlock;
 
 import java.util.ArrayList;
@@ -79,9 +82,11 @@ public abstract class AbstractDetailedReportBuilder {
 	 */
 	protected XmlDetailedReport init() {
 		XmlDetailedReport detailedReport = new XmlDetailedReport();
+		detailedReport.setValidationTime(currentTime);
 
 		if (policy.isEIDASConstraintPresent()) {
-			detailedReport.getTLAnalysis().addAll(executeAllTlAnalysis(diagnosticData, policy, currentTime));
+			detailedReport.getTLAnalysis().addAll(executeAllTLAnalysis(diagnosticData, policy, currentTime));
+			detailedReport.getLoTEAnalysis().addAll(executeAllLoTEAnalysis(diagnosticData, policy, currentTime));
 		}
 
 		return detailedReport;
@@ -95,7 +100,7 @@ public abstract class AbstractDetailedReportBuilder {
 	 * @param currentTime {@link Date} validation time
 	 * @return a list of {@link XmlTLAnalysis}
 	 */
-	protected List<XmlTLAnalysis> executeAllTlAnalysis(DiagnosticData diagnosticData, ValidationPolicy policy,
+	protected List<XmlTLAnalysis> executeAllTLAnalysis(DiagnosticData diagnosticData, ValidationPolicy policy,
 													   Date currentTime) {
 		List<XmlTLAnalysis> result = new ArrayList<>();
 		result.addAll(validateTL(policy, currentTime, diagnosticData.getListOfTrustedLists()));
@@ -115,6 +120,33 @@ public abstract class AbstractDetailedReportBuilder {
 	}
 
 	/**
+	 * Executes the TL analysis
+	 *
+	 * @param diagnosticData {@link DiagnosticData}
+	 * @param policy {@link ValidationPolicy}
+	 * @param currentTime {@link Date} validation time
+	 * @return a list of {@link XmlLoTEAnalysis}
+	 */
+	protected List<XmlLoTEAnalysis> executeAllLoTEAnalysis(DiagnosticData diagnosticData, ValidationPolicy policy,
+														   Date currentTime) {
+		List<XmlLoTEAnalysis> result = new ArrayList<>();
+		result.addAll(validateLoTE(policy, currentTime, diagnosticData.getListsOfListsOfTrustedEntities()));
+		result.addAll(validateLoTE(policy, currentTime, diagnosticData.getListsOfTrustedEntities()));
+		return result;
+	}
+
+	private List<XmlLoTEAnalysis> validateLoTE(ValidationPolicy policy, Date currentTime, List<XmlListOfTrustedEntities> trustedLists) {
+		List<XmlLoTEAnalysis> result = new ArrayList<>();
+		if (Utils.isCollectionNotEmpty(trustedLists)) {
+			for (XmlListOfTrustedEntities xmlTrustedList : trustedLists) {
+				LoTEValidationBlock loteValidation = new LoTEValidationBlock(i18nProvider, xmlTrustedList, currentTime, policy);
+				result.add(loteValidation.execute());
+			}
+		}
+		return result;
+	}
+
+	/**
 	 * Process the tokens validation
 	 *
 	 * @param tokensToProcess collection of tokens to validate
@@ -124,7 +156,8 @@ public abstract class AbstractDetailedReportBuilder {
 	protected void process(Collection<? extends AbstractTokenProxy> tokensToProcess, Context context,
 						   Map<String, XmlBasicBuildingBlocks> bbbs) {
 		for (AbstractTokenProxy token : tokensToProcess) {
-			BasicBuildingBlocks bbb = new BasicBuildingBlocks(i18nProvider, diagnosticData, token, currentTime, policy, context);
+			BasicBuildingBlocks bbb = new BasicBuildingBlocks(
+					i18nProvider, diagnosticData, token, currentTime, bbbs, policy, context);
 			XmlBasicBuildingBlocks result = bbb.execute();
 			bbbs.put(token.getId(), result);
 		}

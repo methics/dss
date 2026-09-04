@@ -1,27 +1,27 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.xades.validation;
 
-import eu.europa.esig.dss.xml.utils.DomUtils;
 import eu.europa.esig.dss.utils.Utils;
+import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigAttribute;
 import org.apache.xml.security.c14n.Canonicalizer;
 import org.apache.xml.security.transforms.Transforms;
 import org.w3c.dom.Element;
@@ -85,7 +85,7 @@ public class TransformsDescriptionBuilder {
 				for (int i = 0; i < transformChildNodes.getLength(); i++) {
 					Node transformation = transformChildNodes.item(i);
 					if (Node.ELEMENT_NODE == transformation.getNodeType()) {
-						transformsList.add(buildTransformationName(transformation));
+						transformsList.add(buildTransformationName((Element) transformation));
 					}
 				}
 			}
@@ -95,11 +95,12 @@ public class TransformsDescriptionBuilder {
 
 	/**
 	 * Returns a complete description string for the given transformation node
-	 * @param transformation {@link Node} containing a single reference transformation information
+	 * @param transformation {@link Element} containing a single reference transformation information
+	 *
 	 * @return transformation description name
 	 */
-	private String buildTransformationName(Node transformation) {
-		String algorithmUri = DomUtils.getValue(transformation, "@Algorithm");
+	private String buildTransformationName(Element transformation) {
+		final String algorithmUri = transformation.getAttribute(XMLDSigAttribute.ALGORITHM.getAttributeName());
 		String algorithm = algorithmUri;
 		if (presentableTransformationNames.containsKey(algorithmUri)) {
 			algorithm = presentableTransformationNames.get(algorithmUri);

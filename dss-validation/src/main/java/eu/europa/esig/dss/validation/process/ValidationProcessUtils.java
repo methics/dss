@@ -1,28 +1,30 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.validation.process;
 
+import eu.europa.esig.dss.detailedreport.jaxb.XmlAOV;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlBasicBuildingBlocks;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlCRS;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlConclusion;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlCryptographicValidation;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlRAC;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlSubXCV;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlXCV;
@@ -36,12 +38,15 @@ import eu.europa.esig.dss.diagnostic.jaxb.XmlDigestMatcher;
 import eu.europa.esig.dss.enumerations.Context;
 import eu.europa.esig.dss.enumerations.DigestMatcherType;
 import eu.europa.esig.dss.enumerations.Indication;
+import eu.europa.esig.dss.enumerations.Level;
+import eu.europa.esig.dss.enumerations.QWACProfile;
+import eu.europa.esig.dss.enumerations.SubContext;
 import eu.europa.esig.dss.enumerations.SubIndication;
 import eu.europa.esig.dss.enumerations.TimestampType;
 import eu.europa.esig.dss.enumerations.ValidationTime;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
-import eu.europa.esig.dss.policy.SubContext;
+import eu.europa.esig.dss.model.policy.LevelRule;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.validation.process.vpfswatsp.POEExtraction;
 
@@ -105,7 +110,8 @@ public class ValidationProcessUtils {
 				|| SubIndication.OUT_OF_BOUNDS_NO_POE.equals(conclusion.getSubIndication())
 				|| SubIndication.OUT_OF_BOUNDS_NOT_REVOKED.equals(conclusion.getSubIndication())
 				|| SubIndication.CRYPTO_CONSTRAINTS_FAILURE_NO_POE.equals(conclusion.getSubIndication())
-				|| SubIndication.REVOCATION_OUT_OF_BOUNDS_NO_POE.equals(conclusion.getSubIndication()))));
+				|| SubIndication.REVOCATION_OUT_OF_BOUNDS_NO_POE.equals(conclusion.getSubIndication())
+				|| SubIndication.NO_CERTIFICATE_CHAIN_FOUND_NO_POE.equals(conclusion.getSubIndication()))));
 	}
 
 	/**
@@ -122,7 +128,8 @@ public class ValidationProcessUtils {
 						|| SubIndication.OUT_OF_BOUNDS_NO_POE.equals(conclusion.getSubIndication())
 						|| SubIndication.OUT_OF_BOUNDS_NOT_REVOKED.equals(conclusion.getSubIndication())
 						|| SubIndication.CRYPTO_CONSTRAINTS_FAILURE_NO_POE.equals(conclusion.getSubIndication())
-						|| SubIndication.REVOCATION_OUT_OF_BOUNDS_NO_POE.equals(conclusion.getSubIndication()))));
+						|| SubIndication.REVOCATION_OUT_OF_BOUNDS_NO_POE.equals(conclusion.getSubIndication())
+						|| SubIndication.NO_CERTIFICATE_CHAIN_FOUND_NO_POE.equals(conclusion.getSubIndication()))));
 	}
 
 	/**
@@ -140,6 +147,7 @@ public class ValidationProcessUtils {
 					|| SubIndication.OUT_OF_BOUNDS_NOT_REVOKED.equals(conclusion.getSubIndication())
 					|| SubIndication.CRYPTO_CONSTRAINTS_FAILURE_NO_POE.equals(conclusion.getSubIndication())
 					|| SubIndication.REVOCATION_OUT_OF_BOUNDS_NO_POE.equals(conclusion.getSubIndication())
+					|| SubIndication.NO_CERTIFICATE_CHAIN_FOUND_NO_POE.equals(conclusion.getSubIndication())
 					|| SubIndication.SIG_CONSTRAINTS_FAILURE.equals(conclusion.getSubIndication())
 				    || SubIndication.TRY_LATER.equals(conclusion.getSubIndication()))));
 	}
@@ -182,14 +190,17 @@ public class ValidationProcessUtils {
 	 *
 	 * @param token {@link TokenProxy} used in the validation process
 	 * @param certificate {@link CertificateWrapper} to get acceptable revocation data for
+	 * @param currentTime {@link Date}
 	 * @param bbbs a map of {@link XmlBasicBuildingBlocks}
 	 * @param poe {@link POEExtraction}
+	 * @param revocationIssuerSunsetDateConstraint {@link LevelRule}
 	 * @return a list of {@link CertificateRevocationWrapper}s
 	 */
 	public static List<CertificateRevocationWrapper> getAcceptableRevocationDataForPSVIfExistOrReturnAll(
-			TokenProxy token, CertificateWrapper certificate, Map<String, XmlBasicBuildingBlocks> bbbs, POEExtraction poe) {
+			TokenProxy token, CertificateWrapper certificate, Date currentTime, Map<String, XmlBasicBuildingBlocks> bbbs,
+			POEExtraction poe, LevelRule revocationIssuerSunsetDateConstraint) {
 		List<CertificateRevocationWrapper> revocationWrappers =
-				filterRevocationDataForPastSignatureValidation(token, certificate, bbbs, poe);
+				filterRevocationDataForPastSignatureValidation(token, certificate, currentTime, bbbs, poe, revocationIssuerSunsetDateConstraint);
 		if (Utils.isCollectionNotEmpty(revocationWrappers)) {
 			return revocationWrappers;
 		} else {
@@ -202,12 +213,15 @@ public class ValidationProcessUtils {
 	 *
 	 * @param token {@link TokenProxy} used in the validation process
 	 * @param certificate {@link CertificateWrapper} to get acceptable revocation data for
+	 * @param currentTime {@link Date}
 	 * @param bbbs a map of {@link XmlBasicBuildingBlocks}
 	 * @param poe {@link POEExtraction}
+	 * @param revocationIssuerSunsetDateConstraint {@link LevelRule}
 	 * @return a list of {@link CertificateRevocationWrapper}s
 	 */
 	private static List<CertificateRevocationWrapper> filterRevocationDataForPastSignatureValidation(
-			TokenProxy token, CertificateWrapper certificate, Map<String, XmlBasicBuildingBlocks> bbbs, POEExtraction poe) {
+			TokenProxy token, CertificateWrapper certificate, Date currentTime, Map<String, XmlBasicBuildingBlocks> bbbs,
+			POEExtraction poe, LevelRule revocationIssuerSunsetDateConstraint) {
 		final List<CertificateRevocationWrapper> certificateRevocations = new ArrayList<>();
 
 		for (CertificateRevocationWrapper certificateRevocation : certificate.getCertificateRevocationData()) {
@@ -216,12 +230,32 @@ public class ValidationProcessUtils {
 
 			if (ValidationProcessUtils.isAllowedBasicRevocationDataValidation(revocationBBB.getConclusion())
 					&& ValidationProcessUtils.isRevocationDataAcceptable(bbbs.get(token.getId()), certificate, certificateRevocation)
-					&& revocationIssuer != null && (revocationIssuer.isTrusted() || poe.isPOEExistInRange(revocationIssuer.getId(),
-					revocationIssuer.getNotBefore(), revocationIssuer.getNotAfter()))) {
+					&& revocationIssuer != null && (isTrustAnchor(revocationIssuer, currentTime, revocationIssuerSunsetDateConstraint)
+						|| poe.isPOEExistInRange(revocationIssuer.getId(), revocationIssuer.getNotBefore(), revocationIssuer.getNotAfter()))) {
 				certificateRevocations.add(certificateRevocation);
 			}
 		}
 		return certificateRevocations;
+	}
+
+	/**
+	 * This method verifies whether the given {@code certificateWrapper} can be considered as a trust anchor
+	 * at the {@code currentTime}
+	 *
+	 * @param certificateWrapper {@link CertificateWrapper} trust anchor candidate
+	 * @param currentTime {@link Date} to verify certificate's sunset date, when applicable
+	 * @param certificateSunsetDateConstraint {@link LevelRule}
+	 * @return TRUE if the certificate is a trust anchor at the given time, FALSE otherwise
+	 */
+	public static boolean isTrustAnchor(CertificateWrapper certificateWrapper, Date currentTime,
+										LevelRule certificateSunsetDateConstraint) {
+		return certificateWrapper.isTrusted() &&
+				(certificateWrapper.getTrustSunsetDate() == null || currentTime.before(certificateWrapper.getTrustSunsetDate()) ||
+						!certificateSunsetDateCheckEnforced(certificateSunsetDateConstraint));
+	}
+
+	private static boolean certificateSunsetDateCheckEnforced(LevelRule constraint) {
+		return constraint != null && Level.FAIL == constraint.getLevel();
 	}
 
 	/**
@@ -321,9 +355,12 @@ public class ValidationProcessUtils {
 	 * @return {@link String} formatted date
 	 */
 	public static String getFormattedDate(Date date) {
-		SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
-		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-		return sdf.format(date);
+		if (date != null) {
+			SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
+			sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+			return sdf.format(date);
+		}
+		return null;
 	}
 	
 	/**
@@ -349,17 +386,24 @@ public class ValidationProcessUtils {
 	 */
 	public static MessageTag getCryptoPosition(Context context) {
 		switch (context) {
-		case SIGNATURE:
-		case COUNTER_SIGNATURE:
-			return MessageTag.ACCM_POS_SIG_SIG;
-		case TIMESTAMP:
-			return MessageTag.ACCM_POS_TST_SIG;
-		case REVOCATION:
-			return MessageTag.ACCM_POS_REVOC_SIG;
-		case CERTIFICATE:
-			return MessageTag.ACCM_POS_CERT_CHAIN;
-		default:
-			throw new IllegalArgumentException("Unsupported context " + context);
+			case SIGNATURE:
+			case COUNTER_SIGNATURE:
+			case KEY_BINDING_SIGNATURE:
+				return MessageTag.ACCM_POS_SIG_SIG;
+			case TIMESTAMP:
+				return MessageTag.ACCM_POS_TST_SIG;
+			case REVOCATION:
+				return MessageTag.ACCM_POS_REVOC_SIG;
+			case CERTIFICATE:
+				return MessageTag.ACCM_POS_CERT_CHAIN;
+			case EVIDENCE_RECORD:
+				return MessageTag.ACCM_POS_EV_RECORD;
+			case ATTESTATION:
+				return MessageTag.ACCM_POS_EAA;
+			case ATTESTATION_REVOCATION:
+				return MessageTag.ACCM_POS_EAA;
+			default:
+				throw new IllegalArgumentException("Unsupported context " + context);
 		}
 	}
 
@@ -371,17 +415,20 @@ public class ValidationProcessUtils {
 	 */
 	public static MessageTag getCertificateChainCryptoPosition(Context context) {
 		switch (context) {
-		case SIGNATURE:
-		case COUNTER_SIGNATURE:
-			return MessageTag.ACCM_POS_CERT_CHAIN_SIG;
-		case TIMESTAMP:
-			return MessageTag.ACCM_POS_CERT_CHAIN_TST;
-		case REVOCATION:
-			return MessageTag.ACCM_POS_CERT_CHAIN_REVOC;
-		case CERTIFICATE:
-			return MessageTag.ACCM_POS_CERT_CHAIN;
-		default:
-			throw new IllegalArgumentException("Unsupported context " + context);
+			case SIGNATURE:
+			case COUNTER_SIGNATURE:
+			case KEY_BINDING_SIGNATURE:
+				return MessageTag.ACCM_POS_CERT_CHAIN_SIG;
+			case TIMESTAMP:
+				return MessageTag.ACCM_POS_CERT_CHAIN_TST;
+			case REVOCATION:
+				return MessageTag.ACCM_POS_CERT_CHAIN_REVOC;
+			case ATTESTATION_REVOCATION:
+				return MessageTag.ACCM_POS_CERT_CHAIN_EAA_REV;
+			case CERTIFICATE:
+				return MessageTag.ACCM_POS_CERT_CHAIN;
+			default:
+				throw new IllegalArgumentException("Unsupported context " + context);
 		}
 	}
 	
@@ -414,8 +461,10 @@ public class ValidationProcessUtils {
 				return MessageTag.ACCM_POS_MES_DIG;
 			case CONTENT_DIGEST:
 				return MessageTag.ACCM_POS_CON_DIG;
-			case JWS_SIGNING_INPUT_DIGEST:
+			case JWS_SIGNING_INPUT:
 				return MessageTag.ACCM_POS_JWS;
+			case COSE_SIG_STRUCTURE:
+				return MessageTag.ACCM_POS_COSE;
 			case SIG_D_ENTRY:
 				return MessageTag.ACCM_POS_SIG_D_ENT;
 			case MESSAGE_IMPRINT:
@@ -428,6 +477,16 @@ public class ValidationProcessUtils {
 				return MessageTag.ACCM_POS_ER_TST;
 			case EVIDENCE_RECORD_ARCHIVE_TIME_STAMP_SEQUENCE:
 				return MessageTag.ACCM_POS_ER_TST_SEQ;
+			case EVIDENCE_RECORD_MASTER_SIGNATURE:
+				return MessageTag.ACCM_POS_ER_MST_SIG;
+			case SELECTIVE_DISCLOSURE:
+				return MessageTag.ACCM_POS_EAA_SD;
+			case NESTED_SELECTIVE_DISCLOSURE:
+				return MessageTag.ACCM_POS_EAA_NSD;
+			case ORPHAN_SELECTIVELY_DISCLOSABLE_CLAIM:
+				return MessageTag.ACCM_POS_EAA_OSDC;
+			case KEY_BINDING_SIGNATURE:
+				return MessageTag.ACCM_POS_EAA_KB;
 			default:
 				throw new IllegalArgumentException(String.format(
 						"The provided DigestMatcherType '%s' is not supported!", digestMatcher.getType()));
@@ -472,6 +531,14 @@ public class ValidationProcessUtils {
 					return MessageTag.ACCM_POS_ER_ADO_PL;
 				case EVIDENCE_RECORD_ORPHAN_REFERENCE:
 					return MessageTag.ACCM_POS_ER_OR_PL;
+				case SELECTIVE_DISCLOSURE:
+					return MessageTag.ACCM_POS_EAA_SD_PL;
+				case NESTED_SELECTIVE_DISCLOSURE:
+					return MessageTag.ACCM_POS_EAA_NSD_PL;
+				case ORPHAN_SELECTIVELY_DISCLOSABLE_CLAIM:
+					return MessageTag.ACCM_POS_EAA_OSDC_PL;
+				case KEY_BINDING_SIGNATURE:
+					return MessageTag.ACCM_POS_EAA_KB;
 				default:
 					throw new IllegalArgumentException(String.format(
 							"The provided DigestMatcherType '%s' is not supported for multiple digest matchers!", digestMatcherType));
@@ -516,11 +583,14 @@ public class ValidationProcessUtils {
 	 *
 	 * @param context {@link Context}
 	 * @return {@link MessageTag}
+	 * @deprecated since DSS 6.5. To be removed.
 	 */
+	@Deprecated
 	public static MessageTag getContextPosition(Context context) {
 		switch (context) {
 			case SIGNATURE:
 			case COUNTER_SIGNATURE:
+			case KEY_BINDING_SIGNATURE:
 			case CERTIFICATE:
 				return MessageTag.SIGNATURE;
 			case TIMESTAMP:
@@ -535,17 +605,54 @@ public class ValidationProcessUtils {
 	/**
 	 * Returns the message tag for the given subContext
 	 *
+	 * @param context {@link Context}
 	 * @param subContext {@link SubContext}
 	 * @return {@link MessageTag}
 	 */
-	public static MessageTag getSubContextPosition(SubContext subContext) {
-		switch (subContext) {
-			case SIGNING_CERT:
-				return MessageTag.SIGNING_CERTIFICATE;
-			case CA_CERTIFICATE:
-				return MessageTag.CA_CERTIFICATE;
+	public static MessageTag getSubContextPosition(Context context, SubContext subContext) {
+		switch (context) {
+			case CERTIFICATE:
+				return MessageTag.CERTIFICATE;
+			case SIGNATURE:
+			case COUNTER_SIGNATURE:
+			case KEY_BINDING_SIGNATURE:
+				switch (subContext) {
+					case SIGNING_CERT:
+						return MessageTag.SIGNING_CERTIFICATE;
+					case CA_CERTIFICATE:
+						return MessageTag.CA_CERTIFICATE;
+					default:
+						throw new IllegalArgumentException("Unsupported subContext " + subContext);
+				}
+			case TIMESTAMP:
+				switch (subContext) {
+					case SIGNING_CERT:
+						return MessageTag.TIMESTAMP_SIG_CERT;
+					case CA_CERTIFICATE:
+						return MessageTag.TIMESTAMP_CA_CERT;
+					default:
+						throw new IllegalArgumentException("Unsupported subContext " + subContext);
+				}
+			case REVOCATION:
+				switch (subContext) {
+					case SIGNING_CERT:
+						return MessageTag.REVOCATION_SIG_CERT;
+					case CA_CERTIFICATE:
+						return MessageTag.REVOCATION_CA_CERT;
+					default:
+						throw new IllegalArgumentException("Unsupported subContext " + subContext);
+				}
+			case ATTESTATION_REVOCATION:
+				switch (subContext) {
+					case SIGNING_CERT:
+						return MessageTag.EAA_REV_SIG_CERT;
+					case CA_CERTIFICATE:
+						return MessageTag.EAA_REV_CA_CERT;
+					default:
+						throw new IllegalArgumentException("Unsupported subContext " + subContext);
+				}
 			default:
-				throw new IllegalArgumentException("Unsupported subContext " + subContext);
+				throw new IllegalArgumentException("Unsupported context " + context);
 		}
 	}
 
@@ -569,6 +676,25 @@ public class ValidationProcessUtils {
 				return MessageTag.VT_TST_POE_TIME;
 			default:
 				throw new IllegalArgumentException(String.format("The validation time [%s] is not supported", validationTime));
+		}
+	}
+
+	/**
+	 * Returns a {@code MessageTag} corresponding to the given {@code ValidationTime} type
+	 *
+	 * @param qwacProfile {@link QWACProfile}
+	 * @return {@link MessageTag}
+	 */
+	public static MessageTag getQWACValidationMessageTag(QWACProfile qwacProfile) {
+		switch (qwacProfile) {
+			case QWAC_1:
+				return MessageTag.QWAC1_PROFILE;
+			case QWAC_2:
+				return MessageTag.QWAC2_PROFILE;
+			case TLS_BY_QWAC_2:
+				return MessageTag.TLS_BY_QWAC2_PROFILE;
+			default:
+				throw new IllegalArgumentException(String.format("The QWAC profile  [%s] is not supported", qwacProfile));
 		}
 	}
 
@@ -603,10 +729,10 @@ public class ValidationProcessUtils {
 	 * Checks the value against the list of expected values
 	 *
 	 * @param value {@link String} to check
-	 * @param expectedValues a list of {@link String} expected values
-	 * @return TRUE if the value is allowed by the list of expected values, FALSE otherwise
+	 * @param expectedValues a collection of {@link String} expected values
+	 * @return TRUE if the value is allowed by the collection of expected values, FALSE otherwise
 	 */
-	public static boolean processValueCheck(String value, List<String> expectedValues) {
+	public static boolean processValueCheck(String value, Collection<String> expectedValues) {
 		if (Utils.isStringNotEmpty(value) && Utils.isCollectionNotEmpty(expectedValues)) {
 			return expectedValues.contains(ALL_VALUE) || expectedValues.contains(value);
 		}
@@ -618,9 +744,9 @@ public class ValidationProcessUtils {
 	 *
 	 * @param values {@link String} to check
 	 * @param expectedValues {@link String}s to check against
-	 * @return TRUE if the values are allowed by the list of expected values, FALSE otherwise
+	 * @return TRUE if at least one of the value is allowed by the collection of expected values, FALSE otherwise
 	 */
-	public static boolean processValuesCheck(List<String> values, List<String> expectedValues) {
+	public static boolean processValuesCheck(Collection<String> values, Collection<String> expectedValues) {
 		if (Utils.isCollectionNotEmpty(values)) {
 			for (String value : values) {
 				if (processValueCheck(value, expectedValues)) {
@@ -631,6 +757,192 @@ public class ValidationProcessUtils {
 		} else {
 			return Utils.isCollectionEmpty(expectedValues);
 		}
+	}
+
+    /**
+     * Checks the values against the expected values
+     *
+     * @param values {@link String} to check
+     * @param expectedValues {@link String}s to check against
+     * @return TRUE if all the values are allowed by the collection of expected values, FALSE otherwise
+     */
+    public static boolean processAllValuesCheck(Collection<String> values, Collection<String> expectedValues) {
+        if (Utils.isCollectionNotEmpty(values)) {
+            for (String value : values) {
+                if (!processValueCheck(value, expectedValues)) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return Utils.isCollectionEmpty(expectedValues);
+        }
+    }
+
+	/**
+	 * Checks whether {@code values} contain all the {@code expectedValues}
+	 *
+	 * @param values {@link String} to check
+	 * @param expectedValues {@link String}s to check against
+	 * @return TRUE if all values is present within the expected values, FALSE otherwise
+	 */
+	public static boolean processValuesForEachExpectedCheck(Collection<String> values, Collection<String> expectedValues) {
+		if (Utils.isCollectionNotEmpty(values)) {
+			for (String expectedValue : expectedValues) {
+				if (!processValueCheck(expectedValue, values)) {
+					return false;
+				}
+			}
+			return true;
+		} else {
+			return Utils.isCollectionEmpty(expectedValues);
+		}
+	}
+
+	/**
+	 * Returns final cryptographic validation from the AOV block.
+	 * This method returns the first algorithm which is going to expire in case of failure,
+	 * or the first applicable algorithm (which is SignatureValue's signature algorithm in most of the cases).
+	 * In case of a valid cryptographic validation, returns the first available entry
+	 *
+	 * @param aov {@link XmlAOV}
+	 * @return {@link XmlCryptographicValidation}
+	 */
+	public static XmlCryptographicValidation getFinalCryptographicValidation(XmlAOV aov) {
+		if (aov == null || aov.getConclusion() == null) {
+			return null;
+		}
+		if (Indication.PASSED == aov.getConclusion().getIndication()) {
+			return getPrimaryCryptographicValidation(aov);
+		} else {
+			return getFailCryptographicValidation(aov);
+		}
+	}
+
+	/**
+	 * Returns final cryptographic validation from the AOV block.
+	 * This method returns the first algorithm which is going to expire in case of failure,
+	 * or the first applicable algorithm (which is SignatureValue's signature algorithm in most of the cases).
+	 *
+	 * @param aov {@link XmlAOV}
+	 * @return {@link XmlCryptographicValidation}
+	 */
+	public static XmlCryptographicValidation getFailCryptographicValidation(XmlAOV aov) {
+		if (aov == null) {
+			return null;
+		}
+		XmlCryptographicValidation result = null;
+		if (aov.getSignatureCryptographicValidation() != null) {
+			result = aov.getSignatureCryptographicValidation();
+		}
+		if (aov.getSignedAttributesValidation() != null &&
+				(result == null || (Indication.PASSED == result.getConclusion().getIndication() && result.getNotAfter() == null) ||
+						(aov.getSignedAttributesValidation().getNotAfter() != null && result.getNotAfter() != null && result.getNotAfter().after(aov.getSignedAttributesValidation().getNotAfter())))) {
+			result = aov.getSignedAttributesValidation();
+		}
+		if (aov.getDigestMatchersValidation() != null &&
+				(result == null || (Indication.PASSED == result.getConclusion().getIndication() && result.getNotAfter() == null) ||
+						(aov.getDigestMatchersValidation().getNotAfter() != null && result.getNotAfter() != null && result.getNotAfter().after(aov.getDigestMatchersValidation().getNotAfter())))) {
+			result = aov.getDigestMatchersValidation();
+		}
+		if (aov.getCertificateChainCryptographicValidation() != null && (
+				Utils.isCollectionNotEmpty(aov.getCertificateChainCryptographicValidation().getCertificateCryptographicValidation()))) {
+			for (XmlCryptographicValidation cryptographicValidation : aov.getCertificateChainCryptographicValidation().getCertificateCryptographicValidation()) {
+				if (cryptographicValidation != null &&
+						(result == null || (Indication.PASSED == result.getConclusion().getIndication() && result.getNotAfter() == null) ||
+								(cryptographicValidation.getNotAfter() != null && result.getNotAfter() != null && result.getNotAfter().after(cryptographicValidation.getNotAfter())))) {
+					result = cryptographicValidation;
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Returns the first available Cryptographic Validation entry
+	 *
+	 * @param aov {@link XmlAOV}
+	 * @return {@link XmlCryptographicValidation}
+	 */
+	public static XmlCryptographicValidation getPrimaryCryptographicValidation(XmlAOV aov) {
+		if (aov == null) {
+			return null;
+		}
+		XmlCryptographicValidation result = null;
+		if (aov.getSignatureCryptographicValidation() != null) {
+			result = aov.getSignatureCryptographicValidation();
+		}
+		if (result == null && aov.getSignedAttributesValidation() != null) {
+			result = aov.getSignedAttributesValidation();
+		}
+		if (result == null && aov.getDigestMatchersValidation() != null) {
+			result = aov.getDigestMatchersValidation();
+		}
+		if (result == null && aov.getCertificateChainCryptographicValidation() != null && (
+				Utils.isCollectionNotEmpty(aov.getCertificateChainCryptographicValidation().getCertificateCryptographicValidation()))) {
+			for (XmlCryptographicValidation cryptographicValidation : aov.getCertificateChainCryptographicValidation().getCertificateCryptographicValidation()) {
+				if (cryptographicValidation != null) {
+					result = cryptographicValidation;
+					break;
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * This method is used to return the current level with a max limit of the {@code maxLevel}
+	 *
+	 * @param constraint {@link LevelRule} to check
+	 * @param maxLevel {@link Level}
+	 * @return {@link LevelRule}
+	 */
+	public static LevelRule getConstraintOrMaxLevel(LevelRule constraint, Level maxLevel) {
+		if (constraint == null || maxLevel == null) {
+			return null;
+		}
+		Level level;
+		switch (constraint.getLevel()) {
+			case FAIL:
+				if (Level.FAIL == maxLevel) {
+					level = Level.FAIL;
+					break;
+				}
+			case WARN:
+				if (Level.WARN == maxLevel) {
+					level = Level.WARN;
+					break;
+				}
+			case INFORM:
+				if (Level.INFORM == maxLevel) {
+					level = Level.INFORM;
+					break;
+				}
+			case IGNORE:
+				if (Level.IGNORE == maxLevel) {
+					level = Level.IGNORE;
+					break;
+				}
+				level = constraint.getLevel();
+				break;
+			default:
+				throw new IllegalArgumentException(String.format("The support of Level '%s' is not implemented!", constraint.getLevel()));
+		}
+
+		return getLevelRule(level);
+	}
+
+	/**
+	 * Generates an anonymous implementation of the {@code LevelRule} with the given {@code Level}
+	 *
+	 * @param level {@link Level}
+	 * @return {@link LevelRule}
+	 */
+	public static LevelRule getLevelRule(Level level) {
+		if (level == null) {
+			return null;
+		}
+		return () -> level;
 	}
 
 }

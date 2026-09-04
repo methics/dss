@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 // NOTE: encryption type is not supported in OpenPdf. See: {@link https://github.com/LibrePDF/OpenPDF/issues/375}
-public class PAdESLevelBEncryptedDocumentTest extends AbstractPAdESTestSignature {
+class PAdESLevelBEncryptedDocumentTest extends AbstractPAdESTestSignature {
 
     private PAdESService service;
     private PAdESSignatureParameters signatureParameters;
@@ -42,7 +42,7 @@ public class PAdESLevelBEncryptedDocumentTest extends AbstractPAdESTestSignature
 
     @BeforeEach
     void init() throws Exception {
-        documentToSign = new InMemoryDocument(PAdESLevelBTest.class.getResourceAsStream("/protected/restricted_fields.pdf"));
+        documentToSign = new InMemoryDocument(PAdESLevelBEncryptedDocumentTest.class.getResourceAsStream("/protected/restricted_fields.pdf"));
 
         signatureParameters = new PAdESSignatureParameters();
         signatureParameters.setSigningCertificate(getSigningCert());
@@ -54,7 +54,7 @@ public class PAdESLevelBEncryptedDocumentTest extends AbstractPAdESTestSignature
 
     @Override
     protected DSSDocument sign() {
-        Exception exception = assertThrows(ProtectedDocumentException.class, () -> super.sign());
+        Exception exception = assertThrows(ProtectedDocumentException.class, super::sign);
         assertEquals("The creation of new signatures is not permitted in the current document. " +
                         "Reason : PDF Permissions dictionary does not allow modification or creation interactive form fields, " +
                         "including signature fields when document is open with user-access!",

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -29,7 +29,7 @@ import eu.europa.esig.dss.xades.DSSXMLUtils;
 import eu.europa.esig.dss.xades.reference.XAdESReferenceValidation;
 import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigAttribute;
 import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigPath;
-import eu.europa.esig.dss.xml.utils.DomUtils;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.apache.xml.security.exceptions.XMLSecurityException;
 import org.apache.xml.security.signature.Manifest;
 import org.apache.xml.security.signature.Reference;
@@ -128,8 +128,14 @@ public class ManifestValidator {
 
 		List<ReferenceValidation> referenceValidations = new ArrayList<>();
 		for (Reference reference : references) {
+			XAdESReferenceValidation refValidation = new XAdESReferenceValidation(reference);
+			refValidation.setType(DigestMatcherType.MANIFEST_ENTRY);
+
+			referenceValidations.add(refValidation);
+
 			try {
-				XAdESReferenceValidation refValidation = createReferenceValidation(reference);
+				refValidation.setDigest(DSSXMLUtils.getReferenceDigest(reference));
+				refValidation.setTransformationNames(getTransformNames(reference.getElement()));
 
 				boolean refFound = DSSXMLUtils.isAbleToDeReferenceContent(reference);
 				refValidation.setFound(refFound);
@@ -141,7 +147,6 @@ public class ManifestValidator {
 				if (refFound && !isDuplicated) {
 					refValidation.setIntact(reference.verify());
 				}
-				referenceValidations.add(refValidation);
 
 			} catch (Exception e) {
 				LOG.warn("Unable to verify reference with Id [{}] : {}", reference.getId(), e.getMessage(), e);
@@ -149,18 +154,10 @@ public class ManifestValidator {
 		}
 		return referenceValidations;
 	}
-
-	private XAdESReferenceValidation createReferenceValidation(Reference reference) {
-		XAdESReferenceValidation refValidation = new XAdESReferenceValidation(reference);
-		refValidation.setType(DigestMatcherType.MANIFEST_ENTRY);
-		refValidation.setDigest(DSSXMLUtils.getReferenceDigest(reference));
-		refValidation.setTransformationNames(getTransformNames(reference.getElement()));
-		return refValidation;
-	}
 	
 	private List<String> getTransformNames(Element refNode) {
 		List<String> transformNames = new ArrayList<>();
-		NodeList nodeList = DomUtils.getNodeList(refNode, XMLDSigPath.TRANSFORMS_TRANSFORM_PATH);
+		NodeList nodeList = XPathUtils.getNodeList(refNode, XMLDSigPath.TRANSFORMS_TRANSFORM_PATH);
 		if (nodeList != null && nodeList.getLength() > 0) {
 			for (int ii = 0; ii < nodeList.getLength(); ii++) {
 				Element transformElement = (Element) nodeList.item(ii);

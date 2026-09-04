@@ -1,109 +1,111 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <DetailedReport ValidationTime="2018-02-09T07:03:45" xmlns="http://dss.esig.europa.eu/validation/detailed-report">
-    <Certificate Id="C-0E9B5C373AFEC1CED5723FCD9231F793BB330FFBF2B94BB8698301C90405B9BF" Title="Certificate Qualification">
-        <Constraint>
-            <Name Key="BBB_ACCEPT">Is the result of the Basic Building Block conclusive?</Name>
-            <Status>WARNING</Status>
-            <Warning Key="BBB_ACCEPT_ANS">The result of the Basic Building Block is not conclusive!</Warning>
-        </Constraint>
-        <Constraint Id="LOTL-5593FFFD1C67322CB1EDD3E26916E1487F630F7FA22644ADA5B90DA7F1C9E05E">
-            <Name Key="QUAL_TRUSTED_LIST_ACCEPT">Is the trusted list acceptable?</Name>
-            <Status>OK</Status>
-            <AdditionalInfo>Trusted List : https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml</AdditionalInfo>
-        </Constraint>
-        <Constraint Id="TL-C876A5D23654549B5B16B869E1368AFF6EB2E5ECD13F05C489E23F6A919A2164">
-            <Name Key="QUAL_TRUSTED_LIST_ACCEPT">Is the trusted list acceptable?</Name>
-            <Status>OK</Status>
-            <AdditionalInfo>Trusted List : https://www.nrca-ds.de/st/TSL-XML.xml</AdditionalInfo>
-        </Constraint>
-        <Conclusion>
-            <Indication>INDETERMINATE</Indication>
-            <Warnings Key="BBB_ACCEPT_ANS">The result of the Basic Building Block is not conclusive!</Warnings>
-        </Conclusion>
-        <ValidationCertificateQualification Id="C-0E9B5C373AFEC1CED5723FCD9231F793BB330FFBF2B94BB8698301C90405B9BF" DateTime="2011-11-17T13:17:27" ValidationTime="CERTIFICATE_ISSUANCE_TIME" CertificateQualification="QC for eSig with QSCD" Title="Certificate Qualification at certificate issuance time">
+    <Certificate Id="C-0E9B5C373AFEC1CED5723FCD9231F793BB330FFBF2B94BB8698301C90405B9BF">
+        <CertificateQualificationProcess Title="Certificate Qualification">
             <Constraint>
-                <Name Key="QUAL_HAS_CAQC">Is the certificate related to a CA/QC?</Name>
-                <Status>OK</Status>
+                <Name Key="BBB_ACCEPT">Is the result of the Basic Building Block conclusive?</Name>
+                <Status>WARNING</Status>
+                <Warning Key="BBB_ACCEPT_ANS">The result of the Basic Building Block is not conclusive!</Warning>
             </Constraint>
-            <Constraint>
-                <Name Key="QUAL_HAS_GRANTED">Is the certificate related to a trust service with a granted status?</Name>
+            <Constraint Id="LOTL-5593FFFD1C67322CB1EDD3E26916E1487F630F7FA22644ADA5B90DA7F1C9E05E">
+                <Name Key="QUAL_TRUSTED_LIST_ACCEPT">Is the trusted list acceptable?</Name>
                 <Status>OK</Status>
+                <AdditionalInfo>Trusted List : https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml</AdditionalInfo>
             </Constraint>
-            <Constraint>
-                <Name Key="QUAL_TL_SERV_CONS">Is the trust service consistent?</Name>
+            <Constraint Id="TL-C876A5D23654549B5B16B869E1368AFF6EB2E5ECD13F05C489E23F6A919A2164">
+                <Name Key="QUAL_TRUSTED_LIST_ACCEPT">Is the trusted list acceptable?</Name>
                 <Status>OK</Status>
-                <AdditionalInfo>Trust service name : D-TRUST Qualified CA 1 2008:PN</AdditionalInfo>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_HAS_CONSISTENT">Is the certificate related to a consistent trust service declaration?</Name>
-                <Status>OK</Status>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_HAS_CERT_TYPE_COVERAGE">Can the certificate type be issued by a found trust service?</Name>
-                <Status>OK</Status>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_IS_TRUST_CERT_MATCH_SERVICE">Does the trusted certificate match the trust service?</Name>
-                <Status>OK</Status>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_QC_AT_CC">Is the certificate qualified at issuance time?</Name>
-                <Status>OK</Status>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_FOR_SIGN_AT_CC">Is the certificate for eSig at issuance time?</Name>
-                <Status>OK</Status>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_QSCD_AT_CC">Does the private key reside in a QSCD at issuance time?</Name>
-                <Status>OK</Status>
+                <AdditionalInfo>Trusted List : https://www.nrca-ds.de/st/TSL-XML.xml</AdditionalInfo>
             </Constraint>
             <Conclusion>
-                <Indication>PASSED</Indication>
+                <Indication>INDETERMINATE</Indication>
+                <Warnings Key="BBB_ACCEPT_ANS">The result of the Basic Building Block is not conclusive!</Warnings>
             </Conclusion>
-        </ValidationCertificateQualification>
-        <ValidationCertificateQualification Id="C-0E9B5C373AFEC1CED5723FCD9231F793BB330FFBF2B94BB8698301C90405B9BF" DateTime="2018-02-09T07:03:45" ValidationTime="VALIDATION_TIME" CertificateQualification="QC for eSig with QSCD" Title="Certificate Qualification at validation time">
-            <Constraint>
-                <Name Key="QUAL_HAS_CAQC">Is the certificate related to a CA/QC?</Name>
-                <Status>OK</Status>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_HAS_GRANTED">Is the certificate related to a trust service with a granted status?</Name>
-                <Status>OK</Status>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_TL_SERV_CONS">Is the trust service consistent?</Name>
-                <Status>OK</Status>
-                <AdditionalInfo>Trust service name : D-TRUST Qualified CA 1 2008:PN</AdditionalInfo>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_HAS_CONSISTENT">Is the certificate related to a consistent trust service declaration?</Name>
-                <Status>OK</Status>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_HAS_CERT_TYPE_COVERAGE">Can the certificate type be issued by a found trust service?</Name>
-                <Status>OK</Status>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_IS_TRUST_CERT_MATCH_SERVICE">Does the trusted certificate match the trust service?</Name>
-                <Status>OK</Status>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_QC_AT_VT">Is the certificate qualified at validation time?</Name>
-                <Status>OK</Status>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_FOR_SIGN_AT_VT">Is the certificate for eSig at validation time?</Name>
-                <Status>OK</Status>
-            </Constraint>
-            <Constraint>
-                <Name Key="QUAL_QSCD_AT_VT">Does the private key reside in a QSCD at validation time?</Name>
-                <Status>OK</Status>
-            </Constraint>
-            <Conclusion>
-                <Indication>PASSED</Indication>
-            </Conclusion>
-        </ValidationCertificateQualification>
+            <ValidationCertificateQualification Id="C-0E9B5C373AFEC1CED5723FCD9231F793BB330FFBF2B94BB8698301C90405B9BF" DateTime="2011-11-17T13:17:27" ValidationTime="CERTIFICATE_ISSUANCE_TIME" CertificateQualification="QC for eSig with QSCD" Title="Certificate Qualification at certificate issuance time">
+                <Constraint>
+                    <Name Key="QUAL_HAS_CAQC">Is the certificate related to a CA/QC?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_HAS_GRANTED">Is the certificate related to a trust service with a granted status?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_TL_SERV_CONS">Is the trust service consistent?</Name>
+                    <Status>OK</Status>
+                    <AdditionalInfo>Trust service name : D-TRUST Qualified CA 1 2008:PN</AdditionalInfo>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_HAS_CONSISTENT">Is the certificate related to a consistent trust service declaration?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_HAS_CERT_TYPE_COVERAGE">Can the certificate type be issued by a found trust service?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_IS_TRUST_CERT_MATCH_SERVICE">Does the trusted certificate match the trust service?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_QC_AT_CC">Is the certificate qualified at issuance time?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_FOR_SIGN_AT_CC">Is the certificate for eSig at issuance time?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_QSCD_AT_CC">Does the private key reside in a QSCD at issuance time?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </ValidationCertificateQualification>
+            <ValidationCertificateQualification Id="C-0E9B5C373AFEC1CED5723FCD9231F793BB330FFBF2B94BB8698301C90405B9BF" DateTime="2018-02-09T07:03:45" ValidationTime="VALIDATION_TIME" CertificateQualification="QC for eSig with QSCD" Title="Certificate Qualification at validation time">
+                <Constraint>
+                    <Name Key="QUAL_HAS_CAQC">Is the certificate related to a CA/QC?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_HAS_GRANTED">Is the certificate related to a trust service with a granted status?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_TL_SERV_CONS">Is the trust service consistent?</Name>
+                    <Status>OK</Status>
+                    <AdditionalInfo>Trust service name : D-TRUST Qualified CA 1 2008:PN</AdditionalInfo>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_HAS_CONSISTENT">Is the certificate related to a consistent trust service declaration?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_HAS_CERT_TYPE_COVERAGE">Can the certificate type be issued by a found trust service?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_IS_TRUST_CERT_MATCH_SERVICE">Does the trusted certificate match the trust service?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_QC_AT_VT">Is the certificate qualified at validation time?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_FOR_SIGN_AT_VT">Is the certificate for eSig at validation time?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Constraint>
+                    <Name Key="QUAL_QSCD_AT_VT">Does the private key reside in a QSCD at validation time?</Name>
+                    <Status>OK</Status>
+                </Constraint>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </ValidationCertificateQualification>
+        </CertificateQualificationProcess>
     </Certificate>
     <BasicBuildingBlocks Id="C-0E9B5C373AFEC1CED5723FCD9231F793BB330FFBF2B94BB8698301C90405B9BF" Type="CERTIFICATE">
         <XCV Title="X509 Certificate Validation">

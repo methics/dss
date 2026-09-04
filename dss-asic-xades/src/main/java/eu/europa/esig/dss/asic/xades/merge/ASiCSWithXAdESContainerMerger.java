@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -173,14 +173,6 @@ public class ASiCSWithXAdESContainerMerger extends AbstractASiCWithXAdESContaine
         return result;
     }
 
-    private Set<String> getEvidenceRecordDocumentNameSet() {
-        Set<String> result = new HashSet<>();
-        for (ASiCContent asicContent : asicContents) {
-            result.addAll(DSSUtils.getDocumentNames(asicContent.getEvidenceRecordDocuments()));
-        }
-        return result;
-    }
-
     @Override
     protected void ensureSignaturesAllowMerge() {
         if (Arrays.stream(asicContents).filter(asicContent ->
@@ -195,8 +187,8 @@ public class ASiCSWithXAdESContainerMerger extends AbstractASiCWithXAdESContaine
     }
 
     private void mergeSignatureDocuments() {
-        List<XMLDocumentAnalyzer> documentValidators = getAllDocumentValidators();
-        List<AdvancedSignature> allSignatures = getAllSignatures(documentValidators);
+        List<XMLDocumentAnalyzer> documentAnalyzers = getAllDocumentAnalyzers();
+        List<AdvancedSignature> allSignatures = getAllSignatures(documentAnalyzers);
         if (Utils.isCollectionEmpty(allSignatures)) {
             return;
         }
@@ -210,28 +202,28 @@ public class ASiCSWithXAdESContainerMerger extends AbstractASiCWithXAdESContaine
         if (!checkNoCommonIdsBetweenSignatureValues(allSignatures)) {
             throw new IllegalInputException("Signature documents contain signatures with SignatureValue elements sharing the same ids!");
         }
-        assertSameRootElement(documentValidators);
+        assertSameRootElement(documentAnalyzers);
 
-        DSSDocument signaturesXml = getMergedSignaturesXml(documentValidators);
+        DSSDocument signaturesXml = getMergedSignaturesXml(documentAnalyzers);
         for (ASiCContent asicContent : asicContents) {
             asicContent.setSignatureDocuments(Collections.singletonList(signaturesXml));
         }
     }
 
-    private List<XMLDocumentAnalyzer> getAllDocumentValidators() {
-        List<XMLDocumentAnalyzer> validators = new ArrayList<>();
+    private List<XMLDocumentAnalyzer> getAllDocumentAnalyzers() {
+        List<XMLDocumentAnalyzer> analyzers = new ArrayList<>();
         for (ASiCContent asicContent : asicContents) {
             for (DSSDocument signatureDocument : asicContent.getSignatureDocuments()) {
-                validators.add(new XMLDocumentAnalyzer(signatureDocument));
+                analyzers.add(new XMLDocumentAnalyzer(signatureDocument));
             }
         }
-        return validators;
+        return analyzers;
     }
 
-    private List<AdvancedSignature> getAllSignatures(List<XMLDocumentAnalyzer> validators) {
+    private List<AdvancedSignature> getAllSignatures(List<XMLDocumentAnalyzer> analyzers) {
         List<AdvancedSignature> signatures = new ArrayList<>();
-        for (XMLDocumentAnalyzer validator : validators) {
-            signatures.addAll(validator.getSignatures());
+        for (XMLDocumentAnalyzer analyzer : analyzers) {
+            signatures.addAll(analyzer.getSignatures());
         }
         return signatures;
     }
@@ -295,10 +287,10 @@ public class ASiCSWithXAdESContainerMerger extends AbstractASiCWithXAdESContaine
         return false;
     }
 
-    private void assertSameRootElement(List<XMLDocumentAnalyzer> documentValidators) {
+    private void assertSameRootElement(List<XMLDocumentAnalyzer> documentAnalyzers) {
         Element rootElement = null;
-        for (XMLDocumentAnalyzer documentValidator : documentValidators) {
-            Element currentRootElement = documentValidator.getRootElement().getDocumentElement();
+        for (XMLDocumentAnalyzer documentAnalyzer : documentAnalyzers) {
+            Element currentRootElement = documentAnalyzer.getRootElement().getDocumentElement();
             if (rootElement == null) {
                 rootElement = currentRootElement;
             } else {
@@ -319,16 +311,16 @@ public class ASiCSWithXAdESContainerMerger extends AbstractASiCWithXAdESContaine
 
     }
 
-    private DSSDocument getMergedSignaturesXml(List<XMLDocumentAnalyzer> documentValidators) {
+    private DSSDocument getMergedSignaturesXml(List<XMLDocumentAnalyzer> documentAnalyzers) {
         Document document = null;
         Element documentElement = null;
 
-        for (XMLDocumentAnalyzer documentValidator : documentValidators) {
+        for (XMLDocumentAnalyzer documentAnalyzer : documentAnalyzers) {
             if (document == null) {
-                document = documentValidator.getRootElement();
+                document = documentAnalyzer.getRootElement();
                 documentElement = document.getDocumentElement();
             } else {
-                NodeList childNodesToAdd = documentValidator.getRootElement().getDocumentElement().getChildNodes();
+                NodeList childNodesToAdd = documentAnalyzer.getRootElement().getDocumentElement().getChildNodes();
                 for (int i = 0; i < childNodesToAdd.getLength(); i++) {
                     Node node = childNodesToAdd.item(i);
                     Node adopted = document.importNode(node, true);

@@ -4,7 +4,7 @@
     <parent>
         <artifactId>sd-dss</artifactId>
         <groupId>eu.europa.ec.joinup.sd-dss</groupId>
-        <version>6.1</version>
+        <version>6.5</version>
     </parent>
 
     <artifactId>specs-xmlers</artifactId>
@@ -98,6 +98,28 @@
                             <sources>
                                 <source>${project.build.directory}/generated-sources/xjc/</source>
                             </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>fix-jaxb-javadoc</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <replaceregexp match="\{@link byte\[\]\}" replace="{@code byte[]}" flags="g">
+                                    <fileset dir="${project.build.directory}/generated-sources/xjc">
+                                        <include name="**/*.java" />
+                                    </fileset>
+                                </replaceregexp>
+                            </target>
                         </configuration>
                     </execution>
                 </executions>

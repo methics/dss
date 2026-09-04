@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -40,11 +40,12 @@ import org.bouncycastle.cms.CMSSignedData;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,7 +59,7 @@ public abstract class PAdESUtilsTest {
 
         DSSDocument signedDocument = PAdESUtils.replaceSignature(documentToBeSigned,
                 DSSASN1Utils.getDEREncoded(Utils.fromHex(hexEncodedCMSSignedData)), new InMemoryResourcesHandlerBuilder());
-        assertTrue(signedDocument instanceof InMemoryDocument);
+        assertInstanceOf(InMemoryDocument.class, signedDocument);
 
         PDFDocumentAnalyzer analyzer = new PDFDocumentAnalyzer(signedDocument);
         analyzer.setCertificateVerifier(new CommonCertificateVerifier());
@@ -80,7 +81,7 @@ public abstract class PAdESUtilsTest {
 
         DSSDocument signedDocument = PAdESUtils.replaceSignature(documentToBeSigned,
                 DSSASN1Utils.getDEREncoded(Utils.fromHex(hexEncodedCMSSignedData)),tempFileResourcesHandlerBuilder);
-        assertTrue(signedDocument instanceof FileDocument);
+        FileDocument fileDocument = assertInstanceOf(FileDocument.class, signedDocument);
 
         PDFDocumentAnalyzer validator = new PDFDocumentAnalyzer(signedDocument);
         validator.setCertificateVerifier(new CommonCertificateVerifier());
@@ -88,11 +89,19 @@ public abstract class PAdESUtilsTest {
         PDFDocumentAnalyzer analyzer = new PDFDocumentAnalyzer(signedDocument);
         analyzer.setCertificateVerifier(new CommonCertificateVerifier());
 
+        analyzer = new PDFDocumentAnalyzer(signedDocument);
+        analyzer.setCertificateVerifier(new CommonCertificateVerifier());
+
         assertEquals(1, analyzer.getSignatures().size());
 
         AdvancedSignature signature = analyzer.getSignatures().get(0);
         assertTrue(signature.getSignatureCryptographicVerification().isSignatureIntact());
         assertTrue(signature.getSignatureCryptographicVerification().isSignatureValid());
+
+        File file = fileDocument.getFile();
+        assertTrue(file.exists());
+        assertTrue(file.delete());
+        assertFalse(file.exists());
     }
 
     @Test
@@ -130,12 +139,12 @@ public abstract class PAdESUtilsTest {
 
         DSSDocument signedDocument = PAdESUtils.replaceSignature(documentToBeSigned,
                 DSSASN1Utils.getDEREncoded(Utils.fromHex(hexEncodedCMSSignedData)), null);
-        assertTrue(signedDocument instanceof InMemoryDocument);
-
-        PDFDocumentAnalyzer validator = new PDFDocumentAnalyzer(signedDocument);
-        validator.setCertificateVerifier(new CommonCertificateVerifier());
+        assertInstanceOf(InMemoryDocument.class, signedDocument);
 
         PDFDocumentAnalyzer analyzer = new PDFDocumentAnalyzer(signedDocument);
+        analyzer.setCertificateVerifier(new CommonCertificateVerifier());
+
+        analyzer = new PDFDocumentAnalyzer(signedDocument);
         analyzer.setCertificateVerifier(new CommonCertificateVerifier());
 
         assertEquals(1, analyzer.getSignatures().size());
@@ -191,7 +200,7 @@ public abstract class PAdESUtilsTest {
     }
 
     @Test
-    void getSignatureValueTest() throws IOException  {
+    void getSignatureValueTest()  {
         DSSDocument document = new InMemoryDocument(getClass().getResourceAsStream("/validation/PAdES-LT.pdf"));
         ByteRange byteRange = new ByteRange(new int[]{0, 92856, 111802, 50376});
 

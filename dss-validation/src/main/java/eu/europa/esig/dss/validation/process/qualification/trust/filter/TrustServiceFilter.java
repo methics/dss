@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,6 +21,7 @@
 package eu.europa.esig.dss.validation.process.qualification.trust.filter;
 
 import eu.europa.esig.dss.diagnostic.TrustServiceWrapper;
+import eu.europa.esig.dss.diagnostic.TrustedSourceServiceWrapper;
 
 import java.util.List;
 
@@ -31,10 +32,10 @@ import java.util.List;
 public interface TrustServiceFilter {
 
 	/**
-	 * Filters a list of {@code TrustServiceWrapper}s
+	 * Filters a list of {@code TrustedSourceServiceWrapper}s
 	 *
-	 * @param trustServices a list of {@link TrustServiceWrapper}s to filter
-	 * @return filtered list of {@link TrustServiceWrapper}s
+	 * @param trustServices a list of {@link TrustedSourceServiceWrapper}s to filter
+	 * @return filtered list of {@link TrustedSourceServiceWrapper}s
 	 */
 	List<TrustServiceWrapper> filter(List<TrustServiceWrapper> trustServices);
 

@@ -165,6 +165,16 @@
                 <Status>OK</Status>
                 <AdditionalInfo>Signature algorithm RSA with SHA256 with key size 2048 at validation time : 2021-07-09 10:10</AdditionalInfo>
             </Constraint>
+            <Conclusion>
+                <Indication>PASSED</Indication>
+            </Conclusion>
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2021-07-09T10:10:12Z">
+            <Constraint>
+                <Name Key="ACCM">Are cryptographic constraints met for the time-stamp signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Signature algorithm RSA with SHA256 with key size 2048 at validation time : 2021-07-09 10:10</AdditionalInfo>
+            </Constraint>
             <Constraint>
                 <Name Key="ACCM">Are cryptographic constraints met for the message imprint?</Name>
                 <Status>OK</Status>
@@ -173,17 +183,18 @@
             <Conclusion>
                 <Indication>PASSED</Indication>
             </Conclusion>
-            <CryptographicValidation secure="true">
+            <SignatureCryptographicValidation TokenId="T-DBCE6DC6BFDD5713D9281FE79CAB93927961746BC0D2F13B3F4DE252DF494684">
                 <Algorithm>
                     <Name>RSA with SHA256</Name>
                     <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</Uri>
                     <KeyLength>2048</KeyLength>
                 </Algorithm>
                 <NotAfter>2022-12-31T23:00:00Z</NotAfter>
-                <ValidationTime>2021-07-09T10:10:12Z</ValidationTime>
-                <ConcernedMaterial>T-DBCE6DC6BFDD5713D9281FE79CAB93927961746BC0D2F13B3F4DE252DF494684</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="C-C28D73354E868E7E672D13A872658539C579E820059446AC04EB002DCCCB02A7">
                 <Source>TIMESTAMP</Source>

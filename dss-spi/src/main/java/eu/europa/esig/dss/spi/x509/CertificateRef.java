@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -25,6 +25,7 @@ import eu.europa.esig.dss.model.identifier.Identifier;
 import eu.europa.esig.dss.model.identifier.IdentifierBasedObject;
 
 import java.io.Serializable;
+import java.security.PublicKey;
 import java.util.Objects;
 
 /**
@@ -44,8 +45,14 @@ public class CertificateRef implements IdentifierBasedObject, Serializable {
 	/** ResponderId in case of OCSP response */
 	private ResponderId responderId;
 
+	/** Key identifier */
+	private String kid;
+
 	/** Identifies the location URI of the X.509 public key certificate */
 	private String x509Url;
+
+	/** Public key of the signer's certificate */
+	private PublicKey publicKey;
 	
 	/** An unique identifier of the reference */
 	private Identifier identifier;
@@ -112,6 +119,24 @@ public class CertificateRef implements IdentifierBasedObject, Serializable {
 	}
 	
 	/**
+	 * Gets a key identifier (KID)
+	 *
+	 * @return {@link String}
+	 */
+	public String getKid() {
+		return kid;
+	}
+
+	/**
+	 * Sets a key identifier (KID)
+	 *
+	 * @param kid {@link String}
+	 */
+	public void setKid(String kid) {
+		this.kid = kid;
+	}
+
+	/**
 	 * Gets the X.509 Public Key Certificate location URL
 	 *
 	 * @return {@link String}
@@ -127,6 +152,24 @@ public class CertificateRef implements IdentifierBasedObject, Serializable {
 	 */
 	public void setX509Url(String x509Url) {
 		this.x509Url = x509Url;
+	}
+
+	/**
+	 * Gets the public key of the signer certificate
+	 *
+	 * @return {@link PublicKey}
+	 */
+	public PublicKey getPublicKey() {
+		return publicKey;
+	}
+
+	/**
+	 * Sets the public key of the signer's certificate
+	 *
+	 * @param publicKey {@link PublicKey}
+	 */
+	public void setPublicKey(PublicKey publicKey) {
+		this.publicKey = publicKey;
 	}
 
 	/**
@@ -153,8 +196,15 @@ public class CertificateRef implements IdentifierBasedObject, Serializable {
 
 	@Override
 	public String toString() {
-		return "CertificateRef [certDigest=" + certDigest + ", signerIdentifier=" + signerIdentifier +
-				", responderId=" + responderId + ", x509Uri='" + x509Url + "\']";
+		return "CertificateRef [" +
+				"certDigest=" + certDigest +
+				", signerIdentifier=" + signerIdentifier +
+				", responderId=" + responderId +
+				", kid='" + kid + '\'' +
+				", x509Url='" + x509Url + '\'' +
+				", publicKey=" + publicKey +
+				", identifier=" + identifier +
+				']';
 	}
 	
 	@Override
@@ -168,7 +218,9 @@ public class CertificateRef implements IdentifierBasedObject, Serializable {
 		if (!Objects.equals(signerIdentifier, that.signerIdentifier))
 			return false;
 		if (!Objects.equals(responderId, that.responderId)) return false;
-		return Objects.equals(x509Url, that.x509Url);
+		if (!Objects.equals(kid, that.kid)) return false;
+		if (!Objects.equals(x509Url, that.x509Url)) return false;
+		return Objects.equals(publicKey, that.publicKey);
 	}
 
 	@Override
@@ -176,7 +228,9 @@ public class CertificateRef implements IdentifierBasedObject, Serializable {
 		int result = certDigest != null ? certDigest.hashCode() : 0;
 		result = 31 * result + (signerIdentifier != null ? signerIdentifier.hashCode() : 0);
 		result = 31 * result + (responderId != null ? responderId.hashCode() : 0);
+		result = 31 * result + (kid != null ? kid.hashCode() : 0);
 		result = 31 * result + (x509Url != null ? x509Url.hashCode() : 0);
+		result = 31 * result + (publicKey != null ? publicKey.hashCode() : 0);
 		return result;
 	}
 

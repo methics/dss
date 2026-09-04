@@ -153,6 +153,17 @@
                 </xs:complexType>
             </xs:element>
 
+            <xs:element name="subjectAlternativeNames" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Contains a list of subject alternative names to be defined within the corresponding certificate's extension.</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="generalName" type="GeneralName" minOccurs="0" maxOccurs="unbounded" />
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+
             <xs:element name="ca" type="emptyType" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>Defines whether the certificate is a CA certificate. Adds BasicConstraints.cA extension.</xs:documentation>
@@ -205,13 +216,53 @@
 
             <xs:element name="qcCClegislation" minOccurs="0">
                 <xs:annotation>
-                    <xs:documentation>List of QcCClegoislation country codes to be added within a certificate. NOTE: the corresponding QcStatement will be added automatically, when this value is defined.</xs:documentation>
+                    <xs:documentation>List of QcCClegislation country codes to be added within a certificate. NOTE: the corresponding QcStatement will be added automatically, when this value is defined.</xs:documentation>
                 </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="CountryName" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                        <xs:element name="countryName" type="xs:string" minOccurs="0" maxOccurs="unbounded">
                             <xs:annotation>
                                 <xs:documentation>Two-letter country code identifier.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+
+            <xs:element name="qcQSCDlegislation" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>List of QcQSCDlegislation country codes to be added within a certificate.</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="countryName" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>Two-letter country code identifier.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+
+            <xs:element name="qcPSB" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Defines a Public Sector Body EAA Provider qualified certificate attributes (TS 119 412-6).</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="countryName" type="xs:string" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>Two-letter country code identifier.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="authSourceIdentification" type="xs:string" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>This field is for the unique identification of authentic source.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="legislationIdentification" type="xs:string" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>This field contains the identification for the law under which the PSBEAA is established responsible for the authentic source.</xs:documentation>
                             </xs:annotation>
                         </xs:element>
                     </xs:sequence>
@@ -356,5 +407,20 @@
             <xs:enumeration value="aACompromise"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:complexType name="GeneralName">
+        <xs:annotation>
+            <xs:documentation>Contains a general name as defined in RFC 5280.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="type" type="xs:int">
+                    <xs:annotation>
+                        <xs:documentation>The type of GeneralName content.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
 
 </xs:schema>

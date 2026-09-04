@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -132,7 +132,7 @@ public class OID {
 	/**
 	 * etsi-psd2-qcStatement QC-STATEMENT ::= {SYNTAX PSD2QcType IDENTIFIED BY
 	 * id-etsi-psd2-qcStatement }
-	 * 
+	 * <p>
 	 * id-etsi-psd2-qcStatement OBJECT IDENTIFIER ::={itu-t(0)
 	 * identified-organization(4) etsi(0) psd2(19495) qcstatement(2) }
 	 */
@@ -145,8 +145,42 @@ public class OID {
 	public static final ASN1ObjectIdentifier id_etsi_qcs_QcCClegislation = new ASN1ObjectIdentifier("0.4.0.1862.1.7");
 
 	/**
+	 * esi4-qcStatement-8 QC-STATEMENT ::= { SYNTAX QcIdentMethod IDENTIFIED BY id-etsi-qcs-QcIdentMethod }
+	 * id-etsi-qcs-QcIdentMethod OBJECT IDENTIFIER ::= { id-etsi-qcs 8 }
+	 */
+	public static final ASN1ObjectIdentifier id_etsi_qcs_QcIdentMethod = new ASN1ObjectIdentifier("0.4.0.1862.1.8");
+
+	/**
+	 * esi4-qcStatement-9 QC-STATEMENT ::= { SYNTAX QcQSCDlegislation IDENTIFIED BY id-etsi-qcs-QcQCSDlegislation }
+	 * id-etsi-qcs-QcQSCDlegislation OBJECT IDENTIFIER ::= { id-etsi-qcs 9 }
+	 */
+	public static final ASN1ObjectIdentifier id_etsi_qcs_QcQSCDlegislation = new ASN1ObjectIdentifier("0.4.0.1862.1.9");
+
+	// --- ETSI TS 119 412-6 V1.4.1
+
+	/**
+	 * id-etsi-qct-pid OBJECT IDENTIFIER ::= { id-etsi-eidas2-qct-extensions 1 }
+	 *  -- Certificate for PID provider sign/seal certificate
+	 */
+	public static final ASN1ObjectIdentifier id_etsi_qct_pid = new ASN1ObjectIdentifier("0.4.0.194126.1.1");
+
+	/**
+	 * id-etsi-qct-wal OBJECT IDENTIFIER ::= { id-etsi-eidas2-qct-extensions 2 }
+	 *  -- Certificate for Wallet provider sign/seal certificate
+	 */
+	public static final ASN1ObjectIdentifier id_etsi_qct_wal = new ASN1ObjectIdentifier("0.4.0.194126.1.2");
+
+	/**
+	 * -- PSB certificate mandatory data
+	 * id-etsi-qcs-QcPSB   OBJECT IDENTIFIER ::= { id-etsi-eidas2-qct-extensions 3 }
+	 *   esi4-qcStatement-10 QC-STATEMENT ::= { SYNTAX QcPSB IDENTIFIED
+	 *   BY id-etsi-qcs-QcPSB }
+	 */
+	public static final ASN1ObjectIdentifier id_etsi_qcs_QcPSB = new ASN1ObjectIdentifier("0.4.0.194126.1.3");
+
+	/**
 	 * EN 319 412-1 "5.2.2 Validity Assured - Short Term"
-	 *
+	 * <p>
 	 * id-etsi-ext OBJECT IDENTIFIER ::= { itu-t(0) identified-organization(4) etsi(0) id-cert-profile(194121) 2 }
 	 * id-etsi-ext-valassured-ST-certs OBJECT IDENTIFIER ::= { id-etsi-ext 1 }
 	 */

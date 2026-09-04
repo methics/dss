@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,6 +21,7 @@
 package eu.europa.esig.dss.model.x509.extension;
 
 import eu.europa.esig.dss.enumerations.CertificateExtensionEnum;
+import eu.europa.esig.dss.enumerations.QCIdentMethod;
 import eu.europa.esig.dss.enumerations.QCType;
 import eu.europa.esig.dss.enumerations.SemanticsIdentifier;
 
@@ -73,7 +74,7 @@ public class QcStatements extends CertificateExtension {
     /**
      * esi4-qcStatement-7 QC-STATEMENT ::= { SYNTAX QcCClegislation IDENTIFIED BY id-etsi-qcsQcCClegislation }
      * id-etsi-qcs-QcCClegislation OBJECT IDENTIFIER ::= { id-etsi-qcs 7 }
-     *
+     * <p>
      * QcCClegislation ::= SEQUENCE OF CountryName
      * CountryName ::= PrintableString (SIZE (2)) (CONSTRAINED BY { -- ISO 3166-1 [6] alpha-2 codes only -- })
      */
@@ -90,6 +91,31 @@ public class QcStatements extends CertificateExtension {
      * id-etsi-psd2-qcStatement OBJECT IDENTIFIER ::= { itu-t(0) identified-organization(4) etsi(0) psd2(19495) qcstatement(2) }
      */
     private PSD2QcType psd2QcType;
+
+    /**
+     *  esi4-qcStatement-8 QC-STATEMENT ::= { SYNTAX QcIdentMethod IDENTIFIED
+     *  BY id-etsi-qcs-QcIdentMethod }
+     *  QcIdentMethod ::= SEQUENCE SIZE (1) OF OBJECT IDENTIFIER ( id-etsi-qct-eIDAS1-ab |
+     *  id-etsi-qct-eIDAS1-cd | id-etsi-qct-eIDAS2-acd | id-etsi-qct-eIDAS2-b | ...)
+     * id-etsi-qcs-QcIdentMethod OBJECT IDENTIFIER ::= { id-etsi-qcs 8 }
+     */
+    private QCIdentMethod qcIdentMethod;
+
+    /**
+     * esi4-qcStatement-9 QC-STATEMENT ::= { SYNTAX QcQSCDlegislation IDENTIFIED BY id-etsi-qcs-QcQCSDlegislation }
+     * <p>
+     * id-etsi-qcs-QcQSCDlegislation OBJECT IDENTIFIER ::= { id-etsi-qcs 9 }
+     * QcQSCDlegislation ::= SEQUENCE SIZE (1..MAX) OF CountryName
+     * CountryName ::= PrintableString (SIZE (2)) (CONSTRAINED BY { -- ISO 3166-1 [6] alpha-2 codes only -- })
+     */
+    private List<String> qcQSCDLegislationCountryCodes;
+
+    /**
+     *  -- PSB certificate mandatory data
+     *  esi4-qcStatement-10 QC-STATEMENT ::= { SYNTAX QcPSB IDENTIFIED
+     *  BY id-etsi-qcs-QcPSB }
+     */
+    private QCPSB qcPSB;
 
     /**
      * This list contains OIDs defined in QcStatements, which are not supported by the current implementation
@@ -263,6 +289,60 @@ public class QcStatements extends CertificateExtension {
      */
     public void setPsd2QcType(PSD2QcType psd2QcType) {
         this.psd2QcType = psd2QcType;
+    }
+
+    /**
+     * Gets the qc-identification-method
+     *
+     * @return {@link QCIdentMethod}
+     */
+    public QCIdentMethod getQcIdentMethod() {
+        return qcIdentMethod;
+    }
+
+    /**
+     * Sets the qc-identification-method
+     *
+     * @param qcIdentMethod {@link QCIdentMethod}
+     */
+    public void setQcIdentMethod(QCIdentMethod qcIdentMethod) {
+        this.qcIdentMethod = qcIdentMethod;
+    }
+
+    /**
+     * Gets the qc-qscd-legislation-country-codes
+     *
+     * @return a list of {@link String}s
+     */
+    public List<String> getQcQSCDLegislationCountryCodes() {
+        return qcQSCDLegislationCountryCodes;
+    }
+
+    /**
+     * Sets the qc-qscd-legislation-country-codes
+     *
+     * @param qcQSCDLegislationCountryCodes a list of {@link String}s
+     */
+    public void setQcQSCDLegislationCountryCodes(List<String> qcQSCDLegislationCountryCodes) {
+        this.qcQSCDLegislationCountryCodes = qcQSCDLegislationCountryCodes;
+    }
+
+    /**
+     * Gets information for a Public Sector Body's Electronic Attestation of Attributes (PSBEAA) provider certificate
+     *
+     * @return {@link QCPSB}
+     */
+    public QCPSB getQcPSB() {
+        return qcPSB;
+    }
+
+    /**
+     * Sets information for a Public Sector Body's Electronic Attestation of Attributes (PSBEAA) provider certificate
+     *
+     * @param qcPSB {@link QCPSB}
+     */
+    public void setQcPSB(QCPSB qcPSB) {
+        this.qcPSB = qcPSB;
     }
 
     /**

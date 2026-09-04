@@ -296,17 +296,28 @@
             <Conclusion>
                 <Indication>PASSED</Indication>
             </Conclusion>
-            <CryptographicValidation secure="true">
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2020-02-10T06:53:57">
+            <Constraint>
+                <Name Key="ARCCM">Are cryptographic constraints met for the revocation data's signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Validation time : 2020-02-10 06:53 for token with ID : [R-54A348E8CB0461CB2A672B9FEE07605AC6CE8AAA6070A23A2E3F30A2A72CC652]</AdditionalInfo>
+            </Constraint>
+            <Conclusion>
+                <Indication>PASSED</Indication>
+            </Conclusion>
+            <SignatureCryptographicValidation TokenId="R-54A348E8CB0461CB2A672B9FEE07605AC6CE8AAA6070A23A2E3F30A2A72CC652">
                 <Algorithm>
                     <Name>RSA with SHA256</Name>
                     <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</Uri>
                     <KeyLength>4096</KeyLength>
                 </Algorithm>
                 <NotAfter>2025-12-31T23:00:00</NotAfter>
-                <ValidationTime>2020-02-10T06:53:57</ValidationTime>
-                <ConcernedMaterial>R-54A348E8CB0461CB2A672B9FEE07605AC6CE8AAA6070A23A2E3F30A2A72CC652</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="C-C2F76882EA9FB4A81C4B286D5A09E44BB10D4B36572DAA7EAC1E854B0E0DA271">
                 <Source>TRUSTED_LIST</Source>
@@ -485,17 +496,28 @@
             <Conclusion>
                 <Indication>PASSED</Indication>
             </Conclusion>
-            <CryptographicValidation secure="true">
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2020-02-10T06:53:57">
+            <Constraint>
+                <Name Key="ARCCM">Are cryptographic constraints met for the revocation data's signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Validation time : 2020-02-10 06:53 for token with ID : [R-D617BFD380A606FA144B7207257891B5516E8FE2A155A65B1E466656C604E61C]</AdditionalInfo>
+            </Constraint>
+            <Conclusion>
+                <Indication>PASSED</Indication>
+            </Conclusion>
+            <SignatureCryptographicValidation TokenId="R-D617BFD380A606FA144B7207257891B5516E8FE2A155A65B1E466656C604E61C">
                 <Algorithm>
                     <Name>RSA with SHA256</Name>
                     <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</Uri>
-                    <KeyLength>2048</KeyLength>
+                    <KeyLength>4096</KeyLength>
                 </Algorithm>
-                <NotAfter>2022-12-31T23:00:00</NotAfter>
-                <ValidationTime>2020-02-10T06:53:57</ValidationTime>
-                <ConcernedMaterial>R-D617BFD380A606FA144B7207257891B5516E8FE2A155A65B1E466656C604E61C</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <NotAfter>2025-12-31T23:00:00</NotAfter>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="C-D2D0BDD02645B9AE9FD95EF266A19A73E9D243C7CD8D9F8FF35ECD96A5D9A54A">
                 <Source>OCSP_RESPONSE</Source>
@@ -566,17 +588,28 @@
             <Conclusion>
                 <Indication>PASSED</Indication>
             </Conclusion>
-            <CryptographicValidation secure="true">
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2020-02-10T06:53:57">
+            <Constraint>
+                <Name Key="ARCCM">Are cryptographic constraints met for the revocation data's signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Validation time : 2020-02-10 06:53 for token with ID : [R-C6107EDB0D55A32E70246643933113552E59120A3B073C72D159CA5D1BF257C0]</AdditionalInfo>
+            </Constraint>
+            <Conclusion>
+                <Indication>PASSED</Indication>
+            </Conclusion>
+            <SignatureCryptographicValidation TokenId="R-C6107EDB0D55A32E70246643933113552E59120A3B073C72D159CA5D1BF257C0">
                 <Algorithm>
                     <Name>RSA with SHA256</Name>
                     <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</Uri>
                     <KeyLength>4096</KeyLength>
                 </Algorithm>
                 <NotAfter>2025-12-31T23:00:00</NotAfter>
-                <ValidationTime>2020-02-10T06:53:57</ValidationTime>
-                <ConcernedMaterial>R-C6107EDB0D55A32E70246643933113552E59120A3B073C72D159CA5D1BF257C0</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="C-BED0F19ED46D94900D2A9FCD7C6F660B61FF7588D8B71CF8F279D5FAA3021CCF">
                 <Source>TRUSTED_LIST</Source>
@@ -774,17 +807,28 @@
             <Conclusion>
                 <Indication>PASSED</Indication>
             </Conclusion>
-            <CryptographicValidation secure="true">
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2020-02-10T06:53:57">
+            <Constraint>
+                <Name Key="ARCCM">Are cryptographic constraints met for the timestamp's signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Validation time : 2020-02-10 06:53 for token with ID : [T-E70F7C745B498A2208A0096422489744EEAEC0F30FE781A6DC6F3E96467EDEE2]</AdditionalInfo>
+            </Constraint>
+            <Conclusion>
+                <Indication>PASSED</Indication>
+            </Conclusion>
+            <SignatureCryptographicValidation TokenId="T-E70F7C745B498A2208A0096422489744EEAEC0F30FE781A6DC6F3E96467EDEE2">
                 <Algorithm>
                     <Name>RSA with SHA256</Name>
                     <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</Uri>
                     <KeyLength>4096</KeyLength>
                 </Algorithm>
                 <NotAfter>2025-12-31T23:00:00</NotAfter>
-                <ValidationTime>2020-02-10T06:53:57</ValidationTime>
-                <ConcernedMaterial>T-E70F7C745B498A2208A0096422489744EEAEC0F30FE781A6DC6F3E96467EDEE2</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="C-FDCEA85C2138FFF0E1E3B5B9EACD8BCB7F30A806EFE5977961082EBDBE4167C6">
                 <Source>TIMESTAMP</Source>
@@ -1090,17 +1134,28 @@
             <Conclusion>
                 <Indication>PASSED</Indication>
             </Conclusion>
-            <CryptographicValidation secure="true">
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2020-02-10T06:53:57">
+            <Constraint>
+                <Name Key="ARCCM">Are cryptographic constraints met for the timestamp's signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Validation time : 2020-02-10 06:53 for token with ID : [S-3933842D6213C62CF3BE126A56FCF3A9EFFC24D93FEA04B66D6DA5BDEC550703]</AdditionalInfo>
+            </Constraint>
+            <Conclusion>
+                <Indication>PASSED</Indication>
+            </Conclusion>
+            <SignatureCryptographicValidation TokenId="S-3933842D6213C62CF3BE126A56FCF3A9EFFC24D93FEA04B66D6DA5BDEC550703">
                 <Algorithm>
                     <Name>RSA with SHA256</Name>
                     <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</Uri>
                     <KeyLength>2048</KeyLength>
                 </Algorithm>
                 <NotAfter>2022-12-31T23:00:00</NotAfter>
-                <ValidationTime>2020-02-10T06:53:57</ValidationTime>
-                <ConcernedMaterial>S-3933842D6213C62CF3BE126A56FCF3A9EFFC24D93FEA04B66D6DA5BDEC550703</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="C-D9C2BCB81A49ED296437A5649B6C35440AFA261DF6C2FCE66C19A1F89C806B48">
                 <Source>SIGNATURE</Source>

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -26,9 +26,9 @@ import eu.europa.esig.dss.enumerations.Context;
 import eu.europa.esig.dss.enumerations.SignaturePolicyType;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
-import eu.europa.esig.dss.policy.ValidationPolicy;
-import eu.europa.esig.dss.policy.jaxb.LevelConstraint;
-import eu.europa.esig.dss.policy.jaxb.MultiValuesConstraint;
+import eu.europa.esig.dss.model.policy.LevelRule;
+import eu.europa.esig.dss.model.policy.MultiValuesRule;
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
 import eu.europa.esig.dss.validation.process.Chain;
 import eu.europa.esig.dss.validation.process.ChainItem;
 import eu.europa.esig.dss.validation.process.bbb.vci.checks.SignaturePolicyHashValidCheck;
@@ -103,27 +103,27 @@ public class ValidationContextInitialization extends Chain<XmlVCI> {
 	}
 
 	private ChainItem<XmlVCI> signaturePolicyIdentifier() {
-		MultiValuesConstraint signaturePolicyConstraint = validationPolicy.getSignaturePolicyConstraint(context);
+		MultiValuesRule signaturePolicyConstraint = validationPolicy.getSignaturePolicyConstraint(context);
 		return new SignaturePolicyIdentifierCheck(i18nProvider, result, signature, signaturePolicyConstraint);
 	}
 
 	private ChainItem<XmlVCI> signaturePolicyIdentified() {
-		LevelConstraint constraint = validationPolicy.getSignaturePolicyIdentifiedConstraint(context);
+		LevelRule constraint = validationPolicy.getSignaturePolicyIdentifiedConstraint(context);
 		return new SignaturePolicyIdentifiedCheck(i18nProvider, result, signature, constraint);
 	}
 
 	private ChainItem<XmlVCI> signaturePolicyStorePresent() {
-		LevelConstraint constraint = validationPolicy.getSignaturePolicyStorePresentConstraint(context);
+		LevelRule constraint = validationPolicy.getSignaturePolicyStorePresentConstraint(context);
 		return new SignaturePolicyStoreCheck(i18nProvider, result, signature, constraint);
 	}
 
 	private ChainItem<XmlVCI> signaturePolicyHashValid() {
-		LevelConstraint constraint = validationPolicy.getSignaturePolicyPolicyHashValid(context);
+		LevelRule constraint = validationPolicy.getSignaturePolicyPolicyHashValid(context);
 		return new SignaturePolicyHashValidCheck(i18nProvider, result, signature, constraint);
 	}
 
 	private ChainItem<XmlVCI> signaturePolicyZeroHash() {
-		return new SignaturePolicyZeroHashCheck(i18nProvider, result, signature, getWarnLevelConstraint());
+		return new SignaturePolicyZeroHashCheck(i18nProvider, result, signature, getWarnLevelRule());
 	}
 
 }

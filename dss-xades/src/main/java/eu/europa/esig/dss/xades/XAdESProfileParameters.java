@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,10 +21,11 @@
 package eu.europa.esig.dss.xades;
 
 import eu.europa.esig.dss.signature.ProfileParameters;
-import eu.europa.esig.dss.signature.SigningOperation;
+import eu.europa.esig.dss.enumerations.SigningOperation;
 import eu.europa.esig.dss.xades.reference.DSSReference;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This class is used to accelerate signature creation process for XAdES.
@@ -37,7 +38,7 @@ public class XAdESProfileParameters extends ProfileParameters {
 	/**
 	 * The XAdES creation profile
 	 */
-	private SignatureProfile profile;
+	private XAdESSignatureProfile profile;
 
 	/**
 	 * The builder used to create the signature structure.
@@ -66,7 +67,7 @@ public class XAdESProfileParameters extends ProfileParameters {
 	 *
 	 * @return the SignatureProfile
 	 */
-	public SignatureProfile getProfile() {
+	public XAdESSignatureProfile getProfile() {
 		return profile;
 	}
 
@@ -74,9 +75,9 @@ public class XAdESProfileParameters extends ProfileParameters {
 	 * Sets the current Profile used to generate the signature or its extension
 	 * 
 	 * @param profile
-	 *            the SignatureProfile
+	 *            the {@link XAdESSignatureProfile}
 	 */
-	public void setProfile(SignatureProfile profile) {
+	public void setProfile(XAdESSignatureProfile profile) {
 		this.profile = profile;
 	}
 
@@ -131,6 +132,29 @@ public class XAdESProfileParameters extends ProfileParameters {
 	 */
 	public void setReferences(List<DSSReference> references) {
 		this.references = references;
+	}
+
+	@Override
+	public boolean equals(Object object) {
+		if (this == object) return true;
+		if (object == null || getClass() != object.getClass()) return false;
+		if (!super.equals(object)) return false;
+
+		XAdESProfileParameters that = (XAdESProfileParameters) object;
+		return Objects.equals(profile, that.profile)
+				&& Objects.equals(builder, that.builder)
+				&& operationKind == that.operationKind
+				&& Objects.equals(references, that.references);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = super.hashCode();
+		result = 31 * result + Objects.hashCode(profile);
+		result = 31 * result + Objects.hashCode(builder);
+		result = 31 * result + Objects.hashCode(operationKind);
+		result = 31 * result + Objects.hashCode(references);
+		return result;
 	}
 
 }

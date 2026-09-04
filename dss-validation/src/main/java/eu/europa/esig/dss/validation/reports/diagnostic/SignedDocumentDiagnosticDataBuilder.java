@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -272,10 +272,12 @@ public class SignedDocumentDiagnosticDataBuilder extends DiagnosticDataBuilder {
 	 */
 	@Override
 	public XmlDiagnosticData build() {
-		Objects.requireNonNull(signedDocument, "signedDocument shall be provided! Use 'document()' method.");
+		assertConfigurationValid();
 
 		XmlDiagnosticData diagnosticData = super.build(); // fill certificates and revocation data
-		diagnosticData.setDocumentName(removeSpecialCharsForXml(signedDocument.getName()));
+		if (signedDocument != null) {
+			diagnosticData.setDocumentName(removeSpecialCharsForXml(signedDocument.getName()));
+		}
 
 		// collect original signer documents
 		Collection<XmlSignerData> xmlSignerData = buildXmlSignerDataList(signatures, usedTimestamps, evidenceRecords);
@@ -315,6 +317,13 @@ public class SignedDocumentDiagnosticDataBuilder extends DiagnosticDataBuilder {
 		}
 
 		return diagnosticData;
+	}
+
+	/**
+	 * This method verifies whether the configuration is valid in order to build a Diagnostic Data
+	 */
+	protected void assertConfigurationValid() {
+		Objects.requireNonNull(signedDocument, "signedDocument shall be provided! Use 'document()' method.");
 	}
 
 	@Override
@@ -445,11 +454,12 @@ public class SignedDocumentDiagnosticDataBuilder extends DiagnosticDataBuilder {
 	}
 
 	private boolean hasDuplicate(AdvancedSignature currentSignature) {
+		// NOTE: with DSS-3847 we introduce a stricter verification of the signature duplication,
+		// verifying by DSS and DA identifiers across all signature files, as well as a SignatureDigestReference
 		for (AdvancedSignature signature : signatures) {
-			if (currentSignature != signature
-					&& (currentSignature.getId().equals(signature.getId()) ||
-					(currentSignature.getDAIdentifier() != null && currentSignature.getDAIdentifier().equals(signature.getDAIdentifier())
-							&& currentSignature.getSignatureFilename() != null && currentSignature.getSignatureFilename().equals(signature.getSignatureFilename())))) {
+			if (currentSignature != signature && (currentSignature.getId().equals(signature.getId()) ||
+					(currentSignature.getDAIdentifier() != null && currentSignature.getDAIdentifier().equals(signature.getDAIdentifier())) ||
+							currentSignature.getSignatureDigestReference(defaultDigestAlgorithm).equals(signature.getSignatureDigestReference(defaultDigestAlgorithm))) ) {
 				return true;
 			}
 		}
@@ -486,7 +496,7 @@ public class SignedDocumentDiagnosticDataBuilder extends DiagnosticDataBuilder {
 	 */
 	public XmlSignature buildDetachedXmlSignature(AdvancedSignature signature) {
 		XmlSignature xmlSignature = new XmlSignature();
-		xmlSignature.setSignatureFilename(removeSpecialCharsForXml(signature.getSignatureFilename()));
+		xmlSignature.setSignatureFilename(removeSpecialCharsForXml(signature.getFilename()));
 
 		xmlSignature.setId(identifierProvider.getIdAsString(signature));
 		xmlSignature.setDAIdentifier(signature.getDAIdentifier());
@@ -500,6 +510,7 @@ public class SignedDocumentDiagnosticDataBuilder extends DiagnosticDataBuilder {
 				getXmlCommitmentTypeIndications(signature.getCommitmentTypeIndications()));
 		xmlSignature.getSignerRole().addAll(getXmlSignerRoles(signature.getSignerRoles()));
 
+		xmlSignature.setSignatureType(signature.getSignatureType());
 		xmlSignature.setContentType(signature.getContentType());
 		xmlSignature.setMimeType(signature.getMimeType());
 
@@ -513,17 +524,14 @@ public class SignedDocumentDiagnosticDataBuilder extends DiagnosticDataBuilder {
 		return xmlSignature;
 	}
 
-	private XmlStructuralValidation getXmlStructuralValidation(AdvancedSignature signature) {
+	/**
+	 * Gets structural validation result of advanced signature
+	 *
+	 * @param signature {@link AdvancedSignature}
+	 * @return {@link XmlStructuralValidation}
+	 */
+	protected XmlStructuralValidation getXmlStructuralValidation(AdvancedSignature signature) {
 		return getXmlStructuralValidation(signature.getStructureValidationResult());
-	}
-
-	private XmlStructuralValidation getXmlStructuralValidation(List<String> errorMessages) {
-		final XmlStructuralValidation xmlStructuralValidation = new XmlStructuralValidation();
-		xmlStructuralValidation.setValid(Utils.isCollectionEmpty(errorMessages));
-		if (Utils.isCollectionNotEmpty(errorMessages)) {
-			xmlStructuralValidation.getMessages().addAll(errorMessages);
-		}
-		return xmlStructuralValidation;
 	}
 
 	private XmlSignatureProductionPlace getXmlSignatureProductionPlace(SignatureProductionPlace signatureProductionPlace) {
@@ -597,7 +605,14 @@ public class SignedDocumentDiagnosticDataBuilder extends DiagnosticDataBuilder {
 		return xmlSignerRoles;
 	}
 
-	private XmlBasicSignature getXmlBasicSignature(AdvancedSignature signature, PublicKey signingCertificatePublicKey) {
+	/**
+	 * Gets {@code XmlBasicSignature} for a signature
+	 *
+	 * @param signature {@link AdvancedSignature}
+	 * @param signingCertificatePublicKey {@link PublicKey}
+	 * @return {@link XmlBasicSignature}
+	 */
+	protected XmlBasicSignature getXmlBasicSignature(AdvancedSignature signature, PublicKey signingCertificatePublicKey) {
 		XmlBasicSignature xmlBasicSignature = new XmlBasicSignature();
 		xmlBasicSignature.setEncryptionAlgoUsedToSignThisToken(signature.getEncryptionAlgorithm());
 		xmlBasicSignature.setKeyLengthUsedToSignThisToken(DSSPKUtils.getStringPublicKeySize(signingCertificatePublicKey));
@@ -646,7 +661,8 @@ public class SignedDocumentDiagnosticDataBuilder extends DiagnosticDataBuilder {
 		ref.setType(referenceValidation.getType());
 		ref.setId(referenceValidation.getId());
 		ref.setUri(referenceValidation.getUri());
-		ref.setDocumentName(referenceValidation.getDocumentName());
+		ref.setDataObjectReferences(referenceValidation.getDataObjectReferences());
+		ref.setDocumentName(referenceValidation.getDocument() != null ? referenceValidation.getDocument().getName() : null);
 		Digest digest = referenceValidation.getDigest();
 		if (digest != null) {
 			ref.setDigestValue(digest.getValue());
@@ -691,8 +707,7 @@ public class SignedDocumentDiagnosticDataBuilder extends DiagnosticDataBuilder {
 	}
 
 	private XmlSignatureDigestReference getXmlSignatureDigestReference(AdvancedSignature signature) {
-		SignatureDigestReference signatureDigestReference = signature
-				.getSignatureDigestReference(defaultDigestAlgorithm);
+		SignatureDigestReference signatureDigestReference = signature.getSignatureDigestReference(defaultDigestAlgorithm);
 		if (signatureDigestReference != null) {
 			XmlSignatureDigestReference xmlDigestReference = new XmlSignatureDigestReference();
 			xmlDigestReference.setCanonicalizationMethod(signatureDigestReference.getCanonicalizationMethod());
@@ -925,7 +940,9 @@ public class SignedDocumentDiagnosticDataBuilder extends DiagnosticDataBuilder {
 
 		xmlEvidenceRecord.setId(identifierProvider.getIdAsString(evidenceRecord));
 		xmlEvidenceRecord.setDocumentName(evidenceRecord.getFilename());
-		xmlEvidenceRecord.setType(evidenceRecord.getReferenceRecordType());
+		xmlEvidenceRecord.setType(evidenceRecord.getEvidenceRecordType());
+		xmlEvidenceRecord.setOrigin(evidenceRecord.getOrigin());
+		xmlEvidenceRecord.setIncorporationType(evidenceRecord.getIncorporationType());
 		xmlEvidenceRecord.setStructuralValidation(getXmlStructuralValidation(evidenceRecord));
 		xmlEvidenceRecord.setDigestMatchers(getXmlDigestMatchers(evidenceRecord));
 		xmlEvidenceRecord.setEvidenceRecordScopes(getXmlSignatureScopes(evidenceRecord.getEvidenceRecordScopes()));
@@ -968,6 +985,15 @@ public class SignedDocumentDiagnosticDataBuilder extends DiagnosticDataBuilder {
 		for (AdvancedSignature signature : signatures) {
 			XmlSignature xmlSignature = xmlSignaturesMap.get(signature.getId());
 			xmlSignature.setFoundEvidenceRecords(getXmlSignatureEvidenceRecords(signature));
+		}
+		for (EvidenceRecord evidenceRecord : evidenceRecords) {
+			if (evidenceRecord.isEmbedded()) {
+				XmlEvidenceRecord xmlEvidenceRecord = xmlEvidenceRecordMap.get(evidenceRecord.getId());
+				xmlEvidenceRecord.setEmbedded(evidenceRecord.isEmbedded());
+
+				XmlSignature xmlSignature = xmlSignaturesMap.get(evidenceRecord.getMasterSignature().getId());
+				xmlEvidenceRecord.setParent(xmlSignature);
+			}
 		}
 	}
 
@@ -1054,7 +1080,7 @@ public class SignedDocumentDiagnosticDataBuilder extends DiagnosticDataBuilder {
 		xmlTimestampToken.setEvidenceRecordTimestampType(timestampToken.getEvidenceRecordTimestampType());
 
 		xmlTimestampToken.setProductionTime(timestampToken.getGenerationTime());
-		xmlTimestampToken.setTimestampFilename(timestampToken.getFileName());
+		xmlTimestampToken.setTimestampFilename(timestampToken.getFilename());
 		xmlTimestampToken.getDigestMatchers().addAll(getXmlDigestMatchers(timestampToken));
 		xmlTimestampToken.setBasicSignature(getXmlBasicSignature(timestampToken));
 		xmlTimestampToken.setSignerInformationStore(
@@ -1144,7 +1170,9 @@ public class SignedDocumentDiagnosticDataBuilder extends DiagnosticDataBuilder {
 				digestMatcher.setDataFound(entry.isFound());
 				digestMatcher.setDataIntact(entry.isIntact());
 				digestMatcher.setUri(entry.getUri());
-				digestMatcher.setDocumentName(entry.getDocumentName());
+				if (entry.getDocument() != null) {
+					digestMatcher.setDocumentName(entry.getDocument().getName());
+				}
 
 				digestMatchers.add(digestMatcher);
 			}

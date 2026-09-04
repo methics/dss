@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -65,7 +65,7 @@ class Asn1EvidenceRecordTstRenewalInvalidValidationTest extends AbstractAsn1Evid
         assertEquals(2, referenceValidations.size());
         for (ReferenceValidation referenceValidation : referenceValidations) {
             assertEquals(DigestMatcherType.EVIDENCE_RECORD_ARCHIVE_OBJECT, referenceValidation.getType());
-            assertNotNull(referenceValidation.getDocumentName());
+            assertNotNull(referenceValidation.getDocument());
             assertTrue(referenceValidation.isFound());
             assertTrue(referenceValidation.isIntact());
         }
@@ -79,13 +79,26 @@ class Asn1EvidenceRecordTstRenewalInvalidValidationTest extends AbstractAsn1Evid
                 assertEquals(0, Utils.collectionSize(refValidations));
                 validTstFound = true;
             } else {
-                assertEquals(4, Utils.collectionSize(refValidations));
+                assertEquals(5, Utils.collectionSize(refValidations));
+                int orphanRefCounter = 0;
+                int arcTstCounter = 0;
                 for (ReferenceValidation referenceValidation : refValidations) {
-                    assertEquals(DigestMatcherType.EVIDENCE_RECORD_ORPHAN_REFERENCE, referenceValidation.getType());
-                    assertNull(referenceValidation.getDocumentName());
-                    assertFalse(referenceValidation.isFound());
-                    assertFalse(referenceValidation.isIntact());
+                    if (DigestMatcherType.EVIDENCE_RECORD_ORPHAN_REFERENCE == referenceValidation.getType()) {
+                        assertNull(referenceValidation.getDocument());
+                        assertNotNull(referenceValidation.getDigest());
+                        assertFalse(referenceValidation.isFound());
+                        assertFalse(referenceValidation.isIntact());
+                        ++orphanRefCounter;
+                    } else if (DigestMatcherType.EVIDENCE_RECORD_ARCHIVE_TIME_STAMP == referenceValidation.getType()) {
+                        assertNull(referenceValidation.getDocument());
+                        assertNull(referenceValidation.getDigest());
+                        assertTrue(referenceValidation.isFound());
+                        assertFalse(referenceValidation.isIntact());
+                        ++arcTstCounter;
+                    }
                 }
+                assertEquals(1, arcTstCounter);
+                assertEquals(4, orphanRefCounter);
                 invalidTstFound = true;
             }
         }
@@ -111,14 +124,20 @@ class Asn1EvidenceRecordTstRenewalInvalidValidationTest extends AbstractAsn1Evid
 
             } else {
                 List<XmlDigestMatcher> digestMatchers = timestampWrapper.getDigestMatchers();
-                assertEquals(5, digestMatchers.size());
+                assertEquals(6, digestMatchers.size());
                 int messageImprintCounter = 0;
+                int arcTstCounter = 0;
                 int archiveDataObjectCounter = 0;
                 for (XmlDigestMatcher digestMatcher : digestMatchers) {
                     if (DigestMatcherType.MESSAGE_IMPRINT.equals(digestMatcher.getType())) {
                         assertTrue(digestMatcher.isDataFound());
                         assertFalse(digestMatcher.isDataIntact());
                         ++messageImprintCounter;
+
+                    } else if (DigestMatcherType.EVIDENCE_RECORD_ARCHIVE_TIME_STAMP.equals(digestMatcher.getType())) {
+                        assertTrue(digestMatcher.isDataFound());
+                        assertFalse(digestMatcher.isDataIntact());
+                        ++arcTstCounter;
 
                     } else if (DigestMatcherType.EVIDENCE_RECORD_ORPHAN_REFERENCE.equals(digestMatcher.getType())) {
                         assertFalse(digestMatcher.isDataFound());
@@ -127,6 +146,7 @@ class Asn1EvidenceRecordTstRenewalInvalidValidationTest extends AbstractAsn1Evid
                     }
                 }
                 assertEquals(1, messageImprintCounter);
+                assertEquals(1, arcTstCounter);
                 assertEquals(4, archiveDataObjectCounter);
                 invalidTstFound = true;
             }

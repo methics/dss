@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -23,18 +23,17 @@ package eu.europa.esig.dss.cookbook.example.validate;
 import eu.europa.esig.dss.model.FileDocument;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.spi.DSSUtils;
-import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
 import eu.europa.esig.dss.spi.validation.CertificateVerifier;
 import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
+import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
 import eu.europa.esig.dss.validation.DocumentValidator;
 import eu.europa.esig.dss.validation.SignedDocumentValidator;
 import eu.europa.esig.dss.validation.reports.Reports;
-import eu.europa.esig.dss.xades.definition.XAdESPath;
 import eu.europa.esig.dss.xades.definition.xades132.XAdES132Path;
 import eu.europa.esig.dss.xades.validation.XMLDocumentValidator;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -54,15 +53,10 @@ class XAdES132OnlyTest {
 		// import eu.europa.esig.dss.xades.validation.XMLDocumentValidator;
 		// import java.util.List;
 
-		// Initialize document validator
-		XMLDocumentValidator xmlDocumentValidator = new XMLDocumentValidator(xmlDocument);
+		// Initialize document validator and restrict the current XMLDocumentValidator to
+		// XAdES 1.3.2 (and 1.4.1 for archival timestamps)
+		XMLDocumentValidator xmlDocumentValidator = new XMLDocumentValidator(xmlDocument, Collections.singletonList(new XAdES132Path()));
 		xmlDocumentValidator.setCertificateVerifier(cv);
-
-		// Restrict the current XMLDocumentValidator to XAdES 1.3.2 (and 1.4.1 for
-		// archival timestamps)
-		List<XAdESPath> xadesPathsHolders = xmlDocumentValidator.getXAdESPathsHolder();
-		xadesPathsHolders.clear();
-		xadesPathsHolders.add(new XAdES132Path());
 
 		Reports reports = xmlDocumentValidator.validateDocument();
 		// end::demo[]

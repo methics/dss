@@ -113,17 +113,33 @@
             <Conclusion>
                 <Indication>PASSED</Indication>
             </Conclusion>
-            <CryptographicValidation secure="true">
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2019-12-17T05:33:23">
+            <Constraint>
+                <Name Key="ACCM">Are cryptographic constraints met for the time-stamp signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Signature algorithm RSA with SHA256 with key size 2048 at validation time : 2022-12-30 23:00</AdditionalInfo>
+            </Constraint>
+            <Constraint>
+                <Name Key="ACCM">Are cryptographic constraints met for the time-stamp message imprint?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Digest algorithm SHA256 at validation time : 2022-12-30 23:00 for time-stamp message imprint</AdditionalInfo>
+            </Constraint>
+            <Conclusion>
+                <Indication>PASSED</Indication>
+            </Conclusion>
+            <SignatureCryptographicValidation TokenId="T-517648400E98B8EAEA60C1376EDA4D03A454CAA28DBA7E5ACEE5E96A2B1FE0CD">
                 <Algorithm>
                     <Name>RSA with SHA256</Name>
                     <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</Uri>
                     <KeyLength>2048</KeyLength>
                 </Algorithm>
                 <NotAfter>2022-12-31T23:00:00</NotAfter>
-                <ValidationTime>2019-12-17T05:33:23</ValidationTime>
-                <ConcernedMaterial>T-517648400E98B8EAEA60C1376EDA4D03A454CAA28DBA7E5ACEE5E96A2B1FE0CD</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="C-96A544750269FC402373B99305F93B11B81E333D4E4B882BD85347FADA6CD340">
                 <Source>TRUSTED_LIST</Source>

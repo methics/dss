@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,13 +21,12 @@
 package eu.europa.esig.dss.validation.process.qualification.trust.checks;
 
 import eu.europa.esig.dss.detailedreport.jaxb.XmlTLAnalysis;
-import eu.europa.esig.dss.diagnostic.jaxb.XmlTrustedList;
+import eu.europa.esig.dss.diagnostic.jaxb.XmlTrustSourceList;
 import eu.europa.esig.dss.enumerations.Indication;
 import eu.europa.esig.dss.enumerations.SubIndication;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
-import eu.europa.esig.dss.policy.RuleUtils;
-import eu.europa.esig.dss.policy.jaxb.TimeConstraint;
+import eu.europa.esig.dss.model.policy.DurationRule;
 import eu.europa.esig.dss.validation.process.ChainItem;
 
 import java.util.Date;
@@ -39,29 +38,29 @@ import java.util.Date;
 public class TLFreshnessCheck extends ChainItem<XmlTLAnalysis> {
 
 	/** Trusted List to check */
-	private final XmlTrustedList currentTL;
+	private final XmlTrustSourceList currentTL;
 
 	/** Validation time */
 	private final Date currentTime;
 
 	/** Constraint defining the maximum freshness time */
-	private final TimeConstraint timeConstraint;
+	private final DurationRule durationRule;
 
 	/**
 	 * Default constructor
 	 *
 	 * @param i18nProvider {@link I18nProvider}
 	 * @param result {@link XmlTLAnalysis}
-	 * @param currentTL {@link XmlTrustedList}
+	 * @param currentTL {@link XmlTrustSourceList}
 	 * @param currentTime {@link Date}
-	 * @param timeConstraint {@link TimeConstraint}
+	 * @param durationRule {@link DurationRule}
 	 */
-	public TLFreshnessCheck(I18nProvider i18nProvider, XmlTLAnalysis result, XmlTrustedList currentTL,
-							Date currentTime, TimeConstraint timeConstraint) {
-		super(i18nProvider, result, timeConstraint);
+	public TLFreshnessCheck(I18nProvider i18nProvider, XmlTLAnalysis result, XmlTrustSourceList currentTL,
+							Date currentTime, DurationRule durationRule) {
+		super(i18nProvider, result, durationRule);
 		this.currentTL = currentTL;
 		this.currentTime = currentTime;
-		this.timeConstraint = timeConstraint;
+		this.durationRule = durationRule;
 	}
 
 	@Override
@@ -75,7 +74,7 @@ public class TLFreshnessCheck extends ChainItem<XmlTLAnalysis> {
 	}
 
 	private long getMaxFreshness() {
-		return RuleUtils.convertDuration(timeConstraint);
+		return durationRule.getDuration();
 	}
 
 	@Override

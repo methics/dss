@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -24,6 +24,7 @@ import eu.europa.esig.dss.diagnostic.jaxb.XmlDigestAlgoAndValue;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlRevocationRef;
 import eu.europa.esig.dss.enumerations.RevocationRefOrigin;
 
+import java.math.BigInteger;
 import java.util.Date;
 import java.util.List;
 
@@ -60,7 +61,38 @@ public class RevocationRefWrapper {
 	}
 
 	/**
-	 * Returns revocation ref production time if present
+	 * Gets the CRL issuer RDN.
+	 * NOTE: applicable only for CRL references.
+	 *
+	 * @return {@link String}
+	 */
+	public String getIssuer() {
+		return revocationRef.getIssuer();
+	}
+
+	/**
+	 * Gets the issue time of the CRL.
+	 * NOTE: applicable only for CRL references.
+	 *
+	 * @return {@link Date}
+	 */
+	public Date getIssueTime() {
+		return revocationRef.getIssueTime();
+	}
+
+	/**
+	 * Gets the number of the CRL.
+	 * NOTE: applicable only for CRL references.
+	 *
+	 * @return {@link BigInteger}
+	 */
+	public BigInteger getCRLNumber() {
+		return revocationRef.getCRLNumber();
+	}
+
+	/**
+	 * Returns revocation ref production time if present.
+	 * NOTE: applicable only for OCSP response references.
 	 * 
 	 * @return {@link Date}
 	 */
@@ -69,7 +101,8 @@ public class RevocationRefWrapper {
 	}
 	
 	/**
-	 * Returns responder's ID name if present
+	 * Returns responder's ID name if present.
+	 * NOTE: applicable only for OCSP response references.
 	 * 
 	 * @return {@link String}
 	 */
@@ -81,7 +114,8 @@ public class RevocationRefWrapper {
 	}
 	
 	/**
-	 * Returns responder's ID key if present
+	 * Returns responder's ID key if present.
+	 * NOTE: applicable only for OCSP response references.
 	 * 
 	 * @return a byte array
 	 */
@@ -90,6 +124,15 @@ public class RevocationRefWrapper {
 			return revocationRef.getResponderId().getSki();
 		}
 		return null;
+	}
+
+	/**
+	 * Gets the URI reference to the revocation data, when present
+	 *
+	 * @return {@link String}
+	 */
+	public String getUri() {
+		return revocationRef.getUri();
 	}
 	
 	/**

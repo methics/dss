@@ -73,6 +73,7 @@
             <PublicKeySize>2048</PublicKeySize>
             <PublicKeyEncryptionAlgo>RSA</PublicKeyEncryptionAlgo>
             <EntityKey>PK-4855220002BCE218101315CE272CC1B4A5F4DAE037032F63305EF90886701C67</EntityKey>
+            <IssuerEntityKey key="true" subjectName="true">EK-ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCD</IssuerEntityKey>
             <BasicSignature>
                 <EncryptionAlgoUsedToSignThisToken>RSA</EncryptionAlgoUsedToSignThisToken>
                 <KeyLengthUsedToSignThisToken>?</KeyLengthUsedToSignThisToken>
@@ -92,6 +93,9 @@
                     <certificatePolicy>1.3.6.1.4.1.39965.1.1.1</certificatePolicy>
                     <certificatePolicy>0.4.0.1456.1.1</certificatePolicy>
                 </CertificatePolicies>
+                <SubjectKeyIdentifier OID="2.5.29.14" critical="false">
+                    <ski>eTpnUdREx5Cc9kUyPJBuSIgdDxw=</ski>
+                </SubjectKeyIdentifier>
             </CertificateExtensions>
                         <TrustServiceProviders />
             <DigestAlgoAndValue>
@@ -117,6 +121,7 @@
             <PublicKeySize>2048</PublicKeySize>
             <PublicKeyEncryptionAlgo>RSA</PublicKeyEncryptionAlgo>
             <EntityKey>PK-5C58468D55F58E497E743982D2B50010B6D165374ACF83A7D4A32DB768C4408E</EntityKey>
+            <IssuerEntityKey key="true" subjectName="true">EK-ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCD</IssuerEntityKey>
             <BasicSignature>
                 <EncryptionAlgoUsedToSignThisToken>RSA</EncryptionAlgoUsedToSignThisToken>
                 <KeyLengthUsedToSignThisToken>2048</KeyLengthUsedToSignThisToken>
@@ -131,6 +136,9 @@
                     <keyUsageBit>crlSign</keyUsageBit>
                     <keyUsageBit>keyCertSign</keyUsageBit>
                 </KeyUsages>
+                <SubjectKeyIdentifier OID="2.5.29.14" critical="false">
+                    <ski>l5tu31D0z7Z2XtD8Mtve4SLrxds=</ski>
+                </SubjectKeyIdentifier>
             </CertificateExtensions>
                         <TrustServiceProviders />
             <DigestAlgoAndValue>
@@ -156,6 +164,7 @@
             <PublicKeySize>2048</PublicKeySize>
             <PublicKeyEncryptionAlgo>RSA</PublicKeyEncryptionAlgo>
             <EntityKey>PK-CAA0910D7F836EB51888AD951455258EDA15F1F84B5D077F324B8FE60407C314</EntityKey>
+            <IssuerEntityKey key="true" subjectName="true">EK-ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCD</IssuerEntityKey>
             <BasicSignature>
                 <EncryptionAlgoUsedToSignThisToken>RSA</EncryptionAlgoUsedToSignThisToken>
                 <KeyLengthUsedToSignThisToken>2048</KeyLengthUsedToSignThisToken>
@@ -178,9 +187,15 @@
                     <certificatePolicy>1.3.6.1.4.1.39965.1.1.1</certificatePolicy>
                     <certificatePolicy>0.4.0.1456.1.1</certificatePolicy>
                 </CertificatePolicies>
+                <SubjectKeyIdentifier OID="2.5.29.14" critical="false">
+                    <ski>wOju33w+ASSjtYT+RjqMsnYD8gk=</ski>
+                </SubjectKeyIdentifier>
                 <QcStatements OID="1.3.6.1.5.5.7.1.3" critical="false">
                     <QcCompliance present="true"/>
                 </QcStatements>
+                <AuthorityKeyIdentifier OID="2.5.29.35">
+                    <keyIdentifier>eTpnUdREx5Cc9kUyPJBuSIgdDxw=</keyIdentifier>
+                </AuthorityKeyIdentifier>
             </CertificateExtensions>
             <TrustServiceProviders />
             <Revocations>
@@ -211,6 +226,7 @@
             <PublicKeySize>2048</PublicKeySize>
             <PublicKeyEncryptionAlgo>RSA</PublicKeyEncryptionAlgo>
             <EntityKey>PK-D9CAABC3225B7030CDB83E3846E3691C14ED790B1764CE1B4F043157899C5C58</EntityKey>
+            <IssuerEntityKey key="true" subjectName="true">EK-ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCD</IssuerEntityKey>
             <BasicSignature>
                 <EncryptionAlgoUsedToSignThisToken>RSA</EncryptionAlgoUsedToSignThisToken>
                 <KeyLengthUsedToSignThisToken>2048</KeyLengthUsedToSignThisToken>
@@ -231,6 +247,12 @@
                 <CertificatePolicies OID="2.5.29.32" critical="true">
                     <certificatePolicy>1.2.616.1.113527.2.5.1.11</certificatePolicy>
                 </CertificatePolicies>
+                <SubjectKeyIdentifier OID="2.5.29.14" critical="false">
+                    <ski>+byqfHPDF7g8HUKsMfNsxUqJCz4=</ski>
+                </SubjectKeyIdentifier>
+                <AuthorityKeyIdentifier OID="2.5.29.35">
+                    <keyIdentifier>l5tu31D0z7Z2XtD8Mtve4SLrxds=</keyIdentifier>
+                </AuthorityKeyIdentifier>
             </CertificateExtensions>
                         <TrustServiceProviders />
             <Revocations>
@@ -261,6 +283,7 @@
             <PublicKeySize>2048</PublicKeySize>
             <PublicKeyEncryptionAlgo>RSA</PublicKeyEncryptionAlgo>
             <EntityKey>PK-DF3CBD3815591583E63725FA33DAF5CB01852E6CF82C9DFD4F091D160349C733</EntityKey>
+            <IssuerEntityKey key="true" subjectName="true">EK-ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCD</IssuerEntityKey>
             <BasicSignature>
                 <EncryptionAlgoUsedToSignThisToken>RSA</EncryptionAlgoUsedToSignThisToken>
                 <KeyLengthUsedToSignThisToken>2048</KeyLengthUsedToSignThisToken>
@@ -279,8 +302,14 @@
                     <keyUsageBit>nonRepudiation</keyUsageBit>
                     <keyUsageBit>digitalSignature</keyUsageBit>
                 </KeyUsages>
+                <SubjectKeyIdentifier OID="2.5.29.14" critical="false">
+                    <ski>9xcEWV+Rk/9V2sBWHqk9IU+faBs=</ski>
+                </SubjectKeyIdentifier>
 
                 <IdPkixOcspNoCheck OID="1.3.6.1.5.5.7.48.1.5" critical="false" present="true" />
+                <AuthorityKeyIdentifier OID="2.5.29.35">
+                    <keyIdentifier>l5tu31D0z7Z2XtD8Mtve4SLrxds=</keyIdentifier>
+                </AuthorityKeyIdentifier>
             </CertificateExtensions>
                         <TrustServiceProviders />
             <DigestAlgoAndValue>
@@ -306,6 +335,7 @@
             <PublicKeySize>2048</PublicKeySize>
             <PublicKeyEncryptionAlgo>RSA</PublicKeyEncryptionAlgo>
             <EntityKey>PK-8DA084FCF99CE07722F89B3205939806FA5CB811E1C813F6A108C7D336B3408E</EntityKey>
+            <IssuerEntityKey key="true" subjectName="true">EK-ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCD</IssuerEntityKey>
             <BasicSignature>
                 <EncryptionAlgoUsedToSignThisToken>RSA</EncryptionAlgoUsedToSignThisToken>
                 <KeyLengthUsedToSignThisToken>2048</KeyLengthUsedToSignThisToken>
@@ -320,6 +350,9 @@
                     <keyUsageBit>crlSign</keyUsageBit>
                     <keyUsageBit>keyCertSign</keyUsageBit>
                 </KeyUsages>
+                <SubjectKeyIdentifier OID="2.5.29.14" critical="false">
+                    <ski>chMTDZvaUycHgJbRvcgfGqNJht0=</ski>
+                </SubjectKeyIdentifier>
             </CertificateExtensions>
                         <TrustServiceProviders />
             <DigestAlgoAndValue>
@@ -345,6 +378,7 @@
             <PublicKeySize>2048</PublicKeySize>
             <PublicKeyEncryptionAlgo>RSA</PublicKeyEncryptionAlgo>
             <EntityKey>PK-819F1F410A503DB645E0851141333A75A74E55E5F07DF45ED33C062085751900</EntityKey>
+            <IssuerEntityKey key="true" subjectName="true">EK-ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890ABCD</IssuerEntityKey>
             <BasicSignature>
                 <EncryptionAlgoUsedToSignThisToken>RSA</EncryptionAlgoUsedToSignThisToken>
                 <KeyLengthUsedToSignThisToken>2048</KeyLengthUsedToSignThisToken>
@@ -363,6 +397,12 @@
                     <keyUsageBit>digitalSignature</keyUsageBit>
                 </KeyUsages>
                 <IdPkixOcspNoCheck OID="1.3.6.1.5.5.7.48.1.5" critical="false" present="true" />
+                <SubjectKeyIdentifier OID="2.5.29.14" critical="false">
+                    <ski>afEfR8HqUeeN1Zka1bPVYRzEsyc=</ski>
+                </SubjectKeyIdentifier>
+                <AuthorityKeyIdentifier OID="2.5.29.35">
+                    <keyIdentifier>eTpnUdREx5Cc9kUyPJBuSIgdDxw=</keyIdentifier>
+                </AuthorityKeyIdentifier>
             </CertificateExtensions>
                         <TrustServiceProviders />
             <DigestAlgoAndValue>

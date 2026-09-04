@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -41,25 +41,25 @@ public class TrustServiceStatusAndInformationExtensions extends BaseTimeDependen
 	 */
 
 	/** Map of names */
-	private Map<String, List<String>> names;
+	private final Map<String, List<String>> names;
 
 	/** The type */
-	private String type;
+	private final String type;
 
 	/** Status */
-	private String status;
+	private final String status;
 
 	/** A list of condition for qualifiers */
-	private List<ConditionForQualifiers> conditionsForQualifiers;
+	private final List<ConditionForQualifiers> conditionsForQualifiers;
 
 	/** Additional service info urls */
-	private List<String> additionalServiceInfoUris;
+	private final List<String> additionalServiceInfoUris;
 
 	/** List of service supply points */
-	private List<String> serviceSupplyPoints;
+	private final List<String> serviceSupplyPoints;
 
 	/** The expired certs revocation info date */
-	private Date expiredCertsRevocationInfo;
+	private final Date expiredCertsRevocationInfo;
 
 	/**
 	 * Default constructor
@@ -306,6 +306,48 @@ public class TrustServiceStatusAndInformationExtensions extends BaseTimeDependen
 			return this;
 		}
 		
+	}
+
+	@Override
+	public String toString() {
+		return "TrustServiceStatusAndInformationExtensions [" +
+				"names=" + names +
+				", type='" + type + '\'' +
+				", status='" + status + '\'' +
+				", conditionsForQualifiers=" + conditionsForQualifiers +
+				", additionalServiceInfoUris=" + additionalServiceInfoUris +
+				", serviceSupplyPoints=" + serviceSupplyPoints +
+				", expiredCertsRevocationInfo=" + expiredCertsRevocationInfo +
+				"] " + super.toString();
+	}
+
+	@Override
+	public boolean equals(Object object) {
+		if (this == object) return true;
+		if (object == null || getClass() != object.getClass()) return false;
+		if (!super.equals(object)) return false;
+
+		TrustServiceStatusAndInformationExtensions that = (TrustServiceStatusAndInformationExtensions) object;
+		return Objects.equals(names, that.names)
+				&& Objects.equals(type, that.type)
+				&& Objects.equals(status, that.status)
+				&& Objects.equals(conditionsForQualifiers, that.conditionsForQualifiers)
+				&& Objects.equals(additionalServiceInfoUris, that.additionalServiceInfoUris)
+				&& Objects.equals(serviceSupplyPoints, that.serviceSupplyPoints)
+				&& Objects.equals(expiredCertsRevocationInfo, that.expiredCertsRevocationInfo);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = super.hashCode();
+		result = 31 * result + Objects.hashCode(names);
+		result = 31 * result + Objects.hashCode(type);
+		result = 31 * result + Objects.hashCode(status);
+		result = 31 * result + Objects.hashCode(conditionsForQualifiers);
+		result = 31 * result + Objects.hashCode(additionalServiceInfoUris);
+		result = 31 * result + Objects.hashCode(serviceSupplyPoints);
+		result = 31 * result + Objects.hashCode(expiredCertsRevocationInfo);
+		return result;
 	}
 
 }

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -244,7 +244,7 @@ public class XmlTrustServiceProviderBuilder {
     }
 
     private XmlTrustService getXmlTrustService(TrustServiceStatusAndInformationExtensions serviceInfoStatus,
-                                                   CertificateToken certToken, CertificateToken trustAnchor) {
+                                               CertificateToken certToken, CertificateToken trustAnchor) {
         XmlTrustService trustService = new XmlTrustService();
 
         trustService.setServiceDigitalIdentifier(xmlCertsMap.get(trustAnchor.getDSSIdAsString()));
@@ -325,7 +325,7 @@ public class XmlTrustServiceProviderBuilder {
     }
 
     private List<XmlTrustService> getXmlTrustServicesForMRA(TrustServiceStatusAndInformationExtensions serviceInfoStatus,
-                                                         CertificateToken certToken, CertificateToken trustAnchor, MRA mra) {
+                                                            CertificateToken certToken, CertificateToken trustAnchor, MRA mra) {
         List<MutableTimeDependentValues<ServiceEquivalence>> mraEquivalences = getMRAServiceEquivalences(serviceInfoStatus, certToken, mra);
         boolean enactedMra = Utils.isCollectionNotEmpty(mraEquivalences);
         if (enactedMra) {
@@ -359,7 +359,7 @@ public class XmlTrustServiceProviderBuilder {
     }
 
     private List<MutableTimeDependentValues<ServiceEquivalence>> getMRAServiceEquivalences(TrustServiceStatusAndInformationExtensions serviceInfoStatus,
-                                                               CertificateToken certToken, MRA mra) {
+                                                                                           CertificateToken certToken, MRA mra) {
         LOG.debug("MRA");
         final List<MutableTimeDependentValues<ServiceEquivalence>> equivalences = new ArrayList<>();
         for (MutableTimeDependentValues<ServiceEquivalence> serviceEquivalenceList : mra.getServiceEquivalence()) {
@@ -387,6 +387,10 @@ public class XmlTrustServiceProviderBuilder {
 
     private boolean checkServiceTypeAsiEquivalence(TrustServiceStatusAndInformationExtensions serviceInfoStatus,
                                                    Map<ServiceTypeASi, ServiceTypeASi> typeAsiEquivalenceMap) {
+        if (Utils.isMapEmpty(typeAsiEquivalenceMap)) {
+            LOG.debug("No MRA equivalence is defined for Trust Service ASI.");
+            return false;
+        }
         for (ServiceTypeASi typeAsiEquivalence : typeAsiEquivalenceMap.keySet()) {
             if (checkServiceTypeASi(serviceInfoStatus, typeAsiEquivalence)) {
                 return true;
@@ -396,7 +400,7 @@ public class XmlTrustServiceProviderBuilder {
     }
 
     private boolean checkServiceTypeASi(TrustServiceStatusAndInformationExtensions serviceInfoStatus, ServiceTypeASi serviceTypeASi) {
-        return serviceInfoStatus.getType().equals(serviceTypeASi.getType()) &&
+        return serviceInfoStatus.getType() != null && serviceInfoStatus.getType().equals(serviceTypeASi.getType()) &&
                 (serviceTypeASi.getAsi() == null || serviceInfoStatus.getAdditionalServiceInfoUris().contains(serviceTypeASi.getAsi()));
     }
 
@@ -406,6 +410,10 @@ public class XmlTrustServiceProviderBuilder {
         if (xmlCertificate == null) {
             throw new IllegalStateException(String.format(
                     "XML certificate with Id '%s' is not yet created!", certToken.getDSSIdAsString()));
+        }
+        if (Utils.isMapEmpty(typeAsiEquivalenceMap)) {
+            LOG.debug("No MRA equivalence is defined for Trust Service ASI.");
+            return false;
         }
 
         CertificateWrapper certificateWrapper = new CertificateWrapper(xmlCertificate);
@@ -452,6 +460,10 @@ public class XmlTrustServiceProviderBuilder {
 
     private boolean checkStatusEquivalence(TrustServiceStatusAndInformationExtensions serviceInfoStatus,
                                            Map<List<String>, List<String>> statusEquivalenceMap) {
+        if (Utils.isMapEmpty(statusEquivalenceMap)) {
+            LOG.debug("No MRA equivalence is defined for Trust Service status.");
+            return false;
+        }
         for (Map.Entry<List<String>, List<String>> statusEquivalence : statusEquivalenceMap.entrySet()) {
             if (statusEquivalence.getKey().contains(serviceInfoStatus.getStatus())) {
                 return true;
@@ -566,6 +578,10 @@ public class XmlTrustServiceProviderBuilder {
     private ServiceTypeASi getTypeASiSubstitution(
             TrustServiceStatusAndInformationExtensions serviceInfoStatus,
             ServiceEquivalence serviceEquivalence) {
+        if (Utils.isMapEmpty(serviceEquivalence.getTypeAsiEquivalence())) {
+            LOG.debug("No MRA equivalence is defined for Trust Service ASI.");
+            return null;
+        }
         for (Map.Entry<ServiceTypeASi, ServiceTypeASi> expectedSubstitution : serviceEquivalence.getTypeAsiEquivalence()
                 .entrySet()) {
             ServiceTypeASi expected = expectedSubstitution.getKey();
@@ -599,6 +615,10 @@ public class XmlTrustServiceProviderBuilder {
     private String getStatusSubstitution(TrustServiceStatusAndInformationExtensions serviceInfoStatus,
                                          ServiceEquivalence serviceEquivalence) {
         Map<List<String>, List<String>> statusEquivalence = serviceEquivalence.getStatusEquivalence();
+        if (Utils.isMapEmpty(statusEquivalence)) {
+            LOG.debug("No MRA equivalence is defined for Trust Service status.");
+            return null;
+        }
         for (Map.Entry<List<String>, List<String>> equivalence : statusEquivalence.entrySet()) {
             List<String> expected = equivalence.getKey();
             if (expected.contains(serviceInfoStatus.getStatus())) {
@@ -613,6 +633,10 @@ public class XmlTrustServiceProviderBuilder {
             TrustServiceStatusAndInformationExtensions serviceInfoStatus, ServiceEquivalence serviceEquivalence) {
         List<ConditionForQualifiers> result = new ArrayList<>();
         Map<String, String> qualifierEquivalence = serviceEquivalence.getQualifierEquivalence();
+        if (Utils.isMapEmpty(qualifierEquivalence)) {
+            LOG.debug("No MRA equivalence is defined for Trust Service qualifiers.");
+            return result;
+        }
         for (ConditionForQualifiers qualifierCondition : serviceInfoStatus.getConditionsForQualifiers()) {
             List<String> qualifiers = new ArrayList<>();
             for (String qualifier : qualifierCondition.getQualifiers()) {
@@ -789,6 +813,10 @@ public class XmlTrustServiceProviderBuilder {
         List<String> qcCClegislations = qcStatements.getQcCClegislation();
         if (Utils.isCollectionNotEmpty(qcCClegislations)) {
             originalQcStatements.setQcCClegislation(new ArrayList<>(qcCClegislations));
+        }
+        List<String> qcQSCDlegislations = qcStatements.getQcQSCDlegislation();
+        if (Utils.isCollectionNotEmpty(qcQSCDlegislations)) {
+            originalQcStatements.setQcQSCDlegislation(new ArrayList<>(qcQSCDlegislations));
         }
         List<XmlOID> otherOIDs = qcStatements.getOtherOIDs();
         if (Utils.isCollectionNotEmpty(otherOIDs)) {

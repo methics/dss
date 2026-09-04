@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -30,7 +30,8 @@ import eu.europa.esig.dss.diagnostic.jaxb.XmlCertificatePolicy;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlQcSSCD;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlQcStatements;
 import eu.europa.esig.dss.enumerations.CertificateExtensionEnum;
-import eu.europa.esig.dss.policy.jaxb.Level;
+import eu.europa.esig.dss.enumerations.Level;
+import eu.europa.esig.dss.policy.LevelConstraintWrapper;
 import eu.europa.esig.dss.policy.jaxb.LevelConstraint;
 import eu.europa.esig.dss.validation.process.bbb.AbstractTestCheck;
 import eu.europa.esig.dss.validation.process.bbb.xcv.sub.checks.CertificateQcSSCDCheck;
@@ -43,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class CertificateQcSSCDCheckTest extends AbstractTestCheck {
 
     @Test
-    void validTest() throws Exception {
+    void validTest() {
         XmlQcStatements xmlQcStatements = new XmlQcStatements();
         xmlQcStatements.setOID(CertificateExtensionEnum.QC_STATEMENTS.getOid());
 
@@ -59,7 +60,7 @@ class CertificateQcSSCDCheckTest extends AbstractTestCheck {
 
         XmlSubXCV result = new XmlSubXCV();
         CertificateQcSSCDCheck cqsscdc = new CertificateQcSSCDCheck(i18nProvider, result,
-                new CertificateWrapper(xc), constraint);
+                new CertificateWrapper(xc), new LevelConstraintWrapper(constraint));
         cqsscdc.execute();
 
         List<XmlConstraint> constraints = result.getConstraint();
@@ -68,7 +69,7 @@ class CertificateQcSSCDCheckTest extends AbstractTestCheck {
     }
 
     @Test
-    void invalidTest() throws Exception {
+    void invalidTest() {
         XmlQcStatements xmlQcStatements = new XmlQcStatements();
         xmlQcStatements.setOID(CertificateExtensionEnum.QC_STATEMENTS.getOid());
 
@@ -84,7 +85,7 @@ class CertificateQcSSCDCheckTest extends AbstractTestCheck {
 
         XmlSubXCV result = new XmlSubXCV();
         CertificateQcSSCDCheck cqsscdc = new CertificateQcSSCDCheck(i18nProvider, result,
-                new CertificateWrapper(xc), constraint);
+                new CertificateWrapper(xc), new LevelConstraintWrapper(constraint));
         cqsscdc.execute();
 
         List<XmlConstraint> constraints = result.getConstraint();
@@ -93,7 +94,7 @@ class CertificateQcSSCDCheckTest extends AbstractTestCheck {
     }
 
     @Test
-    void certificateSupportedByQSCDCheck() throws Exception {
+    void certificateSupportedByQSCDCheck() {
         LevelConstraint constraint = new LevelConstraint();
         constraint.setLevel(Level.FAIL);
 
@@ -107,7 +108,7 @@ class CertificateQcSSCDCheckTest extends AbstractTestCheck {
 
         XmlSubXCV result = new XmlSubXCV();
         CertificateQcSSCDCheck cqsscdc = new CertificateQcSSCDCheck(i18nProvider, result,
-                new CertificateWrapper(xc), constraint);
+                new CertificateWrapper(xc), new LevelConstraintWrapper(constraint));
         cqsscdc.execute();
 
         List<XmlConstraint> constraints = result.getConstraint();
@@ -116,7 +117,7 @@ class CertificateQcSSCDCheckTest extends AbstractTestCheck {
     }
 
     @Test
-    void qcComplianceNotPresentTest() throws Exception {
+    void qcComplianceNotPresentTest() {
         XmlQcStatements xmlQcStatements = new XmlQcStatements();
         xmlQcStatements.setOID(CertificateExtensionEnum.QC_STATEMENTS.getOid());
 
@@ -128,7 +129,7 @@ class CertificateQcSSCDCheckTest extends AbstractTestCheck {
 
         XmlSubXCV result = new XmlSubXCV();
         CertificateQcSSCDCheck cqsscdc = new CertificateQcSSCDCheck(i18nProvider, result,
-                new CertificateWrapper(xc), constraint);
+                new CertificateWrapper(xc), new LevelConstraintWrapper(constraint));
         cqsscdc.execute();
 
         List<XmlConstraint> constraints = result.getConstraint();
@@ -137,7 +138,7 @@ class CertificateQcSSCDCheckTest extends AbstractTestCheck {
     }
 
     @Test
-    void qcStatementsNotPresentTest() throws Exception {
+    void qcStatementsNotPresentTest() {
         LevelConstraint constraint = new LevelConstraint();
         constraint.setLevel(Level.FAIL);
 
@@ -145,7 +146,7 @@ class CertificateQcSSCDCheckTest extends AbstractTestCheck {
 
         XmlSubXCV result = new XmlSubXCV();
         CertificateQcSSCDCheck cqsscdc = new CertificateQcSSCDCheck(i18nProvider, result,
-                new CertificateWrapper(xc), constraint);
+                new CertificateWrapper(xc), new LevelConstraintWrapper(constraint));
         cqsscdc.execute();
 
         List<XmlConstraint> constraints = result.getConstraint();

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -133,6 +133,7 @@ public abstract class PKIFactoryAccess {
     protected static final String GOOD_TSA_CROSS_CERTIF = "cc-good-tsa-crossed";
     protected static final String SELF_SIGNED_TSA = "self-signed-tsa";
     protected static final String SELF_SIGNED_LONG_TSA = "self-signed-long-tsa";
+    protected static final String EXPIRED_TSA = "expired-tsa";
 
     /* Produces timestamp with a fail status */
     private static final String FAIL_GOOD_TSA_ONLINE = "fail/good-tsa";
@@ -170,9 +171,11 @@ public abstract class PKIFactoryAccess {
     protected static final String EE_GOOD_USER = "ee-good-user";
     protected static final String OCSP_SKIP_USER = "ocsp-skip-user";
     protected static final String OCSP_SKIP_USER_WITH_CRL = "ocsp-skip-user-with-crl";
+    protected static final String OCSP_USER_WITH_RESPONDER_WITH_OCSP =  "ocsp-responder-with-ocsp-ee";
     protected static final String OCSP_SKIP_CA = "ocsp-skip-valid-ca";
     protected static final String OCSP_EXPIRED_RESPONDER_USER = "ocsp-skip-expired-ocsp-user";
     protected static final String OCSP_NOT_YET_VALID_CA_USER = "ocsp-skip-not-yet-valid-ca-user";
+    protected static final String GOOD_CA = "good-ca";
     protected static final String ROOT_CA = "root-ca";
 
     private static final String DEFAULT_TSA_DATE_FORMAT = "yyyy-MM-dd-HH-mm";
@@ -370,7 +373,11 @@ public abstract class PKIFactoryAccess {
     }
 
     protected CertEntity getCertEntity() {
-        return getXMLCertificateLoader().loadCertificateEntityFromXml(getSigningAlias());
+        return getCertEntity(getSigningAlias());
+    }
+
+    protected CertEntity getCertEntity(String alias) {
+        return getXMLCertificateLoader().loadCertificateEntityFromXml(alias);
     }
 
     protected AbstractSignatureTokenConnection getToken() {
@@ -406,9 +413,9 @@ public abstract class PKIFactoryAccess {
         return getTrustedCertificateSourceByPKIName("good-pki");
     }
 
-    private CertificateSource getTrustedCertificateSourceByPKIName(String pkiName) {
+    protected CertificateSource getTrustedCertificateSourceByPKIName(String pkiName) {
         CommonTrustedCertificateSource trustedCertificateSource = new CommonTrustedCertificateSource();
-        List<JAXBCertEntity> certEntities = certEntityRepository.getByPkiName(pkiName);
+        List<JAXBCertEntity> certEntities = getCertEntityRepository().getByPkiName(pkiName);
         if (Utils.isCollectionNotEmpty(certEntities)) {
             certEntities.stream().filter(JAXBCertEntity::isTrustAnchor).map(JAXBCertEntity::getCertificateToken).forEach(trustedCertificateSource::addCertificate);
         }

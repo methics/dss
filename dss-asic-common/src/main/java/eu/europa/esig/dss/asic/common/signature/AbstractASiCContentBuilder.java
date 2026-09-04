@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -22,11 +22,11 @@ package eu.europa.esig.dss.asic.common.signature;
 
 import eu.europa.esig.dss.asic.common.ASiCContent;
 import eu.europa.esig.dss.asic.common.ASiCUtils;
-import eu.europa.esig.dss.asic.common.extract.DefaultASiCContainerExtractor;
+import eu.europa.esig.dss.asic.common.extract.ASiCContainerExtractor;
 import eu.europa.esig.dss.enumerations.ASiCContainerType;
-import eu.europa.esig.dss.spi.exception.IllegalInputException;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.spi.exception.IllegalInputException;
 import eu.europa.esig.dss.utils.Utils;
 
 import java.util.ArrayList;
@@ -59,26 +59,19 @@ public abstract class AbstractASiCContentBuilder {
     public ASiCContent build(List<DSSDocument> documents, ASiCContainerType asicContainerType) {
         if (Utils.isCollectionNotEmpty(documents) && documents.size() == 1) {
             DSSDocument archiveDocument = documents.get(0);
-            if (ASiCUtils.isZip(archiveDocument) && isAcceptableContainerFormat(archiveDocument)) {
-                return fromZipArchive(archiveDocument, asicContainerType);
+            if (ASiCUtils.isASiC(archiveDocument)) {
+                ASiCContainerExtractor extractor = getContainerExtractor(archiveDocument);
+                if (extractor.isSupportedContainerFormat()) {
+                    return fromZipArchive(extractor, asicContainerType);
+                }
             }
         }
         return fromFiles(documents, asicContainerType);
     }
 
-    /**
-     * Method verifies whether the given {@code archiveDocument} has an acceptable to the format type
-     *
-     * @param archiveDocument {@link DSSDocument}
-     * @return TRUE if the given document corresponds to the current format, FALSE otherwise
-     */
-    protected abstract boolean isAcceptableContainerFormat(DSSDocument archiveDocument);
-
-    private ASiCContent fromZipArchive(DSSDocument archiveDoc, ASiCContainerType asicContainerType) {
-        DefaultASiCContainerExtractor extractor = getContainerExtractor(archiveDoc);
+    private ASiCContent fromZipArchive(ASiCContainerExtractor extractor, ASiCContainerType asicContainerType) {
         ASiCContent asicContent = extractor.extract();
         assertContainerTypeValid(asicContent, asicContainerType);
-
         return asicContent;
     }
 
@@ -96,9 +89,9 @@ public abstract class AbstractASiCContentBuilder {
      * Returns an instance of a corresponding container extractor class
      *
      * @param archiveDocument {@link DSSDocument} representing a container to be extracted
-     * @return {@link DefaultASiCContainerExtractor}
+     * @return {@link ASiCContainerExtractor}
      */
-    protected abstract DefaultASiCContainerExtractor getContainerExtractor(DSSDocument archiveDocument);
+    protected abstract ASiCContainerExtractor getContainerExtractor(DSSDocument archiveDocument);
 
     private void assertContainerTypeValid(ASiCContent result, ASiCContainerType asicContainerType) {
         if (ASiCUtils.filesContainSignatures(DSSUtils.getDocumentNames(result.getAllDocuments()))

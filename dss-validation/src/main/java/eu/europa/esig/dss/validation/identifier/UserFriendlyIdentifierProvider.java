@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -27,31 +27,38 @@ import eu.europa.esig.dss.model.identifier.Identifier;
 import eu.europa.esig.dss.model.identifier.IdentifierBasedObject;
 import eu.europa.esig.dss.model.identifier.MultipleDigestIdentifier;
 import eu.europa.esig.dss.model.identifier.TokenIdentifierProvider;
+import eu.europa.esig.dss.model.lote.LoLoTEInfo;
+import eu.europa.esig.dss.model.lote.LoTEInfo;
+import eu.europa.esig.dss.model.lote.record.LoTEParsingInfoRecord;
+import eu.europa.esig.dss.model.scope.SignatureScope;
+import eu.europa.esig.dss.model.tsl.LOTLInfo;
+import eu.europa.esig.dss.model.tsl.PivotInfo;
+import eu.europa.esig.dss.model.tsl.TLInfo;
+import eu.europa.esig.dss.model.tsl.TLParsingInfoRecord;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.model.x509.Token;
 import eu.europa.esig.dss.model.x509.X500PrincipalHelper;
 import eu.europa.esig.dss.spi.DSSASN1Utils;
 import eu.europa.esig.dss.spi.DSSUtils;
-import eu.europa.esig.dss.model.tsl.LOTLInfo;
-import eu.europa.esig.dss.model.tsl.ParsingInfoRecord;
-import eu.europa.esig.dss.model.tsl.PivotInfo;
-import eu.europa.esig.dss.model.tsl.TLInfo;
+import eu.europa.esig.dss.spi.attestation.Attestation;
+import eu.europa.esig.dss.spi.attestation.AttestationRevocationToken;
 import eu.europa.esig.dss.spi.signature.AdvancedSignature;
 import eu.europa.esig.dss.spi.x509.CertificateRef;
+import eu.europa.esig.dss.spi.x509.evidencerecord.EvidenceRecord;
 import eu.europa.esig.dss.spi.x509.revocation.RevocationRef;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLRef;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLToken;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPRef;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPResponseBinary;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPToken;
-import eu.europa.esig.dss.utils.Utils;
-import eu.europa.esig.dss.model.scope.SignatureScope;
 import eu.europa.esig.dss.spi.x509.tsp.TimestampToken;
-import eu.europa.esig.dss.spi.x509.evidencerecord.EvidenceRecord;
+import eu.europa.esig.dss.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.x500.X500Principal;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -60,12 +67,13 @@ import java.util.Objects;
 
 /**
  * Creates an identifier for a given token by the template:
- *
+ * <p>
  * TOKEN-CommonCertName-CreationDate-id(optional)
- *
+ * <p>
  * Examples:
  * SIGNATURE-JohnConner-20201015-2045
  * CERTIFICATE-CryptoSign-20151014-1425
+ *
  */
 public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
 
@@ -77,6 +85,9 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
     /** String to be used to replace non-alphanumeric characters in a certificate's common name */
     private static final String NAME_REPLACEMENT = "-";
 
+    /** String to be used to replace invalid XML characters */
+    private static final String UNSUPPORTED_CHARACTER = "?";
+
     /** To be used to define an issuer name */
     private static final String ISSUER = "ISSUER-";
 
@@ -85,6 +96,9 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
 
     /** String used when token's signing certificate is not identified */
     private static final String UNKNOWN_SIGNER = "UNKNOWN-SIGNER";
+
+    /** String used when token's subject is not identified */
+    private static final String UNKNOWN_SUBJECT = "UNKNOWN_SUBJECT";
 
     /** String used when token's signing certificate does not have a human-readable name */
     private static final String UNNAMED_SIGNER = "UNNAMED-SIGNER";
@@ -125,6 +139,12 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
     /** The prefix to be used for an evidence record identifier creation */
     private String evidenceRecordPrefix = "EVIDENCE-RECORD";
 
+    /** The prefix to be used for an attestation identifier creation */
+    private String attestationPrefix = "ATTESTATION";
+
+    /** The prefix to be used for an attestation revocation token identifier creation */
+    private String attestationRevocationTokenPrefix = "ATTESTATION-REVOCATION";
+
     /** The prefix to be used for a List of Trusted Lists identifier creation */
     private String lotlPrefix = "LOTL";
 
@@ -133,6 +153,12 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
 
     /** The prefix to be used for a pivot identifier creation */
     private String pivotPrefix = "PIVOT";
+
+    /** The prefix to be used for a List of Lists of Trusted Entities identifier creation */
+    private String lolotePrefix = "LOLOTE";
+
+    /** The prefix to be used for a List of Trusted Entities identifier creation */
+    private String lotePrefix = "LOTE";
 
     /** The date format to be used for a token identifier creation */
     private String dateFormat = "yyyyMMdd-HHmm";
@@ -146,7 +172,7 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
 
     /**
      * Sets the prefix to be used for signature identifiers
-     *
+     * <p>
      * Default = "SIGNATURE"
      *
      * @param signaturePrefix {@link String}
@@ -158,7 +184,7 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
 
     /**
      * Sets the prefix to be used for counter-signature identifiers
-     *
+     * <p>
      * Default = "COUNTER-SIGNATURE"
      *
      * @param counterSignaturePrefix {@link String}
@@ -170,7 +196,7 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
 
     /**
      * Sets the prefix to be used for timestamp identifiers
-     *
+     * <p>
      * Default = "TIMESTAMP"
      *
      * @param timestampPrefix {@link String}
@@ -182,7 +208,7 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
 
     /**
      * Sets the prefix to be used for certificate identifiers
-     *
+     * <p>
      * Default = "CERTIFICATE"
      *
      * @param certificatePrefix {@link String}
@@ -194,7 +220,7 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
 
     /**
      * Sets the prefix to be used for CRL identifiers
-     *
+     * <p>
      * Default = "CRL"
      *
      * @param crlPrefix {@link String}
@@ -206,7 +232,7 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
 
     /**
      * Sets the prefix to be used for OCSP identifiers
-     *
+     * <p>
      * Default = "OCSP"
      *
      * @param ocspPrefix {@link String}
@@ -218,7 +244,7 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
 
     /**
      * Sets the prefix to be used for original document identifiers
-     *
+     * <p>
      * Default = "DOCUMENT"
      *
      * @param signedDataPrefix {@link String}
@@ -230,51 +256,103 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
 
     /**
      * Sets the prefix to be used for evidence record identifiers
-     *
+     * <p>
      * Default = "EVIDENCE-RECORD"
      *
      * @param evidenceRecordPrefix {@link String}
      */
     public void setEvidenceRecordPrefix(String evidenceRecordPrefix) {
+        assertNotBlank(evidenceRecordPrefix);
         this.evidenceRecordPrefix = evidenceRecordPrefix;
     }
 
     /**
      * Sets the prefix to be used for a LOTL identifier
-     *
+     * <p>
      * Default = "LOTL"
      *
      * @param lotlPrefix {@link String}
      */
     public void setLOTLPrefix(String lotlPrefix) {
+        assertNotBlank(lotlPrefix);
         this.lotlPrefix = lotlPrefix;
     }
 
     /**
      * Sets the prefix to be used for TL identifiers
-     *
+     * <p>
      * Default = "TL"
      *
      * @param tlPrefix {@link String}
      */
     public void setTLPrefix(String tlPrefix) {
+        assertNotBlank(tlPrefix);
         this.tlPrefix = tlPrefix;
     }
 
     /**
      * Sets the prefix to be used for pivot identifiers
-     *
+     * <p>
      * Default = "PIVOT"
      *
      * @param pivotPrefix {@link String}
      */
     public void setPivotPrefix(String pivotPrefix) {
+        assertNotBlank(pivotPrefix);
         this.pivotPrefix = pivotPrefix;
     }
 
     /**
-     * Sets the dataFormat to be used for identifiers creation
+     * Sets the prefix to be used for LoTE identifiers
+     * <p>
+     * Default = "LOTE"
      *
+     * @param lotePrefix {@link String}
+     */
+    public void setLotePrefix(String lotePrefix) {
+        assertNotBlank(lotlPrefix);
+        this.lotePrefix = lotePrefix;
+    }
+
+    /**
+     * Sets the prefix to be used for LoLoTE identifiers
+     * <p>
+     * Default = "LOLOTE"
+     *
+     * @param lolotePrefix {@link String}
+     */
+    public void setLolotePrefix(String lolotePrefix) {
+        assertNotBlank(lotlPrefix);
+        this.lolotePrefix = lolotePrefix;
+    }
+
+    /**
+     * Sets the prefix to be used for attestation identifiers
+     * <p>
+     * Default = "ATTESTATION"
+     *
+     * @param attestationPrefix {@link String}
+     */
+    public void setAttestationPrefix(String attestationPrefix) {
+        assertNotBlank(pivotPrefix);
+        this.attestationPrefix = attestationPrefix;
+    }
+
+    /**
+     * Sets the prefix to be used for attestation revocation token identifiers
+     * <p>
+     * Default = "ATTESTATION-REVOCATION"
+     *
+     * @param attestationRevocationTokenPrefix {@link String}
+     */
+    public void setAttestationRevocationTokenPrefix(String attestationRevocationTokenPrefix) {
+        assertNotBlank(attestationRevocationTokenPrefix);
+        this.attestationRevocationTokenPrefix = attestationRevocationTokenPrefix;
+    }
+
+    /**
+     * Sets the dataFormat to be used for identifiers creation
+     * <p>
      * Default = "yyyyMMdd-HHmm"
      *
      * @param dateFormat {@link String} the target date format
@@ -301,9 +379,6 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
         } else if (object instanceof SignatureScope) {
             return getIdAsStringForSignatureScope((SignatureScope) object);
 
-        } else if (object instanceof TLInfo) {
-            return getIdAsStringForTL((TLInfo) object);
-
         } else if (object instanceof CertificateRef) {
             return getIdAsStringForCertRef((CertificateRef) object);
 
@@ -315,6 +390,15 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
 
         } else if (object instanceof EvidenceRecord) {
             return getIdAsStringForEvidenceRecordIdentifier((EvidenceRecord) object);
+
+        }  else if (object instanceof Attestation) {
+            return getIdAsStringForAttestationIdentifier((Attestation) object);
+
+        } else if (object instanceof TLInfo) {
+            return getIdAsStringForTL((TLInfo) object);
+
+        } else if (object instanceof LoTEInfo) {
+            return getIdAsStringForLoTE((LoTEInfo) object);
 
         }
         LOG.warn("The class '{}' is not supported! Return the original identifier for the object.", object.getClass());
@@ -389,7 +473,7 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
      */
     protected String getIdAsStringForTL(TLInfo tlInfo) {
         StringBuilder stringBuilder = new StringBuilder(getTlPrefix(tlInfo));
-        ParsingInfoRecord parsingCacheInfo = tlInfo.getParsingCacheInfo();
+        TLParsingInfoRecord parsingCacheInfo = tlInfo.getParsingCacheInfo();
         if (parsingCacheInfo != null) {
             if (Utils.isStringNotBlank(parsingCacheInfo.getTerritory())) {
                 stringBuilder.append(STRING_DELIMITER);
@@ -401,6 +485,28 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
             }
         }
         return generateId(stringBuilder, tlInfo.getDSSIdAsString());
+    }
+
+    /**
+     * Gets a {@code String} identifier for a given {@code LoTEInfo}
+     *
+     * @param listInfo {@link LoTEInfo} to get String id for
+     * @return {@link String}
+     */
+    protected String getIdAsStringForLoTE(LoTEInfo listInfo) {
+        StringBuilder stringBuilder = new StringBuilder(getLoTEPrefix(listInfo));
+        LoTEParsingInfoRecord parsingCacheInfo = listInfo.getParsingCacheInfo();
+        if (parsingCacheInfo != null) {
+            if (Utils.isStringNotBlank(parsingCacheInfo.getTerritory())) {
+                stringBuilder.append(STRING_DELIMITER);
+                stringBuilder.append(getUserFriendlyString(parsingCacheInfo.getTerritory()));
+            }
+            if (parsingCacheInfo.getIssueDate() != null) {
+                stringBuilder.append(STRING_DELIMITER);
+                stringBuilder.append(DSSUtils.formatDateWithCustomFormat(parsingCacheInfo.getIssueDate(), dateFormat));
+            }
+        }
+        return generateId(stringBuilder, listInfo.getDSSIdAsString());
     }
 
     /**
@@ -482,6 +588,109 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
         return generateId(stringBuilder, evidenceRecord.getId());
     }
 
+    /**
+     * Gets an identifier for the attestation
+     *
+     * @param attestation {@link Attestation}
+     * @return {@link String} identifier
+     */
+    protected String getIdAsStringForAttestationIdentifier(Attestation attestation) {
+        StringBuilder stringBuilder = new StringBuilder(attestationPrefix);
+
+        // 1. Doc type
+        if (attestation.getPayload().getDocType() != null) {
+            String docType = prettyPrintDocType(attestation.getPayload().getDocType().getStringValue());
+            if (Utils.isStringNotEmpty(docType)) {
+                stringBuilder.append(STRING_DELIMITER);
+                stringBuilder.append(docType);
+            }
+        } else if (attestation.getPayload().getVerifiableCredentialsType() != null) {
+            String docType = prettyPrintDocType(attestation.getPayload().getVerifiableCredentialsType().getStringValue());
+            if (Utils.isStringNotEmpty(docType)) {
+                stringBuilder.append(STRING_DELIMITER);
+                stringBuilder.append(docType);
+            }
+        }
+
+        // 2. Subject
+        stringBuilder.append(STRING_DELIMITER);
+        if (attestation.getPayload().getSubject() != null) {
+            stringBuilder.append(getUserFriendlyString(attestation.getPayload().getSubject().getStringValue()));
+        } else if (attestation.getPayload().getGivenName() != null || attestation.getPayload().getFamilyName() != null) {
+            String name = null;
+            if (attestation.getPayload().getFamilyName() != null) {
+                name = attestation.getPayload().getFamilyName().getStringValue();
+            }
+            if (attestation.getPayload().getGivenName() != null) {
+                if (Utils.isStringNotEmpty(name)) {
+                    name = name.concat("-");
+                } else {
+                    name = Utils.EMPTY_STRING;
+                }
+                name = name.concat(attestation.getPayload().getGivenName().getStringValue());
+            }
+            stringBuilder.append(getUserFriendlyString(name));
+        } else if (Utils.collectionSize(attestation.getSignatures()) == 1 && attestation.getSignatures().get(0).getSigningCertificateToken() != null) {
+            X500PrincipalHelper subject = attestation.getSignatures().get(0).getSigningCertificateToken().getSubject();
+            stringBuilder.append(getHumanReadableName(subject));
+        } else {
+            stringBuilder.append(UNKNOWN_SUBJECT);
+        }
+
+        // 3. Issuance time
+        if (attestation.getPayload().getIssuedAtTime() != null) {
+            stringBuilder.append(STRING_DELIMITER);
+            stringBuilder.append(DSSUtils.formatDateWithCustomFormat(attestation.getPayload().getIssuedAtTime().getDateValue(), dateFormat));
+        } else if (attestation.getPayload().getValidityInfo() != null && attestation.getPayload().getValidityInfo().getSigned() != null) {
+            stringBuilder.append(STRING_DELIMITER);
+            stringBuilder.append(DSSUtils.formatDateWithCustomFormat(attestation.getPayload().getValidityInfo().getSigned().getDateValue(), dateFormat));
+        } else if (Utils.collectionSize(attestation.getSignatures()) == 1 && attestation.getSignatures().get(0).getSigningTime() != null) {
+            stringBuilder.append(STRING_DELIMITER);
+            stringBuilder.append(DSSUtils.formatDateWithCustomFormat(attestation.getSignatures().get(0).getSigningTime(), dateFormat));
+        }
+
+        return generateId(stringBuilder, attestation.getId());
+    }
+
+    private String prettyPrintDocType(String docType) {
+        if (Utils.isStringNotEmpty(docType)) {
+            String[] parts;
+            if (docType.contains(".")) {
+                parts = docType.split("\\.");
+            } else if (docType.contains(":")) {
+                parts = docType.split(":");
+            } else {
+                parts = new String[] { docType };
+            }
+            return prettyPrintDocType(parts);
+        }
+        return null;
+    }
+
+    private String prettyPrintDocType(String[] parts) {
+        if (Utils.isArrayNotEmpty(parts)) {
+            List<String> result = new ArrayList<>();
+            boolean stringFound = false;
+            for (int i = parts.length - 1; i >= 0; i--) {
+                String part = parts[i];
+                if (Utils.areStringsEqualIgnoreCase("urn", part)) {
+                    break;
+                }
+                if (Utils.isStringDigits(part)) {
+                    if (i != parts.length - 1 && stringFound) {
+                        break;
+                    }
+                } else {
+                    stringFound = true;
+                }
+                result.add(part);
+            }
+            Collections.reverse(result);
+            return getUserFriendlyString(Utils.joinStrings(result, "-"));
+        }
+        return null;
+    }
+
     private String createIdString(String prefix, X500PrincipalHelper subject, Date creationDate, String dssId) {
         StringBuilder stringBuilder = new StringBuilder(prefix);
         stringBuilder.append(STRING_DELIMITER);
@@ -543,6 +752,8 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
             return ocspPrefix;
         } else if (token instanceof TimestampToken) {
             return timestampPrefix;
+        }  else if (token instanceof AttestationRevocationToken) {
+            return attestationRevocationTokenPrefix;
         } else {
             throw new IllegalArgumentException(String.format(
                     "Unsupported token of class '%s' has been reached!", token.getClass()));
@@ -573,6 +784,14 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
         }
     }
 
+    private String getLoTEPrefix(LoTEInfo listInfo) {
+        if (listInfo instanceof LoLoTEInfo) {
+            return lolotePrefix;
+        } else {
+            return lotePrefix;
+        }
+    }
+
     private String getRevocationRefPrefix(RevocationRef<?> revocationRef) {
         if (revocationRef instanceof CRLRef) {
             return crlPrefix;
@@ -597,7 +816,11 @@ public class UserFriendlyIdentifierProvider implements TokenIdentifierProvider {
     }
 
     private String getUserFriendlyString(String str) {
+        if (Utils.isStringEmpty(str)) {
+            return str;
+        }
         str = DSSUtils.removeControlCharacters(str);
+        str = DSSUtils.replaceInvalidXmlCharacters(str, UNSUPPORTED_CHARACTER);
         str = DSSUtils.replaceAllNonAlphanumericCharacters(str, NAME_REPLACEMENT);
         return trim(str, NAME_REPLACEMENT);
     }

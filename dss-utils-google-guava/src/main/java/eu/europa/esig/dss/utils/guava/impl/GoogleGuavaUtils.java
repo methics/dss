@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -240,6 +240,7 @@ public class GoogleGuavaUtils implements IUtils {
 		if (array == null) {
 			return null;
 		}
+		length = Math.min(array.length, length);
 		return Arrays.copyOfRange(array, start, length);
 	}
 
@@ -261,6 +262,15 @@ public class GoogleGuavaUtils implements IUtils {
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
+	public int collectionSize(Collection collection) {
+		if (collection == null) {
+			return 0;
+		}
+		return collection.size();
+	}
+
+	@Override
 	public boolean isMapEmpty(Map<?,?> map) {
 		return map == null || map.isEmpty();
 	}
@@ -271,12 +281,11 @@ public class GoogleGuavaUtils implements IUtils {
 	}
 
 	@Override
-	@SuppressWarnings("rawtypes")
-	public int collectionSize(Collection collection) {
-		if (collection == null) {
+	public int mapSize(Map<?, ?> map) {
+		if (map == null) {
 			return 0;
 		}
-		return collection.size();
+		return map.size();
 	}
 
 	@Override
@@ -336,6 +345,11 @@ public class GoogleGuavaUtils implements IUtils {
 		ByteStreams.copy(new ByteArrayInputStream(content), os);
 	}
 	
+	@Override
+	public OutputStream nullOutputStream() {
+		return ByteStreams.nullOutputStream();
+	}
+
 	@Override
 	public long getInputStreamSize(InputStream is) throws IOException {
 		return ByteStreams.exhaust(is);

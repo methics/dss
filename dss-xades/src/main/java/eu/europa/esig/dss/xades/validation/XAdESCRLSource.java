@@ -1,26 +1,25 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.xades.validation;
 
-import eu.europa.esig.dss.xml.utils.DomUtils;
 import eu.europa.esig.dss.crl.CRLBinary;
 import eu.europa.esig.dss.crl.CRLUtils;
 import eu.europa.esig.dss.enumerations.RevocationOrigin;
@@ -29,6 +28,8 @@ import eu.europa.esig.dss.spi.x509.revocation.crl.CRLRef;
 import eu.europa.esig.dss.spi.x509.revocation.crl.OfflineCRLSource;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.xades.definition.XAdESPath;
+import eu.europa.esig.dss.xml.common.xpath.XPathQuery;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
@@ -69,21 +70,22 @@ public class XAdESCRLSource extends OfflineCRLSource {
 		collectValues(xadesPaths.getRevocationValuesPath(), RevocationOrigin.REVOCATION_VALUES);
 		collectValues(xadesPaths.getAttributeRevocationValuesPath(), RevocationOrigin.ATTRIBUTE_REVOCATION_VALUES);
 		collectValues(xadesPaths.getTimeStampValidationDataRevocationValuesPath(), RevocationOrigin.TIMESTAMP_VALIDATION_DATA);
+		collectValues(xadesPaths.getAnyValidationDataRevocationValuesPath(), RevocationOrigin.ANY_VALIDATION_DATA);
 
 		// references
 		collectRefs(xadesPaths.getCompleteRevocationRefsPath(), RevocationRefOrigin.COMPLETE_REVOCATION_REFS);
 		collectRefs(xadesPaths.getAttributeRevocationRefsPath(), RevocationRefOrigin.ATTRIBUTE_REVOCATION_REFS);
 	}
 
-	private void collectValues(final String revocationValuesPath, RevocationOrigin revocationOrigin) {
+	private void collectValues(final XPathQuery revocationValuesPath, RevocationOrigin revocationOrigin) {
 		if (revocationValuesPath == null) {
 			return;
 		}
 
-		final NodeList revocationValuesNodeList = DomUtils.getNodeList(signatureElement, revocationValuesPath);
+		final NodeList revocationValuesNodeList = XPathUtils.getNodeList(signatureElement, revocationValuesPath);
 		for (int i = 0; i < revocationValuesNodeList.getLength(); i++) {
 			final Element revocationValuesElement = (Element) revocationValuesNodeList.item(i);
-			final NodeList crlValueNodes = DomUtils.getNodeList(revocationValuesElement, xadesPaths.getCurrentCRLValuesChildren());
+			final NodeList crlValueNodes = XPathUtils.getNodeList(revocationValuesElement, xadesPaths.getCurrentCRLValuesChildren());
 			for (int ii = 0; ii < crlValueNodes.getLength(); ii++) {
 				try {
 					final Element crlValueEl = (Element) crlValueNodes.item(ii);
@@ -98,15 +100,15 @@ public class XAdESCRLSource extends OfflineCRLSource {
 		}
 	}
 
-	private void collectRefs(final String revocationRefsPath, RevocationRefOrigin revocationRefOrigin) {
+	private void collectRefs(final XPathQuery revocationRefsPath, RevocationRefOrigin revocationRefOrigin) {
 		if (revocationRefsPath == null) {
 			return;
 		}
 
-		final NodeList revocationRefsNodeList = DomUtils.getNodeList(signatureElement, revocationRefsPath);
+		final NodeList revocationRefsNodeList = XPathUtils.getNodeList(signatureElement, revocationRefsPath);
 		for (int i = 0; i < revocationRefsNodeList.getLength(); i++) {
 			final Element revocationRefsElement = (Element) revocationRefsNodeList.item(i);
-			final NodeList crlRefNodes = DomUtils.getNodeList(revocationRefsElement, xadesPaths.getCurrentCRLRefsChildren());
+			final NodeList crlRefNodes = XPathUtils.getNodeList(revocationRefsElement, xadesPaths.getCurrentCRLRefsChildren());
 			for (int ii = 0; ii < crlRefNodes.getLength(); ii++) {
 				final Element crlRefNode = (Element) crlRefNodes.item(ii);
 				CRLRef crlRef = XAdESRevocationRefExtractionUtils.createCRLRef(xadesPaths, crlRefNode);

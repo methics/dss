@@ -1,42 +1,38 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.policy;
 
+import eu.europa.esig.dss.enumerations.Level;
+import eu.europa.esig.dss.enumerations.ValidationModel;
 import eu.europa.esig.dss.policy.jaxb.Algo;
 import eu.europa.esig.dss.policy.jaxb.CertificateConstraints;
 import eu.europa.esig.dss.policy.jaxb.ConstraintsParameters;
-import eu.europa.esig.dss.policy.jaxb.Level;
-import eu.europa.esig.dss.policy.jaxb.Model;
 import eu.europa.esig.dss.policy.jaxb.ModelConstraint;
 import eu.europa.esig.dss.policy.jaxb.RevocationConstraints;
 import eu.europa.esig.dss.policy.jaxb.TimeConstraint;
 import eu.europa.esig.dss.policy.jaxb.TimeUnit;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
-
-import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.UnmarshalException;
-import javax.xml.stream.XMLStreamException;
+import org.junit.jupiter.api.Test;
+
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -69,7 +65,7 @@ class ValidationPolicyFacadeTest {
 				.unmarshall(new File("src/test/resources/constraint.xml"));
 
 		ModelConstraint mc = new ModelConstraint();
-		mc.setValue(Model.SHELL);
+		mc.setValue(ValidationModel.SHELL);
 		constraintsParameters.setModel(mc);
 
 		String marshall = ValidationPolicyFacade.newFacade().marshall(constraintsParameters);
@@ -86,25 +82,6 @@ class ValidationPolicyFacadeTest {
 		ConstraintsParameters constraintsParameters = ValidationPolicyFacade.newFacade()
 				.unmarshall(new File("src/test/resources/constraint-core-validation.xml"));
 		assertNotNull(constraintsParameters);
-	}
-
-	@Test
-	void getDefaultValidationPolicy() throws JAXBException, XMLStreamException, IOException, SAXException {
-		assertNotNull(ValidationPolicyFacade.newFacade().getDefaultValidationPolicy());
-	}
-
-	@Test
-	void getCertificateValidationPolicy() throws JAXBException, XMLStreamException, IOException, SAXException {
-		ValidationPolicy certificateValidationPolicy = ValidationPolicyFacade.newFacade().getCertificateValidationPolicy();
-		assertNotNull(certificateValidationPolicy);
-		assertEquals("Certificate policy TL based", certificateValidationPolicy.getPolicyName());
-	}
-
-	@Test
-	void getTrustedListValidationPolicy() throws JAXBException, XMLStreamException, IOException, SAXException {
-		ValidationPolicy trustedListValidationPolicy = ValidationPolicyFacade.newFacade().getTrustedListValidationPolicy();
-		assertNotNull(trustedListValidationPolicy);
-		assertEquals("Policy to validate Trusted Lists", trustedListValidationPolicy.getPolicyDescription());
 	}
 
 	@Test

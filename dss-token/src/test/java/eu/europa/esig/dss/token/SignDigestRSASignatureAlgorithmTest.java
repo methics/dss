@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -38,7 +38,6 @@ import javax.crypto.Cipher;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore.PasswordProtection;
-import java.security.Security;
 import java.security.Signature;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -52,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SignDigestRSASignatureAlgorithmTest {
 
     static {
-        Security.addProvider(DSSSecurityProvider.getSecurityProvider());
+        DSSSecurityProvider.initSystemProviders();
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(SignDigestRSATest.class);
@@ -102,9 +101,7 @@ class SignDigestRSASignatureAlgorithmTest {
 
             final DigestAlgorithm digestAlgorithm = signatureAlgorithm.getDigestAlgorithm();
             final byte[] digestBinaries = DSSUtils.digest(digestAlgorithm, toBeSigned.getBytes());
-            // Important step with RSA without PSS
-            final byte[] encodedDigest = DSSUtils.encodeRSADigest(digestAlgorithm, digestBinaries);
-            Digest digest = new Digest(digestAlgorithm, encodedDigest);
+            Digest digest = new Digest(digestAlgorithm, digestBinaries);
 
             SignatureValue signDigestValue = signatureToken.signDigest(digest, signatureAlgorithm, entry);
             assertNotNull(signDigestValue.getAlgorithm());

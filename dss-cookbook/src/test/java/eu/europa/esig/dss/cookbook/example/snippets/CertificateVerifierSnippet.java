@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -24,19 +24,21 @@ import eu.europa.esig.dss.alert.ExceptionOnStatusAlert;
 import eu.europa.esig.dss.alert.LogOnStatusAlert;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
-import eu.europa.esig.dss.policy.ValidationPolicy;
-import eu.europa.esig.dss.policy.ValidationPolicyFacade;
+import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
 import eu.europa.esig.dss.spi.OID;
 import eu.europa.esig.dss.spi.validation.CertificateVerifier;
 import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.spi.validation.OCSPFirstRevocationDataLoadingStrategyFactory;
 import eu.europa.esig.dss.spi.validation.RevocationDataVerifier;
 import eu.europa.esig.dss.spi.validation.TimestampTokenVerifier;
+import eu.europa.esig.dss.spi.validation.TrustAnchorVerifier;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.aia.AIASource;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLSource;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPSource;
 import eu.europa.esig.dss.validation.RevocationDataVerifierFactory;
+import eu.europa.esig.dss.validation.policy.ValidationPolicyLoader;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.slf4j.event.Level;
 
@@ -197,9 +199,16 @@ public class CertificateVerifierSnippet {
         TimestampTokenVerifier timestampTokenVerifier = TimestampTokenVerifier.createDefaultTimestampTokenVerifier();
         cv.setTimestampTokenVerifier(timestampTokenVerifier);
 
+        // DSS 6.2+ :
+        // Defines a behavior for acceptance of trust anchors present within a signature document as POE
+        // for the signature and data objects
+        // NOTE: The class is not synchronized with the rules defined within the used XML Validation Policy.
+        TrustAnchorVerifier trustAnchorVerifier = TrustAnchorVerifier.createDefaultTrustAnchorVerifier();
+        cv.setTrustAnchorVerifier(trustAnchorVerifier);
+
         // end::demo[]
 
-        final ValidationPolicy validationPolicy = ValidationPolicyFacade.newFacade().getDefaultValidationPolicy();
+        final ValidationPolicy validationPolicy = ValidationPolicyLoader.fromDefaultValidationPolicy().create();
         final Date validationTime = new Date();
 
         // tag::rev-data-verifier[]
@@ -230,18 +239,30 @@ public class CertificateVerifierSnippet {
         // For customization directly in RevocationDataVerifier, the following methods
         // may be used:
 
-        // #setAcceptableDigestAlgorithms method is used to provide a list of DigestAlgorithms
-        // to be accepted during the revocation data validation.
+        // Cryptographic constraints can be configured either as a list of
+        // SignatureAlgorithm's OR as a collection of DigestAlgorithm and
+        // EncryptionAlgorithm pairs.
+        // NOTE : 'OR' applies inclusively.
+
+        // #setAcceptableDigestAlgorithms method defines an explicit list of
+        // acceptable SignatureAlgorithms with the minimal accepted key length.
         // Default : collection of algorithms is synchronized with ETSI 119 312
+        Map<SignatureAlgorithm, Integer> signatureAlgorithms = new HashMap<>();
+        signatureAlgorithms.put(SignatureAlgorithm.RSA_SSA_PSS_SHA256_MGF1, 1900);
+        signatureAlgorithms.put(SignatureAlgorithm.RSA_SSA_PSS_SHA384_MGF1, 1900);
+        signatureAlgorithms.put(SignatureAlgorithm.RSA_SSA_PSS_SHA512_MGF1, 1900);
+        revocationDataVerifier.setAcceptableSignatureAlgorithmKeyLength(signatureAlgorithms);
+
+        // #setAcceptableDigestAlgorithms method is used to provide a list of DigestAlgorithms
+        // to be accepted during the revocation data validation, in a combination with
+        // corresponding EncryptionAlgorithms.
         revocationDataVerifier.setAcceptableDigestAlgorithms(Arrays.asList(
                 DigestAlgorithm.SHA224, DigestAlgorithm.SHA256, DigestAlgorithm.SHA384, DigestAlgorithm.SHA512,
                 DigestAlgorithm.SHA3_256, DigestAlgorithm.SHA3_384, DigestAlgorithm.SHA3_512));
 
         // #setAcceptableEncryptionAlgorithmKeyLength method defines a list of acceptable
-        // encryption algorithms and their corresponding key length. Revocation tokens
-        // signed with other algorithms or with a key length smaller than one defined within
-        // the map will be skipped.
-        // Default : collection of algorithms is synchronized with ETSI 119 312
+        // encryption algorithms and their corresponding minimal accepted key length,
+        // in a combination with corresponding DigestAlgorithms.
         Map<EncryptionAlgorithm, Integer> encryptionAlgos = new HashMap<>();
         encryptionAlgos.put(EncryptionAlgorithm.DSA, 2048);
         encryptionAlgos.put(EncryptionAlgorithm.RSA, 1900);
@@ -311,12 +332,28 @@ public class CertificateVerifierSnippet {
         // All configuration shall be provided manually.
         timestampTokenVerifier = TimestampTokenVerifier.createEmptyTimestampTokenVerifier();
 
-        // Defines whether timestamp tokens created by untrusted CAs should be considered as
-        // valid, and their POE should be extracted during the validation process
-        // Default : FALSE (only trusted timestamps are accepted)
-        timestampTokenVerifier.setAcceptUntrustedCertificateChains(true);
-
         // end::tst-token-verifier[]
+
+        // tag::trust-anchor-verifier[]
+
+        // The following method is used to create a TrustAnchorVerifier configured
+        // with default behavior (such as to accept only certificates present in a trusted certificate source)
+        trustAnchorVerifier = TrustAnchorVerifier.createDefaultTrustAnchorVerifier();
+
+        // This method created a TimestampTokenVerifier with en empty configuration.
+        // All configuration shall be provided manually.
+        trustAnchorVerifier = TrustAnchorVerifier.createEmptyTrustAnchorVerifier();
+
+        // Defines whether tokens created by untrusted certificate chains should be considered as valid,
+        // and their POE should be extracted during the validation process
+        // Default : FALSE (only trusted certificate chains are accepted)
+        trustAnchorVerifier.setAcceptTimestampUntrustedCertificateChains(true);
+
+        // Defines whether trust anchor's sunset date should be considered during the validation process
+        // Default : FALSE (trust anchor's sunset time is ignored)
+        trustAnchorVerifier.setUseSunsetDate(true);
+
+        // end::trust-anchor-verifier[]
 
         // tag::disable-augmentation-alert[]
         cv.setAugmentationAlertOnHigherSignatureLevel(new LogOnStatusAlert());

@@ -6,8 +6,7 @@
 			"properties":{
 				"etsiU": {"$ref": "19182-jsonSchema.json#/definitions/etsiU"}
 			},
-			"required": ["etsiU"],
-			"additionalProperties": false
+			"minItems": 1
 		}
 	},
 	

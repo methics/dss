@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -67,7 +67,7 @@ public class PDFAStructureValidator {
      */
     public PDFAValidationResult validate(DSSDocument signedDocument) {
         try (InputStream is = signedDocument.openStream(); PDFAParser parser = FOUNDRY.createParser(is);
-             PDFAValidator validator = FOUNDRY.createValidator(parser.getFlavour(), false)) {
+             PDFAValidator validator = FOUNDRY.createValidator(getFlavour(parser), false)) {
 
             ValidationResult result = validator.validate(parser);
             return toPDFAValidationResult(result);
@@ -76,6 +76,12 @@ public class PDFAStructureValidator {
             LOG.error("Unable to perform PDF/A structure validation. Reason : {}", e.getMessage(), e);
             return null;
         }
+    }
+
+    private PDFAFlavour getFlavour(PDFAParser parser) {
+        // Previously, veraPDF returned the default flavour when none was detected, but now it returns an empty list instead.
+        // To preserve the previous behavior, as it is required by the validator, we explicitly fall back to the default flavour.
+        return parser.getFlavours().isEmpty() ? FOUNDRY.defaultFlavour() : parser.getFlavour();
     }
 
     private PDFAValidationResult toPDFAValidationResult(ValidationResult validationResult) {

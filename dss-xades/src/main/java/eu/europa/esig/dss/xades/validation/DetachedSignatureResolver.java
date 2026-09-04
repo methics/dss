@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -27,6 +27,8 @@ import eu.europa.esig.dss.model.DigestDocument;
 import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.xades.DSSXMLUtils;
+import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigAttribute;
+import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigElement;
 import eu.europa.esig.dss.xml.utils.DomUtils;
 import org.apache.xml.security.signature.XMLSignatureInput;
 import org.apache.xml.security.utils.resolver.ResourceResolverContext;
@@ -35,6 +37,9 @@ import org.apache.xml.security.utils.resolver.ResourceResolverSpi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.util.List;
 
@@ -78,7 +83,11 @@ public class DetachedSignatureResolver extends ResourceResolverSpi {
 	}
 
 	private DSSDocument getBestCandidate(ResourceResolverContext context) throws ResourceResolverException {
-		if (definedFilename(context) && isDocumentNamesDefined()) {
+		if (Utils.collectionSize(documents) == 1 && isSingleDetachedDocumentReference(context)) {
+			return documents.get(0);
+		}
+
+		if (definedFilename(context)) {
 			Attr uriAttr = context.attr;
 			String uriValue = DSSUtils.decodeURI(uriAttr.getNodeValue());
 			Digest referenceDigest = DSSXMLUtils.getDigestAndValue(uriAttr.getOwnerElement());
@@ -95,10 +104,6 @@ public class DetachedSignatureResolver extends ResourceResolverSpi {
 			throw new ResourceResolverException("generic.EmptyMessage", exArgs, uriValue, context.baseUri);
 		}
 
-		if (Utils.collectionSize(documents) == 1) {
-			return documents.get(0);
-		}
-
 		Object[] exArgs = { "Unable to find document (detached signature)" };
 		throw new ResourceResolverException("generic.EmptyMessage", exArgs, null, context.baseUri);
 	}
@@ -111,7 +116,7 @@ public class DetachedSignatureResolver extends ResourceResolverSpi {
 		for (DSSDocument dssDocument : documents) {
 			if (referenceDigest.equals(getDocumentDigest(referenceDigest.getAlgorithm(), dssDocument))) {
 				if (bestCandidate != null) {
-					LOG.warn("Multiple documents match the same reference with URI '{}'!", uriValue);
+					LOG.warn("Multiple documents match the same digest value for a reference with URI '{}'!", uriValue);
 					if (!Utils.areStringsEqual(dssDocument.getName(), uriValue)) {
 						// do not change the best candidate in case of name mismatch
 						continue;
@@ -131,7 +136,7 @@ public class DetachedSignatureResolver extends ResourceResolverSpi {
 		for (DSSDocument dssDocument : documents) {
 			if (uriValue.equals(dssDocument.getName())) {
 				if (bestCandidate != null) {
-					LOG.warn("Multiple documents match the same reference with URI '{}'!", uriValue);
+					LOG.warn("Multiple documents match the same reference name with URI '{}'!", uriValue);
 					break;
 				}
 				bestCandidate = dssDocument;
@@ -182,7 +187,48 @@ public class DetachedSignatureResolver extends ResourceResolverSpi {
 
 	@Override
 	public boolean engineCanResolveURI(ResourceResolverContext context) {
-		return (nullURI(context) || definedFilename(context));
+		return nullURI(context) || definedFilename(context);
+	}
+
+	private boolean isSingleDetachedDocumentReference(ResourceResolverContext context) {
+		Attr uriAttr = context.attr;
+		if (uriAttr == null) {
+			// no URI attr -> singular document reference
+			return true;
+		}
+		Element referenceElement = uriAttr.getOwnerElement();
+		if (referenceElement == null) {
+			return false;
+		}
+		Node signedInfo = referenceElement.getParentNode();
+		if (signedInfo == null) {
+			return false;
+		}
+
+		boolean detachedDocRefFound = false;
+		NodeList childNodes = signedInfo.getChildNodes();
+		for (int i = 0; i < childNodes.getLength(); i++) {
+			boolean isDetachedDocRef = false;
+			Node childNode = childNodes.item(i);
+			if (Node.ELEMENT_NODE == childNode.getNodeType() && XMLDSigElement.REFERENCE.isSameTagName(childNode.getLocalName())) {
+				Element childReferenceElement = (Element) childNode;
+				if (!childReferenceElement.hasAttribute(XMLDSigAttribute.URI.getAttributeName())) {
+					// no URI means a detached document
+					isDetachedDocRef = true;
+				}
+				String uriAttrValue = childReferenceElement.getAttribute(XMLDSigAttribute.URI.getAttributeName());
+				if (definedFilename(uriAttrValue)) {
+					isDetachedDocRef = true;
+				}
+			}
+			if (isDetachedDocRef) {
+				if (detachedDocRefFound) {
+					return false;
+				}
+				detachedDocRefFound = isDetachedDocRef;
+			}
+		}
+		return detachedDocRefFound;
 	}
 
 	private boolean nullURI(ResourceResolverContext context) {
@@ -191,18 +237,11 @@ public class DetachedSignatureResolver extends ResourceResolverSpi {
 
 	private boolean definedFilename(ResourceResolverContext context) {
 		Attr uriAttr = context.attr;
-		return uriAttr != null && Utils.isStringNotBlank(uriAttr.getNodeValue()) && !DomUtils.startsFromHash(uriAttr.getNodeValue());
+		return uriAttr != null && definedFilename(uriAttr.getNodeValue());
 	}
 
-	private boolean isDocumentNamesDefined() {
-		if (Utils.isCollectionNotEmpty(documents)) {
-			for (final DSSDocument dssDocument : documents) {
-				if (dssDocument.getName() != null) {
-					return true;
-				}
-			}
-		}
-		return false;
+	private boolean definedFilename(String uriValue) {
+		return Utils.isStringNotBlank(uriValue) && !DomUtils.startsFromHash(uriValue);
 	}
 
 }

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -289,6 +289,15 @@ public interface IUtils {
 	boolean isCollectionNotEmpty(Collection collection);
 
 	/**
+	 * Gets the size of the collection
+	 *
+	 * @param collection {@link Collection}
+	 * @return size of the collection
+	 */
+	@SuppressWarnings("rawtypes")
+	int collectionSize(Collection collection);
+
+	/**
 	 * Checks if the map is null or empty
 	 *
 	 * @param map to check
@@ -305,13 +314,13 @@ public interface IUtils {
 	boolean isMapNotEmpty(Map<?,?> map);
 
 	/**
-	 * Gets the size of the collection
+	 * Gets the size of the map
 	 *
-	 * @param collection {@link Collection}
-	 * @return size of the collection
+	 * @param map {@link Map}
+	 * @return size of the map
 	 */
 	@SuppressWarnings("rawtypes")
-	int collectionSize(Collection collection);
+	int mapSize(Map<?,?> map);
 
 	/**
 	 * Checks if the string is HEX (base16) encoded
@@ -394,6 +403,13 @@ public interface IUtils {
 	 * @throws IOException if an exception occurs
 	 */
 	void write(byte[] content, OutputStream os) throws IOException;
+
+	/**
+	 * Opens an {@code OutputStream} that discards all bytes (written to nowhere)
+	 *
+	 * @return {@link OutputStream}
+	 */
+	OutputStream nullOutputStream();
 
 	/**
 	 * Gets the size of the InputStream content

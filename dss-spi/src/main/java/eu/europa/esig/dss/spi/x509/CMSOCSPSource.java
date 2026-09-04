@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -31,7 +31,6 @@ import eu.europa.esig.dss.utils.Utils;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
@@ -63,8 +62,11 @@ public abstract class CMSOCSPSource extends OfflineOCSPSource {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CMSOCSPSource.class);
 
-	/** The CMS SignedData */
-	protected final transient CMSSignedData cmsSignedData;
+	/** Store of OCSP responses */
+	private final transient Store<?> ocspResponsesStore;
+
+	/** Store of OCSPs in a basic response format */
+	private final transient Store<?> ocspBasicStore;
 
 	/** Represents unsigned properties */
 	protected final transient AttributeTable unsignedAttributes;
@@ -72,13 +74,13 @@ public abstract class CMSOCSPSource extends OfflineOCSPSource {
 	/**
 	 * The default constructor for CAdESOCSPSource.
 	 *
-	 * @param cms
-	 *            {@link CMSSignedData}
-	 * @param unsignedAttributes
-	 *            {@link AttributeTable} unsignedAttributes
+	 * @param ocspResponsesStore {@link Store} of OCSP responses
+	 * @param ocspBasicStore {@link Store} of OCSP basic responses
+	 * @param unsignedAttributes {@link AttributeTable} of the corresponding signer
 	 */
-	protected CMSOCSPSource(final CMSSignedData cms, final AttributeTable unsignedAttributes) {
-		this.cmsSignedData = cms;
+	protected CMSOCSPSource(final Store<?> ocspResponsesStore, final Store<?> ocspBasicStore, final AttributeTable unsignedAttributes) {
+		this.ocspResponsesStore = ocspResponsesStore;
+		this.ocspBasicStore = ocspBasicStore;
 		this.unsignedAttributes = unsignedAttributes;
 		appendContainedOCSPResponses();
 	}
@@ -144,8 +146,10 @@ public abstract class CMSOCSPSource extends OfflineOCSPSource {
 	}
 
 	private void addBasicOcspRespFrom_id_ri_ocsp_response() {
-		final Store<?> otherRevocationInfo = cmsSignedData.getOtherRevocationInfo(CMSObjectIdentifiers.id_ri_ocsp_response);
-		final Collection<?> otherRevocationInfoMatches = otherRevocationInfo.getMatches(null);
+		if (ocspResponsesStore == null) {
+			return;
+		}
+		final Collection<?> otherRevocationInfoMatches = ocspResponsesStore.getMatches(null);
 		for (final Object object : otherRevocationInfoMatches) {
 			if (object instanceof ASN1Sequence) {
 				final ASN1Sequence otherRevocationInfoMatch = (ASN1Sequence) object;
@@ -168,8 +172,10 @@ public abstract class CMSOCSPSource extends OfflineOCSPSource {
 	}
 
 	private void addBasicOcspRespFrom_id_pkix_ocsp_basic() {
-		final Store<?> otherRevocationInfo = cmsSignedData.getOtherRevocationInfo(OCSPObjectIdentifiers.id_pkix_ocsp_basic);
-		final Collection<?> otherRevocationInfoMatches = otherRevocationInfo.getMatches(null);
+		if (ocspBasicStore == null) {
+			return;
+		}
+		final Collection<?> otherRevocationInfoMatches = ocspBasicStore.getMatches(null);
 		for (final Object object : otherRevocationInfoMatches) {
 			if (object instanceof ASN1Sequence) {
 				final ASN1Sequence otherRevocationInfoMatch = (ASN1Sequence) object;
@@ -188,8 +194,7 @@ public abstract class CMSOCSPSource extends OfflineOCSPSource {
 	}
 	
 	private void collectRevocationValues(AttributeTable attributeTable, ASN1ObjectIdentifier revocationValueAttributes,
-			RevocationOrigin origin) {
-
+										 RevocationOrigin origin) {
 		Attribute[] attributes = DSSASN1Utils.getAsn1Attributes(attributeTable, revocationValueAttributes);
 		for (Attribute attribute : attributes) {
 			ASN1Encodable[] attributeValues = attribute.getAttributeValues();
@@ -235,12 +240,11 @@ public abstract class CMSOCSPSource extends OfflineOCSPSource {
 			return;
 		}
 		for (Attribute attribute : attributes) {
-			final ASN1Set attrValues = attribute.getAttrValues();
-			if (attrValues.size() <= 0) {
+			final ASN1Encodable attrValue = DSSASN1Utils.getAsn1Encodable(attribute);
+			if (attrValue == null) {
 				return;
 			}
 
-			final ASN1Encodable attrValue = attrValues.getObjectAt(0);
 			final ASN1Sequence revocationRefs = (ASN1Sequence) attrValue;
 			for (int i = 0; i < revocationRefs.size(); i++) {
 				try {

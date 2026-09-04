@@ -121,6 +121,30 @@
 						 printMethod="eu.europa.esig.dss.jaxb.parsers.EvidenceRecordTypeEnumParser.print" />
 	  </jaxb:bindings>
 
+	  <jaxb:bindings node="//xs:simpleType[@name='EvidenceRecordOrigin']">
+		  <jaxb:javaType name="eu.europa.esig.dss.enumerations.EvidenceRecordOrigin"
+						 parseMethod="eu.europa.esig.dss.jaxb.parsers.EvidenceRecordOriginParser.parse"
+						 printMethod="eu.europa.esig.dss.jaxb.parsers.EvidenceRecordOriginParser.print" />
+	  </jaxb:bindings>
+
+	  <jaxb:bindings node="//xs:simpleType[@name='EvidenceRecordIncorporationType']">
+		  <jaxb:javaType name="eu.europa.esig.dss.enumerations.EvidenceRecordIncorporationType"
+						 parseMethod="eu.europa.esig.dss.jaxb.parsers.EvidenceRecordIncorporationTypeParser.parse"
+						 printMethod="eu.europa.esig.dss.jaxb.parsers.EvidenceRecordIncorporationTypeParser.print" />
+	  </jaxb:bindings>
+
+	  <jaxb:bindings node="//xs:simpleType[@name='AttestationProfile']">
+		  <jaxb:javaType name="eu.europa.esig.dss.enumerations.AttestationProfile"
+						 parseMethod="eu.europa.esig.dss.jaxb.parsers.AttestationProfileParser.parse"
+						 printMethod="eu.europa.esig.dss.jaxb.parsers.AttestationProfileParser.print" />
+	  </jaxb:bindings>
+
+	  <jaxb:bindings node="//xs:simpleType[@name='AttestationDocumentFormat']">
+		  <jaxb:javaType name="eu.europa.esig.dss.enumerations.AttestationDocumentFormat"
+						 parseMethod="eu.europa.esig.dss.jaxb.parsers.AttestationDocumentFormatParser.parse"
+						 printMethod="eu.europa.esig.dss.jaxb.parsers.AttestationDocumentFormatParser.print" />
+	  </jaxb:bindings>
+
   	<jaxb:bindings node="//xs:complexType[@name='BasicSignature']//xs:element[@name='EncryptionAlgoUsedToSignThisToken']">
 			<jaxb:javaType name="eu.europa.esig.dss.enumerations.EncryptionAlgorithm"
 				parseMethod="eu.europa.esig.dss.jaxb.parsers.EncryptionAlgorithmParser.parse"
@@ -144,6 +168,12 @@
 				parseMethod="eu.europa.esig.dss.jaxb.parsers.DigestAlgorithmParser.parse"
 				printMethod="eu.europa.esig.dss.jaxb.parsers.DigestAlgorithmParser.print" />
 		</jaxb:bindings>
+
+	  <jaxb:bindings node="//xs:complexType[@name='IntegrityClaim']//xs:element[@name='DigestMethod']">
+		  <jaxb:javaType name="eu.europa.esig.dss.enumerations.DigestAlgorithm"
+						 parseMethod="eu.europa.esig.dss.jaxb.parsers.DigestAlgorithmParser.parse"
+						 printMethod="eu.europa.esig.dss.jaxb.parsers.DigestAlgorithmParser.print" />
+	  </jaxb:bindings>
 
   	<jaxb:bindings node="//xs:complexType[@name='SignatureDigestReference']//xs:element[@name='DigestMethod']">
 			<jaxb:javaType name="eu.europa.esig.dss.enumerations.DigestAlgorithm"
@@ -175,6 +205,18 @@
 						 printMethod="eu.europa.esig.dss.jaxb.parsers.PdfLockActionParser.print" />
 	  </jaxb:bindings>
 
+	  <jaxb:bindings node="//xs:simpleType[@name='JWSSerializationType']">
+		  <jaxb:javaType name="eu.europa.esig.dss.enumerations.JWSSerializationType"
+						 parseMethod="eu.europa.esig.dss.jaxb.parsers.JWSSerializationTypeParser.parse"
+						 printMethod="eu.europa.esig.dss.jaxb.parsers.JWSSerializationTypeParser.print" />
+	  </jaxb:bindings>
+
+	  <jaxb:bindings node="//xs:simpleType[@name='COSESignatureTypeEnum']">
+		  <jaxb:javaType name="eu.europa.esig.dss.enumerations.COSESignatureType"
+						 parseMethod="eu.europa.esig.dss.jaxb.parsers.COSESignatureTypeParser.parse"
+						 printMethod="eu.europa.esig.dss.jaxb.parsers.COSESignatureTypeParser.print" />
+	  </jaxb:bindings>
+
 	  <jaxb:bindings node="//xs:simpleType[@name='CertificationPermission']">
 		  <jaxb:javaType name="eu.europa.esig.dss.enumerations.CertificationPermission"
 						 parseMethod="eu.europa.esig.dss.jaxb.parsers.CertificationPermissionParser.parse"
@@ -185,6 +227,12 @@
 		  <jaxb:javaType name="eu.europa.esig.dss.enumerations.GeneralNameType"
 						 parseMethod="eu.europa.esig.dss.jaxb.parsers.GeneralNameTypeParser.parse"
 						 printMethod="eu.europa.esig.dss.jaxb.parsers.GeneralNameTypeParser.print" />
+	  </jaxb:bindings>
+
+	  <jaxb:bindings node="//xs:simpleType[@name='ArchiveTimestampHashIndexVersion']">
+		  <jaxb:javaType name="eu.europa.esig.dss.enumerations.ArchiveTimestampHashIndexVersion"
+						 parseMethod="eu.europa.esig.dss.jaxb.parsers.ArchiveTimestampHashIndexVersionParser.parse"
+						 printMethod="eu.europa.esig.dss.jaxb.parsers.ArchiveTimestampHashIndexVersionParser.print" />
 	  </jaxb:bindings>
 
   	<jaxb:bindings node="//xs:complexType[@name='FoundCertificates']//xs:element[@name='RelatedCertificate']">
@@ -306,6 +354,52 @@
             <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlSignerData" />
         </jaxb:property>
     </jaxb:bindings>
+	<jaxb:bindings node="//xs:complexType[@name='SignerData']//xs:attribute[@name='Parent']">
+	    <jaxb:property>
+		    <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlSignerData" />
+	    </jaxb:property>
+	</jaxb:bindings>
+	<jaxb:bindings node="//xs:complexType[@name='EvidenceRecord']//xs:attribute[@name='Parent']">
+		  <jaxb:property>
+			  <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlSignature" />
+		  </jaxb:property>
+	  </jaxb:bindings>
+	<jaxb:bindings node="//xs:complexType[@name='AttestationDocument']//xs:attribute[@name='Attestation']">
+		  <jaxb:property>
+			  <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlAttestation" />
+		  </jaxb:property>
+	  </jaxb:bindings>
+	  <jaxb:bindings node="//xs:complexType[@name='Attestation']//xs:element[@name='AttestationSignature']//xs:attribute[@name='Signature']">
+		  <jaxb:property>
+			  <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlSignature" />
+		  </jaxb:property>
+	  </jaxb:bindings>
+	<jaxb:bindings node="//xs:complexType[@name='Attestation']//xs:element[@name='KeyBindingSignature']//xs:attribute[@name='Signature']">
+		  <jaxb:property>
+			  <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlSignature" />
+		  </jaxb:property>
+	  </jaxb:bindings>
+	<jaxb:bindings node="//xs:complexType[@name='DeviceKeyClaim']//xs:element[@name='X509Certificate']//xs:attribute[@name='Certificate']">
+		  <jaxb:property>
+			  <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlCertificate" />
+		  </jaxb:property>
+	  </jaxb:bindings>
+
+	<jaxb:bindings node="//xs:simpleType[@name='AttestationRevocationOrigin']">
+		  <jaxb:javaType name="eu.europa.esig.dss.enumerations.AttestationRevocationOrigin"
+						 parseMethod="eu.europa.esig.dss.jaxb.parsers.AttestationRevocationOriginParser.parse"
+						 printMethod="eu.europa.esig.dss.jaxb.parsers.AttestationRevocationOriginParser.print" />
+	  </jaxb:bindings>
+	<jaxb:bindings node="//xs:simpleType[@name='AttestationStatus']">
+		  <jaxb:javaType name="eu.europa.esig.dss.enumerations.AttestationStatus"
+						 parseMethod="eu.europa.esig.dss.jaxb.parsers.AttestationStatusParser.parse"
+						 printMethod="eu.europa.esig.dss.jaxb.parsers.AttestationStatusParser.print" />
+	  </jaxb:bindings>
+	<jaxb:bindings node="//xs:complexType[@name='AttestationRevocationStatus']//xs:attribute[@name='AttestationRevocationToken']">
+		  <jaxb:property>
+			  <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlAttestationRevocationToken" />
+		  </jaxb:property>
+	  </jaxb:bindings>
 
     <jaxb:bindings node="//xs:complexType[@name='TimestampedObject']//xs:attribute[@name='Token']">
         <jaxb:property>
@@ -318,8 +412,13 @@
 		    <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlTrustedList" />
 	    </jaxb:property>
     </jaxb:bindings>
+	<jaxb:bindings node="//xs:complexType[@name='ListOfTrustedEntities']//xs:attribute[@name='parent']">
+		<jaxb:property>
+			<jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlListOfTrustedEntities" />
+		</jaxb:property>
+	</jaxb:bindings>
 
-    <jaxb:bindings node="//xs:complexType[@name='TrustService']//xs:attribute[@name='ServiceDigitalIdentifier']">
+    <jaxb:bindings node="//xs:complexType[@name='TrustedEntityService']//xs:attribute[@name='ServiceDigitalIdentifier']">
         <jaxb:property>
             <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlCertificate" />
         </jaxb:property>
@@ -334,6 +433,33 @@
             <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlTrustedList" />
         </jaxb:property>
     </jaxb:bindings>
+	<jaxb:bindings node="//xs:complexType[@name='TrustedEntity']//xs:attribute[@name='LoTE']">
+	    <jaxb:property>
+	        <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlTrustSourceList" />
+	    </jaxb:property>
+	</jaxb:bindings>
+	<jaxb:bindings node="//xs:complexType[@name='TrustedEntity']//xs:attribute[@name='LoLoTE']">
+		<jaxb:property>
+	        <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlTrustSourceList" />
+	    </jaxb:property>
+	</jaxb:bindings>
+
+	  <jaxb:bindings node="//xs:complexType[@name='ConnectionInfo']//xs:element[@name='TLSCertificate']//xs:attribute[@name='Certificate']">
+		  <jaxb:property>
+			  <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlCertificate" />
+		  </jaxb:property>
+	  </jaxb:bindings>
+	  <jaxb:bindings node="//xs:complexType[@name='ConnectionInfo']//xs:element[@name='TLSCertificateBindingSignature']//xs:attribute[@name='Signature']">
+		  <jaxb:property>
+			  <jaxb:baseType name="eu.europa.esig.dss.diagnostic.jaxb.XmlSignature" />
+		  </jaxb:property>
+	  </jaxb:bindings>
+
+	  <jaxb:bindings node="//xs:complexType[@name='Attestation']//xs:element[@name='DigestMethod']">
+		  <jaxb:javaType name="eu.europa.esig.dss.enumerations.DigestAlgorithm"
+						 parseMethod="eu.europa.esig.dss.jaxb.parsers.DigestAlgorithmParser.parse"
+						 printMethod="eu.europa.esig.dss.jaxb.parsers.DigestAlgorithmParser.print" />
+	  </jaxb:bindings>
 
   </jaxb:bindings>
 

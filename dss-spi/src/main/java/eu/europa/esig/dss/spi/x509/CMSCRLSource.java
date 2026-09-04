@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -59,8 +59,8 @@ public abstract class CMSCRLSource extends OfflineCRLSource {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CMSCRLSource.class);
 
-	/** The CMS SignedData */
-	private final transient CMSSignedData cmsSignedData;
+	/** The SignedData.crls values */
+	private final transient Store<X509CRLHolder> crls;
 
 	/** Represents unsigned properties */
 	private final transient AttributeTable unsignedAttributes;
@@ -68,13 +68,14 @@ public abstract class CMSCRLSource extends OfflineCRLSource {
 	/**
 	 * The default constructor for CMSCRLSource.
 	 *
-	 * @param cmsSignedData      {@link CMSSignedData}
+	 * @param crls               {@link Store} containing SignedData.crls values
 	 * @param unsignedAttributes {@link AttributeTable} unsignedAttributes
 	 */
-	protected CMSCRLSource(final CMSSignedData cmsSignedData, final AttributeTable unsignedAttributes) {
-		this.cmsSignedData = cmsSignedData;
+	protected CMSCRLSource(final Store<X509CRLHolder> crls, final AttributeTable unsignedAttributes) {
+		this.crls = crls;
 		this.unsignedAttributes = unsignedAttributes;
 		extract();
+
 	}
 
 	private void extract() {
@@ -129,8 +130,7 @@ public abstract class CMSCRLSource extends OfflineCRLSource {
 	}
 
 	private void collectFromSignedData() {
-		final Store<X509CRLHolder> crLs = cmsSignedData.getCRLs();
-		final Collection<X509CRLHolder> collection = crLs.getMatches(null);
+		final Collection<X509CRLHolder> collection = crls.getMatches(null);
 		for (final X509CRLHolder x509CRLHolder : collection) {
 			addX509CRLHolder(x509CRLHolder, RevocationOrigin.CMS_SIGNED_DATA);
 		}

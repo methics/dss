@@ -1,6 +1,6 @@
-<ConstraintsParameters Name="QES AdESQC TL based" xmlns="http://dss.esig.europa.eu/validation/policy">
-	<Description>Validates electronic signatures and indicates whether they are Advanced electronic Signatures (AdES), AdES supported by a Qualified Certificate (AdES/QC) or a
-		Qualified electronic Signature (QES). All certificates and their related chains supporting the signatures are validated against the EU Member State Trusted Lists (this includes
+<ConstraintsParameters Name="QES AES/QC AES TL based" xmlns="http://dss.esig.europa.eu/validation/policy">
+	<Description>Validates electronic signatures and indicates whether they are advanced electronic signatures (AES), AES supported by a qualified certificate (AES/QC) or a
+		qualified electronic signature (QES). All certificates and their related chains supporting the signatures are validated against the EU Member State Trusted Lists (this includes
 		signer's certificate and certificates used to validate certificate validity status services - CRLs, OCSP, and time-stamps).
 	</Description>
 	<ContainerConstraints>
@@ -20,6 +20,7 @@
 		</AcceptableMimeTypeFileContent>
 		<ManifestFilePresent Level="FAIL" />
 		<SignedFilesPresent Level="FAIL" />
+		<FilenameAdherence Level="WARN" />
 		<AllFilesSigned Level="WARN" />
 	</ContainerConstraints>
 	<PDFAConstraints>
@@ -78,10 +79,12 @@
 				<Recognition Level="FAIL" />
 				<Signature Level="FAIL" />
 				<NotExpired Level="FAIL" />
+				<SunsetDate Level="FAIL" />
 				<AuthorityInfoAccessPresent Level="WARN" />
 				<RevocationDataSkip Level="INFORM">
 					<CertificateExtensions>
 						<Id>0.4.0.194121.2.1</Id> <!-- valassured-ST-certs -->
+						<Id>2.5.29.56</Id> <!-- noRevAvail -->
 					</CertificateExtensions>
 				</RevocationDataSkip>
 				<RevocationInfoAccessPresent Level="WARN" />
@@ -94,6 +97,8 @@
 				</KeyUsage>
 				<PolicyTree Level="WARN" />
 				<NameConstraints Level="WARN" />
+				<AuthorityKeyIdentifierPresent Level="WARN" />
+				<NoRevAvail Level="WARN" />
 				<SupportedCriticalExtensions Level="WARN">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -127,6 +132,7 @@
 			<CACertificate>
 				<Signature Level="FAIL" />
 				<NotExpired Level="FAIL" />
+				<SunsetDate Level="FAIL" />
 				<RevocationDataAvailable Level="FAIL" />
 				<AcceptableRevocationDataFound Level="FAIL" />
 				<CRLNextUpdatePresent Level="WARN" />
@@ -138,6 +144,8 @@
 				</KeyUsage>
 				<PolicyTree Level="WARN" />
 				<NameConstraints Level="WARN" />
+				<AuthorityKeyIdentifierPresent Level="WARN" />
+				<SubjectKeyIdentifierPresent Level="FAIL" />
 				<SupportedCriticalExtensions Level="WARN">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -153,6 +161,7 @@
 				</SupportedCriticalExtensions>
 				<ForbiddenExtensions Level="FAIL">
 					<Id>1.3.6.1.5.5.7.48.1.5</Id> <!-- ocsp_noCheck -->
+					<Id>2.5.29.56</Id> <!-- noRevAvail -->
 				</ForbiddenExtensions>
 				<IssuerName Level="FAIL" />
 				<NotRevoked Level="FAIL" />
@@ -171,10 +180,15 @@
 			<IssuerSerialMatch Level="WARN" />
 			<KeyIdentifierMatch Level="WARN" />
 			<SigningTime Level="FAIL" />
+			<SigningTimeInCertRange Level="FAIL" />
 			<MessageDigestOrSignedPropertiesPresent Level="FAIL" />
 			<EllipticCurveKeySize Level="WARN" />
-<!--		<ContentType Level="FAIL" value="1.2.840.113549.1.7.1" />
-			<ContentHints Level="FAIL" value="*" />
+<!--		<ContentType Level="FAIL">
+				<Id>1.2.840.113549.1.7.1</Id>
+			</ContentType>
+			<ContentHints Level="FAIL">
+				<Id>*</Id>
+			</ContentHints>
 			<CommitmentTypeIndication Level="FAIL">
 				<Id>1.2.840.113549.1.9.16.6.1</Id>
 				<Id>1.2.840.113549.1.9.16.6.4</Id>
@@ -214,10 +228,12 @@
 				<Recognition Level="FAIL" />
 				<Signature Level="FAIL" />
 				<NotExpired Level="FAIL" />
+				<SunsetDate Level="FAIL" />
 				<AuthorityInfoAccessPresent Level="WARN" />
 				<RevocationDataSkip Level="INFORM">
 					<CertificateExtensions>
 						<Id>0.4.0.194121.2.1</Id> <!-- valassured-ST-certs -->
+						<Id>2.5.29.56</Id> <!-- noRevAvail -->
 					</CertificateExtensions>
 				</RevocationDataSkip>
 				<RevocationInfoAccessPresent Level="WARN" />
@@ -230,6 +246,8 @@
 				</KeyUsage>
 				<PolicyTree Level="WARN" />
 				<NameConstraints Level="WARN" />
+				<AuthorityKeyIdentifierPresent Level="WARN" />
+				<NoRevAvail Level="WARN" />
 				<SupportedCriticalExtensions Level="WARN">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -261,6 +279,7 @@
 			<CACertificate>
 				<Signature Level="FAIL" />
 				<NotExpired Level="FAIL" />
+				<SunsetDate Level="FAIL" />
 				<RevocationDataAvailable Level="FAIL" />
 				<AcceptableRevocationDataFound Level="FAIL" />
 				<CRLNextUpdatePresent Level="WARN" />
@@ -272,6 +291,8 @@
 				</KeyUsage>
 				<PolicyTree Level="WARN" />
 				<NameConstraints Level="WARN" />
+				<AuthorityKeyIdentifierPresent Level="WARN" />
+				<SubjectKeyIdentifierPresent Level="FAIL" />
 				<SupportedCriticalExtensions Level="WARN">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -287,6 +308,7 @@
 				</SupportedCriticalExtensions>
 				<ForbiddenExtensions Level="FAIL">
 					<Id>1.3.6.1.5.5.7.48.1.5</Id> <!-- ocsp_noCheck -->
+					<Id>2.5.29.56</Id> <!-- noRevAvail -->
 				</ForbiddenExtensions>
 				<IssuerName Level="FAIL" />
 				<NotRevoked Level="FAIL" />
@@ -305,10 +327,15 @@
 			<IssuerSerialMatch Level="WARN" />
 			<KeyIdentifierMatch Level="WARN" />
 			<SigningTime Level="FAIL" />
+			<SigningTimeInCertRange Level="FAIL" />
 			<MessageDigestOrSignedPropertiesPresent Level="FAIL" />
 			<EllipticCurveKeySize Level="WARN" />
-<!--		<ContentType Level="FAIL" value="1.2.840.113549.1.7.1" />
-			<ContentHints Level="FAIL" value="*" />
+<!--		<ContentType Level="FAIL">
+				<Id>1.2.840.113549.1.7.1</Id>
+			</ContentType>
+			<ContentHints Level="FAIL">
+				<Id>*</Id>
+			</ContentHints>
 			<CommitmentTypeIndication Level="FAIL">
 				<Id>1.2.840.113549.1.9.16.6.1</Id>
 				<Id>1.2.840.113549.1.9.16.6.4</Id>
@@ -348,6 +375,7 @@
 				<Recognition Level="FAIL" />
 				<Signature Level="FAIL" />
 				<NotExpired Level="FAIL" />
+				<SunsetDate Level="FAIL" />
 				<RevocationDataAvailable Level="FAIL" />
 				<AcceptableRevocationDataFound Level="FAIL" />
 				<CRLNextUpdatePresent Level="WARN" />
@@ -357,6 +385,7 @@
 				</ExtendedKeyUsage>
 				<PolicyTree Level="WARN" />
 				<NameConstraints Level="WARN" />
+				<AuthorityKeyIdentifierPresent Level="WARN" />
 				<SupportedCriticalExtensions Level="WARN">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -382,6 +411,7 @@
 			<CACertificate>
 				<Signature Level="FAIL" />
 				<NotExpired Level="FAIL" />
+				<SunsetDate Level="FAIL" />
 				<RevocationDataAvailable Level="WARN" />
 				<AcceptableRevocationDataFound Level="WARN" />
 				<CRLNextUpdatePresent Level="WARN" />
@@ -393,6 +423,8 @@
 				</KeyUsage>
 				<PolicyTree Level="WARN" />
 				<NameConstraints Level="WARN" />
+				<AuthorityKeyIdentifierPresent Level="WARN" />
+				<SubjectKeyIdentifierPresent Level="FAIL" />
 				<SupportedCriticalExtensions Level="WARN">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -408,6 +440,7 @@
 				</SupportedCriticalExtensions>
 				<ForbiddenExtensions Level="FAIL">
 					<Id>1.3.6.1.5.5.7.48.1.5</Id> <!-- ocsp_noCheck -->
+					<Id>2.5.29.56</Id> <!-- noRevAvail -->
 				</ForbiddenExtensions>
 				<IssuerName Level="FAIL" />
 				<NotRevoked Level="FAIL" />
@@ -425,9 +458,16 @@
 			<IssuerSerialMatch Level="WARN" />
 		</SignedAttributes>
 		<TSAGeneralNameContentMatch Level="WARN" />
+		<AtsHashIndex Level="WARN" />
+		<ContainerSignedAndTimestampedFilesCovered Level="FAIL" />
 	</Timestamp>
 	<Revocation>
         <UnknownStatus Level="FAIL" />
+		<ThisUpdatePresent Level="FAIL" />
+		<RevocationIssuerKnown Level="FAIL" />
+		<RevocationIssuerValidAtProductionTime Level="FAIL" />
+		<RevocationAfterCertificateIssuance Level="FAIL" />
+		<RevocationHasInformationAboutCertificate Level="FAIL" />
 		<OCSPResponderIdMatch Level="FAIL" />
         <SelfIssuedOCSP Level="WARN" />
 		<BasicSignatureConstraints>
@@ -439,6 +479,7 @@
 				<Recognition Level="FAIL" />
 				<Signature Level="FAIL" />
 				<NotExpired Level="FAIL" />
+				<SunsetDate Level="FAIL" />
 				<RevocationDataSkip Level="IGNORE">
 					<CertificateExtensions>
 						<Id>1.3.6.1.5.5.7.48.1.5</Id> <!-- ocsp_noCheck -->
@@ -450,6 +491,7 @@
 				<RevocationFreshness Level="IGNORE" Unit="DAYS" Value="0" />
 				<PolicyTree Level="WARN" />
 				<NameConstraints Level="WARN" />
+				<AuthorityKeyIdentifierPresent Level="WARN" />
 				<SupportedCriticalExtensions Level="WARN">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -472,6 +514,7 @@
 			<CACertificate>
 				<Signature Level="FAIL" />
 				<NotExpired Level="FAIL" />
+				<SunsetDate Level="FAIL" />
 				<RevocationDataAvailable Level="WARN" />
 				<AcceptableRevocationDataFound Level="WARN" />
 				<CRLNextUpdatePresent Level="WARN" />
@@ -483,6 +526,8 @@
 				</KeyUsage>
 				<PolicyTree Level="WARN" />
 				<NameConstraints Level="WARN" />
+				<AuthorityKeyIdentifierPresent Level="WARN" />
+				<SubjectKeyIdentifierPresent Level="FAIL" />
 				<SupportedCriticalExtensions Level="WARN">
 					<Id>2.5.29.15</Id> <!-- keyUsage -->
 					<Id>2.5.29.32</Id> <!-- certificatePolicies -->
@@ -498,6 +543,7 @@
 				</SupportedCriticalExtensions>
 				<ForbiddenExtensions Level="FAIL">
 					<Id>1.3.6.1.5.5.7.48.1.5</Id> <!-- ocsp_noCheck -->
+					<Id>2.5.29.56</Id> <!-- noRevAvail -->
 				</ForbiddenExtensions>
 				<IssuerName Level="FAIL" />
 				<NotRevoked Level="FAIL" />
@@ -512,6 +558,8 @@
 		<DataObjectIntact Level="FAIL" />
 		<DataObjectFound Level="FAIL" />
 		<DataObjectGroup Level="WARN" />
+		<SignedFilesCovered Level="WARN" />
+		<ContainerSignedAndTimestampedFilesCovered Level="WARN" />
 		<HashTreeRenewal Level="FAIL" />
 		<Cryptographic />
 	</EvidenceRecord>
@@ -526,8 +574,8 @@
 		</AcceptableEncryptionAlgo>
 		<MiniPublicKeySize>
 			<Algo Size="1024">DSA</Algo>
-			<Algo Size="1024">RSA</Algo>
-			<Algo Size="1024">RSASSA-PSS</Algo>
+			<Algo Size="786">RSA</Algo>
+			<Algo Size="786">RSASSA-PSS</Algo>
 			<Algo Size="160">ECDSA</Algo>
 			<Algo Size="160">PLAIN-ECDSA</Algo>
 <!-- 		<Algo Size="24">EdDSA</Algo> 		Not referenced in ETSI/SOGIS -->
@@ -547,58 +595,64 @@
 			<Algo>RIPEMD160</Algo>
 			<Algo>WHIRLPOOL</Algo>
 		</AcceptableDigestAlgo>
-		<AlgoExpirationDate Level="FAIL" Format="yyyy" UpdateDate="2022" LevelAfterUpdate="WARN">
+		<AlgoExpirationDate Level="FAIL" Format="yyyy-MM-dd" UpdateDate="2026-02-01" LevelAfterUpdate="WARN">
 			<!-- Digest algorithms -->
-<!--		<Algo Date="2005">MD2</Algo> 		Not referenced in ETSI/SOGIS -->
-			<Algo Date="2005">MD5</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
-			<Algo Date="2009">SHA1</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.0.0 -->
-			<Algo Date="2026">SHA224</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029">SHA256</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029">SHA384</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029">SHA512</Algo> <!-- ETSI 119 312 V1.4.2 -->
-<!--		<Algo Date="2026">SHA3-224</Algo> 		Not referenced in ETSI/SOGIS  -->
-			<Algo Date="2029">SHA3-256</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029">SHA3-384</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029">SHA3-512</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2011">RIPEMD160</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.0.0 -->
-			<Algo Date="2015">WHIRLPOOL</Algo> <!-- ETSI 119 312 V1.1.1 -->
+			<Algo Date="2004-08-01">MD5</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
+			<Algo Date="2012-08-01">SHA1</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Date="2029-01-01">SHA224</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo>SHA256</Algo> <!-- ETSI TS 119 312 v2.1.1 --> <!-- R -->
+			<Algo>SHA384</Algo> <!-- ETSI TS 119 312 v2.1.1 --> <!-- R -->
+			<Algo>SHA512</Algo> <!-- ETSI TS 119 312 v2.1.1 --> <!-- R -->
+			<Algo>SHA3-256</Algo> <!-- ETSI TS 119 312 v2.1.1 --> <!-- R -->
+			<Algo>SHA3-384</Algo> <!-- ETSI TS 119 312 v2.1.1 --> <!-- R -->
+			<Algo>SHA3-512</Algo> <!-- ETSI TS 119 312 v2.1.1 --> <!-- R -->
+			<Algo Date="2014-08-01">RIPEMD160</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Date="2020-12-01">WHIRLPOOL</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
 			<!-- end Digest algorithms -->
 			<!-- Encryption algorithms -->
-			<Algo Date="2013" Size="1024">DSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
-			<Algo Date="2026" Size="2048">DSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="3072">DSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2009" Size="1024">RSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.0.0 -->
-			<Algo Date="2016" Size="1536">RSA</Algo> <!-- ETSI 119 312 V1.1.1 -->
-			<Algo Date="2026" Size="1900">RSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="3000">RSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2009" Size="1024">RSASSA-PSS</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.0.0 -->
-			<Algo Date="2016" Size="1536">RSASSA-PSS</Algo> <!-- ETSI 119 312 V1.1.1 -->
-			<Algo Date="2026" Size="1900">RSASSA-PSS</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="3000">RSASSA-PSS</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2013" Size="160">ECDSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
-			<Algo Date="2013" Size="192">ECDSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
-			<Algo Date="2016" Size="224">ECDSA</Algo> <!-- ETSI 119 312 V1.1.1 -->
-			<Algo Date="2029" Size="256">ECDSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="384">ECDSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="512">ECDSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2013" Size="160">PLAIN-ECDSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
-			<Algo Date="2013" Size="192">PLAIN-ECDSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
-			<Algo Date="2016" Size="224">PLAIN-ECDSA</Algo> <!-- ETSI 119 312 V1.1.1 -->
-			<Algo Date="2029" Size="256">PLAIN-ECDSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="384">PLAIN-ECDSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-			<Algo Date="2029" Size="512">PLAIN-ECDSA</Algo> <!-- ETSI 119 312 V1.4.2 -->
-<!-- 		<Algo Date="2026" Size="24">EdDSA</Algo> 		Not referenced in ETSI/SOGIS -->
+			<Algo Date="2015-12-01" Size="1024">DSA</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Date="2027-01-01" Size="1900">DSA</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Size="3000">DSA</Algo> <!-- ETSI TS 119 312 v2.1.1 --> <!-- R -->
+			<Algo Date="2010-08-01" Size="786">RSA</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Date="2019-10-01" Size="1024">RSA</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Date="2019-10-01" Size="1536">RSA</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Date="2027-01-01" Size="1900">RSA</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+            <Algo Date="2035-01-01" Size="3000">RSA</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Date="2010-08-01" Size="786">RSASSA-PSS</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Date="2019-10-01" Size="1024">RSASSA-PSS</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Date="2019-10-01" Size="1536">RSASSA-PSS</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Date="2027-01-01" Size="1900">RSASSA-PSS</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Size="3000">RSASSA-PSS</Algo> <!-- ETSI TS 119 312 v2.1.1 --> <!-- R -->
+			<Algo Date="2012-08-01" Size="160">ECDSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
+			<Algo Date="2012-08-01" Size="163">ECDSA</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Date="2021-10-01" Size="224">ECDSA</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Size="256">ECDSA</Algo> <!-- ETSI TS 119 312 v2.1.1 --> <!-- R -->
+			<Algo Date="2012-08-01" Size="160">PLAIN-ECDSA</Algo> <!-- ETSI TS 102 176-1 (Historical) V2.1.1 -->
+			<Algo Date="2012-08-01" Size="163">PLAIN-ECDSA</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Date="2021-10-01" Size="224">PLAIN-ECDSA</Algo> <!-- ETSI TS 119 312 v2.1.1 -->
+			<Algo Size="256">PLAIN-ECDSA</Algo> <!-- ETSI TS 119 312 v2.1.1 --> <!-- R -->
 			<!-- end Encryption algorithms -->
 		</AlgoExpirationDate>
-	</Cryptographic> 
-	
+	</Cryptographic>
+
 	<Model Value="SHELL" />
-	
-	<!-- eIDAS REGL 910/EU/2014 --> 
+
+	<!-- eIDAS REGL 910/EU/2014 -->
 	<eIDAS>
 		<TLFreshness Level="WARN" Unit="HOURS" Value="6" />
 		<TLNotExpired Level="WARN" />
 		<TLWellSigned Level="WARN" />
-		<TLVersion Level="FAIL" value="5" />
+		<TLVersion Level="FAIL">
+			<Id>5</Id>
+			<Id>6</Id>
+		</TLVersion>
+		<TLStructure Level="WARN" />
+		<LoTEFreshness Level="WARN" Unit="HOURS" Value="6" />
+		<LoTENotExpired Level="WARN" />
+		<LoTEWellSigned Level="WARN" />
+		<LoTEVersion Level="FAIL">
+			<Id>1</Id>
+		</LoTEVersion>
+		<LoTEStructure Level="WARN" />
 	</eIDAS>
 </ConstraintsParameters>

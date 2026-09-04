@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,6 +21,7 @@
 package eu.europa.esig.dss.signature.resources;
 
 import eu.europa.esig.dss.model.DSSException;
+import eu.europa.esig.dss.spi.signature.resources.DSSResourcesHandlerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,28 +54,28 @@ public class TempFileResourcesHandlerBuilder implements DSSResourcesHandlerBuild
 
     /**
      * The prefix (beginning) of a filename to be used for created documents
-     *
+     * <p>
      * Default : "dss-"
      */
     private String fileNamePrefix = DEFAULT_PREFIX;
 
     /**
      * The suffix (ending/extension) of a filename to be used for created documents
-     *
+     * <p>
      * Default : ".tmp"
      */
     private String fileNameSuffix = DEFAULT_SUFFIX;
 
     /**
      * The directory containing created documents.
-     *
+     * <p>
      * Default : temporary system-dependent location
      */
     private File tempFileDirectory = new File(System.getProperty("java.io.tmpdir"));
 
     /**
      * Sets the filename prefix (beginning) for created temporary documents
-     *
+     * <p>
      * Default : "dss-"
      *
      * @param fileNamePrefix {@link String}
@@ -87,7 +88,7 @@ public class TempFileResourcesHandlerBuilder implements DSSResourcesHandlerBuild
 
     /**
      * Sets the filename suffix (ending/extension) for created temporary documents
-     *
+     * <p>
      * Default : ".tmp"
      *
      * @param fileNameSuffix {@link String}
@@ -100,7 +101,7 @@ public class TempFileResourcesHandlerBuilder implements DSSResourcesHandlerBuild
 
     /**
      * Sets a file directory to be used for staring created documents
-     *
+     * <p>
      * Default : temporary system-dependent location
      *
      * @param tempFileDirectory {@link File} representing a directory for storing the temporary files
@@ -132,7 +133,7 @@ public class TempFileResourcesHandlerBuilder implements DSSResourcesHandlerBuild
      * This method is used to remove all handlers created by the current builder,
      * as well as temporary files from the filesystem. This method is not executed in a normal DSS operating,
      * and should be called on user's side when the temporary files are no longer needed.
-     *
+     * <p>
      * NOTE: do not forget to preserve the output documents, such as a FileDocument returned by a
      *       {@code #signDocument()} method.
      */

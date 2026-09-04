@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -35,12 +35,13 @@ import eu.europa.esig.dss.tsl.sync.TrustServiceProviderBuilder;
 import eu.europa.esig.dss.model.timedependent.TimeDependentValues;
 import eu.europa.esig.dss.tsl.dto.condition.CompositeCondition;
 import eu.europa.esig.dss.utils.Utils;
-import eu.europa.esig.trustedlist.enums.Assert;
+import eu.europa.esig.dss.enumerations.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -130,21 +131,21 @@ class DTOTest {
 		List<TrustService> trustServices = new ArrayList<>();
 		
 		TrustServiceBuilder trustServiceBuilder = new TrustService.TrustServiceBuilder();
-		trustServiceBuilder.setCertificates(Arrays.asList(cert));
+		trustServiceBuilder.setCertificates(Collections.singletonList(cert));
 		
 		TrustServiceStatusAndInformationExtensionsBuilder statusBuilder = new TrustServiceStatusAndInformationExtensions.TrustServiceStatusAndInformationExtensionsBuilder();
 		statusBuilder.setNames(names);
 		statusBuilder.setStartDate(new Date());
-		statusBuilder.setEndDate(new GregorianCalendar(2050, 1, 1).getTime());
+		statusBuilder.setEndDate(new GregorianCalendar(2050, Calendar.JANUARY, 1).getTime());
 		statusBuilder.setStatus("withdrawn");
 		statusBuilder.setType("sig");
-		statusBuilder.setConditionsForQualifiers(Arrays.asList(getConditionForQualifiers()));
-		statusBuilder.setAdditionalServiceInfoUris(Arrays.asList("http://site.cz.gov"));
-		statusBuilder.setServiceSupplyPoints(Arrays.asList("http://service-supply.cz.gov"));
-		statusBuilder.setExpiredCertsRevocationInfo(new GregorianCalendar(2030, 1, 1).getTime());
+		statusBuilder.setConditionsForQualifiers(Collections.singletonList(getConditionForQualifiers()));
+		statusBuilder.setAdditionalServiceInfoUris(Collections.singletonList("http://site.cz.gov"));
+		statusBuilder.setServiceSupplyPoints(Collections.singletonList("http://service-supply.cz.gov"));
+		statusBuilder.setExpiredCertsRevocationInfo(new GregorianCalendar(2030, Calendar.JANUARY, 1).getTime());
 		TrustServiceStatusAndInformationExtensions status = statusBuilder.build();
 		
-		TimeDependentValues<TrustServiceStatusAndInformationExtensions> timeDependentValues = new TimeDependentValues<>(Arrays.asList(status));
+		TimeDependentValues<TrustServiceStatusAndInformationExtensions> timeDependentValues = new TimeDependentValues<>(Collections.singletonList(status));
 		trustServiceBuilder.setStatusAndInformationExtensions(timeDependentValues);
 		
 		trustServices.add(trustServiceBuilder.build());
@@ -157,7 +158,7 @@ class DTOTest {
 		assertTrue(Utils.isCollectionNotEmpty(tspNames.get("CZ")));
 		List<String> czTspNames = tspNames.get("CZ");
 		assertThrows(UnsupportedOperationException.class, () -> czTspNames.add("name"));
-		List<String> list = Arrays.asList("Lux");
+		List<String> list = Collections.singletonList("Lux");
 		assertThrows(UnsupportedOperationException.class, () -> tspNames.put("LU", list));
 		
 		Map<String, List<String>> tspTradeNames = trustServiceProvider.getTradeNames();

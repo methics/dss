@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -30,7 +30,7 @@ import eu.europa.esig.dss.diagnostic.CertificateWrapper;
 import eu.europa.esig.dss.diagnostic.RevocationWrapper;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
-import eu.europa.esig.dss.policy.ValidationPolicy;
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
 import eu.europa.esig.dss.validation.process.Chain;
 import eu.europa.esig.dss.validation.process.ChainItem;
 import eu.europa.esig.dss.validation.process.bbb.xcv.rac.RevocationAcceptanceChecker;
@@ -57,7 +57,7 @@ public class CertificateRevocationSelector extends Chain<XmlCRS> {
     protected final Date currentTime;
 
     /** Validation policy */
-    private final ValidationPolicy validationPolicy;
+    protected final ValidationPolicy validationPolicy;
 
     /** This map contains validation results of the revocation data processing */
     protected final Map<RevocationWrapper, Boolean> revocationDataValidityMap = new HashMap<>();
@@ -184,7 +184,7 @@ public class CertificateRevocationSelector extends Chain<XmlCRS> {
 
     /**
      * This method returns the latest acceptable certificate revocation data
-     *
+     * <p>
      * NOTE: method {@code execute()} shall be called before
      *
      * @return {@link CertificateRevocationWrapper}
@@ -193,8 +193,14 @@ public class CertificateRevocationSelector extends Chain<XmlCRS> {
         return latestCertificateRevocation;
     }
 
-    private ChainItem<XmlCRS> revocationAcceptable(XmlRAC racResult) {
-        return new RevocationAcceptanceCheckerResultCheck<>(i18nProvider, result, racResult, getWarnLevelConstraint());
+    /**
+     * Checks whether the revocation data has passed the Revocation Acceptance Validation
+     *
+     * @param racResult {@link XmlRAC}
+     * @return {@link ChainItem}
+     */
+    protected ChainItem<XmlCRS> revocationAcceptable(XmlRAC racResult) {
+        return new RevocationAcceptanceCheckerResultCheck<>(i18nProvider, result, racResult, getWarnLevelRule());
     }
 
     /**
@@ -203,7 +209,7 @@ public class CertificateRevocationSelector extends Chain<XmlCRS> {
      * @return {@link ChainItem}
      */
     protected ChainItem<XmlCRS> acceptableRevocationDataAvailable() {
-        return new AcceptableRevocationDataAvailableCheck<>(i18nProvider, result, latestCertificateRevocation, getFailLevelConstraint());
+        return new AcceptableRevocationDataAvailableCheck<>(i18nProvider, result, latestCertificateRevocation, getFailLevelRule());
     }
 
     @Override

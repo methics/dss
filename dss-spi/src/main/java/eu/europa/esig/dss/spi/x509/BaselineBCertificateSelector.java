@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,8 +21,10 @@
 package eu.europa.esig.dss.spi.x509;
 
 import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.utils.Utils;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -90,9 +92,14 @@ public class BaselineBCertificateSelector extends CertificateReorderer {
 		List<CertificateToken> orderedCertificates = getOrderedCertificates();
 
 		// if true, trust anchor certificates (and upper certificates) are not included in the signature
-		if (trustAnchorBPPolicy && trustedCertificateSource != null) {
-			List<CertificateToken> result = new LinkedList<>();
-			for (CertificateToken certificateToken : orderedCertificates) {
+		if (trustAnchorBPPolicy && trustedCertificateSource != null && Utils.isCollectionNotEmpty(orderedCertificates)) {
+			final List<CertificateToken> result = new LinkedList<>();
+			Iterator<CertificateToken> it = orderedCertificates.iterator();
+			// signing certificate is required to be included in BASELINE-B signature
+			CertificateToken signingCertificate = it.next();
+			result.add(signingCertificate);
+			while (it.hasNext()) {
+				CertificateToken certificateToken = it.next();
 				if (trustedCertificateSource.isTrusted(certificateToken)) {
 					break;
 				}

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -25,11 +25,16 @@ import eu.europa.esig.dss.diagnostic.SignatureWrapper;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
 import eu.europa.esig.dss.enumerations.Indication;
+import eu.europa.esig.dss.enumerations.SignatureForm;
 import eu.europa.esig.dss.enumerations.SubIndication;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
-import eu.europa.esig.dss.policy.jaxb.LevelConstraint;
+import eu.europa.esig.dss.model.policy.LevelRule;
 import eu.europa.esig.dss.validation.process.ChainItem;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * This class verifies whether the elliptic curve key size used to create the signature corresponds to
@@ -47,9 +52,9 @@ public class EllipticCurveKeySizeCheck extends ChainItem<XmlFC> {
      * @param i18nProvider {@link I18nProvider}
      * @param result {@link XmlFC}
      * @param signature {@link SignatureWrapper}
-     * @param constraint {@link LevelConstraint}
+     * @param constraint {@link LevelRule}
      */
-    public EllipticCurveKeySizeCheck(I18nProvider i18nProvider, XmlFC result, SignatureWrapper signature, LevelConstraint constraint) {
+    public EllipticCurveKeySizeCheck(I18nProvider i18nProvider, XmlFC result, SignatureWrapper signature, LevelRule constraint) {
         super(i18nProvider, result, constraint);
         this.signature = signature;
     }
@@ -90,20 +95,26 @@ public class EllipticCurveKeySizeCheck extends ChainItem<XmlFC> {
     }
 
     private boolean keySizeCorrespondsDigestAlgorithm() {
-        String correspondingKeySize = getCorrespondingKeySize(signature.getDigestAlgorithm());
-        return correspondingKeySize != null && correspondingKeySize.equals(signature.getKeyLengthUsedToSignThisToken());
+        if (signature.getDigestAlgorithm() == null || signature.getKeyLengthUsedToSignThisToken() == null) {
+            return false;
+        }
+        List<String> allowedKeySizes = getAllowedKeySizes(signature.getDigestAlgorithm());
+        return allowedKeySizes != null && allowedKeySizes.contains(signature.getKeyLengthUsedToSignThisToken());
     }
 
-    private String getCorrespondingKeySize(DigestAlgorithm digestAlgorithm) {
+    private List<String> getAllowedKeySizes(DigestAlgorithm digestAlgorithm) {
         switch (digestAlgorithm) {
             case SHA256:
-                return "256";
+                return Collections.singletonList("256");
             case SHA384:
-                return "384";
+                // NOTE: CB-AdES supports also brainpool curves
+                return SignatureForm.CBAdES == signature.getSignatureFormat().getSignatureForm() ?
+                        Arrays.asList("320", "384") : Collections.singletonList("384");
             case SHA512:
-                return "521";
+                return SignatureForm.CBAdES == signature.getSignatureFormat().getSignatureForm() ?
+                        Arrays.asList("512", "521") : Collections.singletonList("521");
             default:
-                return null;
+                return Collections.emptyList();
         }
     }
 

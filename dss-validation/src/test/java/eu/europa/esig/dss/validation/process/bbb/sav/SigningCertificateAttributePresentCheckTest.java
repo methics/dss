@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -30,7 +30,8 @@ import eu.europa.esig.dss.diagnostic.jaxb.XmlFoundCertificates;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlRelatedCertificate;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlSignature;
 import eu.europa.esig.dss.enumerations.CertificateRefOrigin;
-import eu.europa.esig.dss.policy.jaxb.Level;
+import eu.europa.esig.dss.enumerations.Level;
+import eu.europa.esig.dss.policy.LevelConstraintWrapper;
 import eu.europa.esig.dss.policy.jaxb.LevelConstraint;
 import eu.europa.esig.dss.validation.process.bbb.AbstractTestCheck;
 import eu.europa.esig.dss.validation.process.bbb.sav.checks.SigningCertificateAttributePresentCheck;
@@ -43,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class SigningCertificateAttributePresentCheckTest extends AbstractTestCheck {
 
 	@Test
-	void signingCertificateAttributePresentCheck() throws Exception {
+	void signingCertificateAttributePresentCheck() {
 		XmlCertificateRef xmlCertificateRef = new XmlCertificateRef();
 		xmlCertificateRef.setOrigin(CertificateRefOrigin.SIGNING_CERTIFICATE);
 		
@@ -62,7 +63,7 @@ class SigningCertificateAttributePresentCheckTest extends AbstractTestCheck {
 
 		XmlSAV result = new XmlSAV();
 		SigningCertificateAttributePresentCheck scapc = new SigningCertificateAttributePresentCheck(i18nProvider, result,
-				new SignatureWrapper(sig), constraint);
+				new SignatureWrapper(sig), new LevelConstraintWrapper(constraint));
 		scapc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();
@@ -71,7 +72,7 @@ class SigningCertificateAttributePresentCheckTest extends AbstractTestCheck {
 	}
 
 	@Test
-	void signingCertificateAttributeNotPresentCheck() throws Exception {
+	void signingCertificateAttributeNotPresentCheck() {
 		XmlCertificateRef xmlCertificateRef = new XmlCertificateRef();
 		xmlCertificateRef.setOrigin(CertificateRefOrigin.COMPLETE_CERTIFICATE_REFS);
 		
@@ -90,7 +91,7 @@ class SigningCertificateAttributePresentCheckTest extends AbstractTestCheck {
 
 		XmlSAV result = new XmlSAV();
 		SigningCertificateAttributePresentCheck scapc = new SigningCertificateAttributePresentCheck(i18nProvider, result,
-				new SignatureWrapper(sig), constraint);
+				new SignatureWrapper(sig), new LevelConstraintWrapper(constraint));
 		scapc.execute();
 
 		List<XmlConstraint> constraints = result.getConstraint();

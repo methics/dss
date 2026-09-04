@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,14 +21,25 @@
 package eu.europa.esig.dss.evidencerecord.xml.digest;
 
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.evidencerecord.xml.definition.XMLERSElement;
+import eu.europa.esig.dss.evidencerecord.xml.definition.XMLERSNamespace;
 import eu.europa.esig.dss.evidencerecord.xml.validation.XmlEvidenceRecord;
-import eu.europa.esig.dss.spi.exception.IllegalInputException;
 import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.DSSMessageDigest;
 import eu.europa.esig.dss.model.Digest;
 import eu.europa.esig.dss.model.FileDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.spi.exception.IllegalInputException;
+import eu.europa.esig.dss.xml.common.definition.DSSElement;
+import eu.europa.esig.dss.xml.common.definition.DSSNamespace;
+import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigElement;
+import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigNamespace;
+import eu.europa.esig.dss.xml.common.xpath.XPathQueryBuilder;
+import eu.europa.esig.dss.xml.utils.DOMDocument;
 import eu.europa.esig.dss.xml.utils.DomUtils;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.crypto.dsig.CanonicalizationMethod;
@@ -36,10 +47,21 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class XMLEvidenceRecordRenewalDigestBuilderTest {
+
+    private static final DSSNamespace XAdES_NAMESPACE = new DSSNamespace("http://uri.etsi.org/01903/v1.3.2#", "xades132");
+    private static final DSSNamespace XAdESEN_NAMESPACE = new DSSNamespace("http://uri.etsi.org/19132/v1.1.1#", "xadesen");
+
+    static {
+        XPathUtils.registerNamespace(XMLDSigNamespace.NS);
+        XPathUtils.registerNamespace(XAdES_NAMESPACE);
+        XPathUtils.registerNamespace(XAdESEN_NAMESPACE);
+        XPathUtils.registerNamespace(XMLERSNamespace.XMLERS);
+    }
 
     @Test
     void timeStampRenewalTest() {
@@ -213,7 +235,145 @@ class XMLEvidenceRecordRenewalDigestBuilderTest {
 
         exception = assertThrows(IllegalInputException.class, () ->
                 new XMLEvidenceRecordRenewalDigestBuilder(new FileDocument("src/test/resources/sample-c14n.xml")));
-        assertEquals("The provided document shall be an XML Evidence Record!", exception.getMessage());
+        assertEquals("No Evidence Record found within the provided document with name 'sample-c14n.xml'! " +
+                "Please ensure the Evidence Record is present at the root level of the provided document.", exception.getMessage());
+    }
+
+    @Test
+    void xadesEmbeddedInclusiveCanonicalizationTstRenewalTest() {
+        DSSDocument xadesDocument = new FileDocument("src/test/resources/er-within-xades-inclusive.xml");
+
+        Exception exception = assertThrows(IllegalInputException.class, () -> new XMLEvidenceRecordRenewalDigestBuilder(xadesDocument));
+        assertEquals("No Evidence Record found within the provided document with name 'er-within-xades-inclusive.xml'! " +
+                "Please ensure the Evidence Record is present at the root level of the provided document.", exception.getMessage());
+
+        Document document = DomUtils.buildDOM(xadesDocument);
+
+        Element erElement = XPathUtils.getElement(document, XPathQueryBuilder.fromCurrentPosition().elements(
+                XMLDSigElement.SIGNATURE, XMLDSigElement.OBJECT, DSSElement.fromDefinition("QualifyingProperties", XAdES_NAMESPACE),
+                        DSSElement.fromDefinition("UnsignedProperties", XAdES_NAMESPACE), DSSElement.fromDefinition("UnsignedSignatureProperties", XAdES_NAMESPACE),
+                        DSSElement.fromDefinition("SealingEvidenceRecords", XAdESEN_NAMESPACE), XMLERSElement.EVIDENCE_RECORD).build());
+        assertNotNull(erElement);
+
+        DSSDocument erDocument = new DOMDocument(erElement);
+
+        XMLEvidenceRecordRenewalDigestBuilder digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(erDocument);
+        DSSMessageDigest digest = digestBuilder.buildTimeStampRenewalDigest();
+        assertEquals("oUgKbUb7XSTTczrIS3ShU8ECDjDPwRYZ1/qfj/MCrJA=", digest.getBase64Value());
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(erDocument).setCanonicalizationMethod(CanonicalizationMethod.INCLUSIVE);
+        digest = digestBuilder.buildTimeStampRenewalDigest();
+        assertEquals("oUgKbUb7XSTTczrIS3ShU8ECDjDPwRYZ1/qfj/MCrJA=", digest.getBase64Value());
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(erDocument).setCanonicalizationMethod(CanonicalizationMethod.EXCLUSIVE);
+        digest = digestBuilder.buildTimeStampRenewalDigest();
+        // ignored canonicalization, used from the ArchiveTimeStampChain definition
+        assertEquals("oUgKbUb7XSTTczrIS3ShU8ECDjDPwRYZ1/qfj/MCrJA=", digest.getBase64Value());
+
+        DSSDocument inMemoryErDoc = new InMemoryDocument(DomUtils.serializeNode(erElement));
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(inMemoryErDoc);
+        digest = digestBuilder.buildTimeStampRenewalDigest();
+        assertEquals("f7snLyAb51tuevykXVnZ9oa7lhOX/5vxwtSJ2xZNcQE=", digest.getBase64Value());
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(inMemoryErDoc).setCanonicalizationMethod(CanonicalizationMethod.INCLUSIVE);
+        digest = digestBuilder.buildTimeStampRenewalDigest();
+        assertEquals("f7snLyAb51tuevykXVnZ9oa7lhOX/5vxwtSJ2xZNcQE=", digest.getBase64Value());
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(inMemoryErDoc).setCanonicalizationMethod(CanonicalizationMethod.EXCLUSIVE);
+        digest = digestBuilder.buildTimeStampRenewalDigest();
+        assertEquals("f7snLyAb51tuevykXVnZ9oa7lhOX/5vxwtSJ2xZNcQE=", digest.getBase64Value());
+    }
+
+    @Test
+    void xadesEmbeddedExclusiveCanonicalizationTstRenewalTest() {
+        DSSDocument xadesDocument = new FileDocument("src/test/resources/er-within-xades-exclusive.xml");
+
+        Exception exception = assertThrows(IllegalInputException.class, () -> new XMLEvidenceRecordRenewalDigestBuilder(xadesDocument));
+        assertEquals("No Evidence Record found within the provided document with name 'er-within-xades-exclusive.xml'! " +
+                "Please ensure the Evidence Record is present at the root level of the provided document.", exception.getMessage());
+
+        Document document = DomUtils.buildDOM(xadesDocument);
+
+        Element erElement = XPathUtils.getElement(document, XPathQueryBuilder.fromCurrentPosition().elements(
+                XMLDSigElement.SIGNATURE, XMLDSigElement.OBJECT, DSSElement.fromDefinition("QualifyingProperties", XAdES_NAMESPACE),
+                DSSElement.fromDefinition("UnsignedProperties", XAdES_NAMESPACE), DSSElement.fromDefinition("UnsignedSignatureProperties", XAdES_NAMESPACE),
+                DSSElement.fromDefinition("SealingEvidenceRecords", XAdESEN_NAMESPACE), XMLERSElement.EVIDENCE_RECORD).build());
+        assertNotNull(erElement);
+
+        DSSDocument erDocument = new DOMDocument(erElement);
+
+        XMLEvidenceRecordRenewalDigestBuilder digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(erDocument);
+        DSSMessageDigest digest = digestBuilder.buildTimeStampRenewalDigest();
+        assertEquals("f7snLyAb51tuevykXVnZ9oa7lhOX/5vxwtSJ2xZNcQE=", digest.getBase64Value());
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(erDocument).setCanonicalizationMethod(CanonicalizationMethod.INCLUSIVE);
+        digest = digestBuilder.buildTimeStampRenewalDigest();
+        // ignored canonicalization, used from the ArchiveTimeStampChain definition
+        assertEquals("f7snLyAb51tuevykXVnZ9oa7lhOX/5vxwtSJ2xZNcQE=", digest.getBase64Value());
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(erDocument).setCanonicalizationMethod(CanonicalizationMethod.EXCLUSIVE);
+        digest = digestBuilder.buildTimeStampRenewalDigest();
+        assertEquals("f7snLyAb51tuevykXVnZ9oa7lhOX/5vxwtSJ2xZNcQE=", digest.getBase64Value());
+
+        DSSDocument inMemoryErDoc = new InMemoryDocument(DomUtils.serializeNode(erElement));
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(inMemoryErDoc);
+        digest = digestBuilder.buildTimeStampRenewalDigest();
+        assertEquals("f7snLyAb51tuevykXVnZ9oa7lhOX/5vxwtSJ2xZNcQE=", digest.getBase64Value());
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(inMemoryErDoc).setCanonicalizationMethod(CanonicalizationMethod.INCLUSIVE);
+        digest = digestBuilder.buildTimeStampRenewalDigest();
+        assertEquals("f7snLyAb51tuevykXVnZ9oa7lhOX/5vxwtSJ2xZNcQE=", digest.getBase64Value());
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(inMemoryErDoc).setCanonicalizationMethod(CanonicalizationMethod.EXCLUSIVE);
+        digest = digestBuilder.buildTimeStampRenewalDigest();
+        assertEquals("f7snLyAb51tuevykXVnZ9oa7lhOX/5vxwtSJ2xZNcQE=", digest.getBase64Value());
+    }
+
+    @Test
+    void xadesEmbeddedChainRenewalTest() {
+        DSSDocument xadesDocument = new FileDocument("src/test/resources/er-within-xades-inclusive.xml");
+        Document document = DomUtils.buildDOM(xadesDocument);
+        Element erElement = XPathUtils.getElement(document, XPathQueryBuilder.fromCurrentPosition().elements(
+                XMLDSigElement.SIGNATURE, XMLDSigElement.OBJECT, DSSElement.fromDefinition("QualifyingProperties", XAdES_NAMESPACE),
+                DSSElement.fromDefinition("UnsignedProperties", XAdES_NAMESPACE), DSSElement.fromDefinition("UnsignedSignatureProperties", XAdES_NAMESPACE),
+                DSSElement.fromDefinition("SealingEvidenceRecords", XAdESEN_NAMESPACE), XMLERSElement.EVIDENCE_RECORD).build());
+        assertNotNull(erElement);
+
+        DSSDocument erDocument = new DOMDocument(erElement);
+
+        XMLEvidenceRecordRenewalDigestBuilder digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(erDocument);
+        List<Digest> digestGroup = digestBuilder.buildHashTreeRenewalDigestGroup();
+        assertEquals(1, digestGroup.size());
+        assertEquals("xsyR8DoDclDgj7VuNhJSFYq9RSOmGc2rT3qahZaLDhM=", digestGroup.get(0).getBase64Value());
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(erDocument).setCanonicalizationMethod(CanonicalizationMethod.INCLUSIVE);
+        digestGroup = digestBuilder.buildHashTreeRenewalDigestGroup();
+        assertEquals(1, digestGroup.size());
+        assertEquals("xsyR8DoDclDgj7VuNhJSFYq9RSOmGc2rT3qahZaLDhM=", digestGroup.get(0).getBase64Value());
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(erDocument).setCanonicalizationMethod(CanonicalizationMethod.EXCLUSIVE);
+        digestGroup = digestBuilder.buildHashTreeRenewalDigestGroup();
+        assertEquals(1, digestGroup.size());
+        assertEquals("kxfp2XAeD7aw+JUahVqzNERhdUNpH7K3BwI4W/vYK2I=", digestGroup.get(0).getBase64Value());
+
+        DSSDocument inMemoryErDoc = new InMemoryDocument(DomUtils.serializeNode(erElement));
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(inMemoryErDoc);
+        digestGroup = digestBuilder.buildHashTreeRenewalDigestGroup();
+        assertEquals(1, digestGroup.size());
+        assertEquals("kxfp2XAeD7aw+JUahVqzNERhdUNpH7K3BwI4W/vYK2I=", digestGroup.get(0).getBase64Value());
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(inMemoryErDoc).setCanonicalizationMethod(CanonicalizationMethod.INCLUSIVE);
+        digestGroup = digestBuilder.buildHashTreeRenewalDigestGroup();
+        assertEquals(1, digestGroup.size());
+        assertEquals("kxfp2XAeD7aw+JUahVqzNERhdUNpH7K3BwI4W/vYK2I=", digestGroup.get(0).getBase64Value());
+
+        digestBuilder = new XMLEvidenceRecordRenewalDigestBuilder(inMemoryErDoc).setCanonicalizationMethod(CanonicalizationMethod.EXCLUSIVE);
+        digestGroup = digestBuilder.buildHashTreeRenewalDigestGroup();
+        assertEquals(1, digestGroup.size());
+        assertEquals("kxfp2XAeD7aw+JUahVqzNERhdUNpH7K3BwI4W/vYK2I=", digestGroup.get(0).getBase64Value());
     }
 
 }

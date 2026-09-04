@@ -11,13 +11,13 @@ Please, use the new JIRA for project is on https://ec.europa.eu/digital-building
 
 The latest version of DSS framework has the following minimal requirements:
 
-* Java 8 or higher (tested up to Java 22) is required for usage;
+* Java 8 or higher (tested up to Java 26) is required for usage;
 * Java 11 or higher is required for the build. Java 15 is the minimal requirement for a build with unit tests;
 * Maven 3.6.3 and higher (if build required);
 * Memory and Disk: see minimal requirements for the used JVM. In general the higher available is better;
 * Operating system: no specific requirements (tested on Windows and Linux).
 
-Starting from version `6.0`, DSS uses `jakarta.\*` namespace naming of Specification API. If your application uses `javax.*` namespaces, please use version `5.13`.
+Starting from version `6.0`, DSS uses `jakarta.\*` namespace naming of Specification API. If your application uses `javax.*` namespaces, please use version `5.13.1`.
 
 # Maven repository
 
@@ -32,7 +32,7 @@ https://central.sonatype.com/search?q=eu.europa.ec.joinup.sd-dss
         &lt;dependency&gt;
             &lt;groupId&gt;eu.europa.ec.joinup.sd-dss&lt;/groupId&gt;
             &lt;artifactId&gt;dss-bom&lt;/artifactId&gt;
-            &lt;version&gt;6.1&lt;/version&gt;
+            &lt;version&gt;6.5&lt;/version&gt;
             &lt;type&gt;pom&lt;/type&gt;
             &lt;scope&gt;import&lt;/scope&gt;
         &lt;/dependency&gt;

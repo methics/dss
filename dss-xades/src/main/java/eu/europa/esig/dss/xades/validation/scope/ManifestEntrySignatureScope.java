@@ -1,33 +1,32 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.xades.validation.scope;
 
-import eu.europa.esig.dss.xml.utils.DomUtils;
 import eu.europa.esig.dss.enumerations.SignatureScopeType;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.identifier.TokenIdentifierProvider;
 import eu.europa.esig.dss.spi.validation.scope.SignatureScopeWithTransformations;
+import eu.europa.esig.dss.xml.utils.DomUtils;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * This SignatureScope represents a Manifest entry document
@@ -74,24 +73,6 @@ public class ManifestEntrySignatureScope extends SignatureScopeWithTransformatio
 		return "ManifestEntrySignatureScope{" +
 				"manifestName='" + manifestName + '\'' +
 				"} " + super.toString();
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (!(o instanceof ManifestEntrySignatureScope)) return false;
-		if (!super.equals(o)) return false;
-
-		ManifestEntrySignatureScope that = (ManifestEntrySignatureScope) o;
-
-		return Objects.equals(manifestName, that.manifestName);
-	}
-
-	@Override
-	public int hashCode() {
-		int result = super.hashCode();
-		result = 31 * result + (manifestName != null ? manifestName.hashCode() : 0);
-		return result;
 	}
 
 }

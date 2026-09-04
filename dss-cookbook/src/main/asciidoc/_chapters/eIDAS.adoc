@@ -10,23 +10,23 @@
 
 ==== Qualified status of certificate
 
-The qualification status determination is based on ETSI TS 119 615 standard (cf. <<R14>>), that requires extraction of information from a certificate (i.e. QcStatements, see <<R27>>) and from a Trusted List (under TSPService corresponding to the certificate).
+The qualification status determination is based on ETSI TS 119 615 standard (cf. <<R14>>), that requires extraction of information from a certificate (i.e. QcStatements, see <<R28>>) and from a Trusted List (under TSPService corresponding to the certificate).
 
 For more information about how to verify a certificate qualification status using DSS, please see the section <<CertificateValidation>>.
 
-==== Type of certificate
+===== Type of certificate
 
 A certificate can be for electronic signature, for electronic seal or for website authentication.
 
 A qualified certificate shall comply with the eIDAS regulation <<R12>>, for each type:
 
- * *Qualified certificate for electronic signature* - shall comply with Annex I "REQUIREMENTS FOR QUALIFIED CERTIFICATES FOR ELECTRONIC SIGNATURES" of eIDAS Regulation;
+* *Qualified certificate for electronic signature* - shall comply with Annex I "REQUIREMENTS FOR QUALIFIED CERTIFICATES FOR ELECTRONIC SIGNATURES" of eIDAS Regulation;
 * *Qualified certificate for electronic seals* - shall comply with Annex III "REQUIREMENTS FOR QUALIFIED CERTIFICATES FOR ELECTRONIC SEALS" of eIDAS Regulation;
 * *Qualified certificate for web authentication* - shall comply with Annex IV "REQUIREMENTS FOR QUALIFIED CERTIFICATES FOR WEBSITE AUTHENTICATION" of eIDAS Regulation;
 
 The certificate type determination is based on ETSI TS 119 615 standard (cf. <<R14>>). The validation process takes into account the following factors but not limited to:
 
- * The certificate type defined in QcStatements (see <<R27>>). One of the following values is supported:
+ * The certificate type defined in QcStatements (see <<R28>>). One of the following values is supported:
     ** `qc-type-esign` (OID "0.4.0.1862.1.6.1") - identifies a certificate for a electronic signature;
     ** `qc-type-eseal` (OID "0.4.0.1862.1.6.2") - identifies a certificate for a electronic seal;
     ** `qc-type-web` (OID "0.4.0.1862.1.6.3") - identifies a certificate for a web authentication.
@@ -34,7 +34,33 @@ The certificate type determination is based on ETSI TS 119 615 standard (cf. <<R
 
 For more information about the validation process please see the ETSI TS 119 615 standard (cf. <<R14>>).
 
+==== Certificate approval status
+
+Since version `6.5` DSS provides a validation support of the <<ListOfTrustedEntities>> as defined in ETSI TS 119 602 (cf. <<R33>>). The specification provides a data model aiming to support the production of the list of providers of person identity data, wallet providers, providers of wallet relying party access certificates, and public sector bodies issuing electronic attestations of attributes by the European Commission as required under Regulation (EU) 910/2014 (cf. <<R12>>) and CIR 2024/2980.
+
+NOTE: The applicability scope from above is not definitive and other types (as well as custom ones) may be defined.
+
+The TS 119 602 List of Trusted Entities <<R33>> can be processed as defined in <<ListOfTrustedEntities>> section.
+
+The following certificate approval statuses are supported by the implementation:
+
+* *PID Provider* - represents a certificate of a provider of person identity data, according to CIR 2024/2980 Article 5(2), with corresponding EUDI Wallet list as defined in the ETSI TS 119 605 <<R39>>, Annex C.1.
+* *Certificate for PID Revocation* - represents a certificate for revocation of person identity data, according to CIR 2024/2980 Article 5(2), with corresponding EUDI Wallet list as defined in the ETSI TS 119 605 <<R39>>, Annex C.1.
+* *Certificate for Wallet Solution Issuance* - represents a certificate of a wallet, according to CIR 2024/2980 Article 5(2), with corresponding EUDI Wallet list as defined in the ETSI TS 119 605 <<R39>>, Annex C.2.
+* *Certificate for Wallet Solution Revocation* - represents a certificate for a wallet revocation, according to CIR 2024/2980 Article 5(2), with corresponding EUDI Wallet list as defined in the ETSI TS 119 605 <<R39>>, Annex C.2.
+
+NOTE: Other EUDI Wallet list certificates, such as certificates for WRPAC, WRPRC, PuB-EAA issuance or revocation are indirectly supported by the implementation, even though they are not defined explicitly in the current draft version of the standard.
+
+The certificate approval status verification relies on the ETSI TS 119 605 <<R39>> standard. The validation process takes into account the following factors but not limited to:
+
+* `LoTEType` - component of TS 119 602 LoTE, that specifies the type of the list of trusted entities. E.g. `http://uri.etsi.org/19602/LoTEType/EUPIDProvidersList` for a list of EU PID Providers.
+* `ServiceTypeIdentifier` - component of the `ServiceInformation` element of TS 119 602 LoTE, that specifies the identifier of the service type. E.g. `http://uri.etsi.org/19602/SvcType/PID/Issuance` for a service accredited to issue person identity data.
+* `ServiceStatus` - component of the `ServiceInformation` element of TS 119 602 LoTE, that specifies the identifier of the current status of the service. Can be null.
+
+For more information about the validation process please refer to the ETSI TS 119 605 standard (cf. <<R39>>).
+
 === How certificate type and qualification are represented in DSS
+
 [[CertificateQualificationDetermination]]
 ==== Certificate Qualification determination
 
@@ -48,17 +74,50 @@ An example of a qualification data extraction for a certificate, can be found be
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/validate/CertificateQualificationTest.java[tags=demo]
 ----
 
-==== Qualified certificate for WebSite Authentication (QWAC)
+[[CertificateApprovalStatusDetermination]]
+==== Certificate Qualification determination
 
-With DSS, it is possible to validate a SSL certificate against the EUMS TL and the ETSI TS 119 615 (cf. <<R14>>) to determine if it is a Qualified certificate for WebSite Authentication (QWAC).
+In order to determine an approval status(es) of a certificate, the `CertificateVerifier` can be used, provided the relevant information extracted is loaded from <<ListOfTrustedEntities>>.
 
-DSS provides a special class `SSLCertificateLoader` allowing to extract the SSL certificate chain from the given URL. The qualification verification is similar to the example defined in chapter <<CertificateQualificationDetermination>>.
+An example of an approval status validation for a certificate, can be found below:
 
 [source,java,indent=0]
-.Validate an SSL certificate and retrieve its qualification level
+.Certificate approval status validation
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/validate/CertificateApprovalStatusTest.java[tags=demo]
+----
+
+[[QWACValidation]]
+==== Qualified certificate for WebSite Authentication (QWAC)
+
+Since version `6.4` DSS provides a support of the ETSI TS 119 411-5 <<R32>> standard, allowing validation of qualified certificates for website authentication (QWAC) as in amended Regulation 910/2014 <<R12>>.
+
+DSS supports validation of the following profiles, according to the standard:
+
+* 1-QWAC;
+* 2-QWAC.
+
+For validation, a website URL should be provided to the `QWACValidator` class in order to establish whether the secure connection is supported by a QWAC.
+
+[source,java,indent=0]
+.Validate a TLS/SSL certificate and retrieve its qualification status
 ----
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/validate/QWACValidationTest.java[tags=demo]
 ----
+
+For configuration of the validation constraints related to a TLS certificate and/or TLS Certificate Binding signature, please see <<validationPolicy>>. For validation of TLS certificates, the constraints provided within the `<SignatureConstraints>/<BasicSignatureConstraints>/<SigningCertificate>` element apply.
+
+NOTE: The configuration of the validation checks applies exclusively to basic X.509 certificate or signature validation processes. The qualification checks enforced in the ETSI TS 119 615 <<R14>> and/or ETSI TS 119 411-5 <<R32>> are not configurable.
+
+It is also possible to validate a particular certificate as a TLS/SSL certificate "candidate" against a website URL, without requesting the actual TLS/SSL certificates from a URL connection, as shown in the example below:
+
+[source,java,indent=0]
+.Offline validation of TLS/SSL certificate
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/validate/QWACValidationTest.java[tags=demo-offline]
+----
+
+NOTE: The aforementioned method may not work "out of the box" for 2-QWAC profile validation, that requires extraction of HTTP response headers and access to a TLS Certificate Binding signature. For validation of this profile with a provided certificate an additional configuration may be required, which is out of scope of this documentation.
 
 === Overview of AdES signatures
 
@@ -96,7 +155,7 @@ include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/validate/SignatureQ
 === Verifying the qualified status of timestamp
 
 ETSI TS 119 615 (<<R14>>) specifies standardized procedures for the determination of the qualification of a timestamp.
-DSS is able to determine a qualification level of a timestamp if a relative information about TrustServiceProviders is provided to a certificate verifier (loaded automatically to a trusted certificate source with <<tlValidationJob>>).
+DSS is able to determine a qualification level of a timestamp if corresponding information about TrustServiceProviders is provided to a certificate verifier (loaded automatically to a trusted certificate source with <<tlValidationJob>>).
 
 Three qualification levels are supported by DSS and can be obtained :
 
@@ -104,9 +163,9 @@ Three qualification levels are supported by DSS and can be obtained :
 * `TSA` any other from a known trust anchor;
 * `N/A` for others.
 
-In order to determine a type and qualification of signature, an instance of `DetachedTimestampValidator` can be used for a detached CMS time-stamp verification, provided the relevant information extracted from a Trusted List(s).
+In order to determine a type and qualification of timestamp, an instance of `DetachedTimestampValidator` can be used for a detached CMS timestamp verification, provided the relevant information extracted from a Trusted List(s).
 
-NOTE: For standalone time-stamps within different containers (e.g. PDF or ASiC) a corresponding instance of a `TimestampValidator` shall be used.
+NOTE: For standalone timestamps within different containers (e.g. PDF or ASiC) a corresponding instance of a `TimestampValidator` shall be used.
 
 The following example verifies the qualification level of a timestamp:
 
@@ -115,3 +174,35 @@ The following example verifies the qualification level of a timestamp:
 ----
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/validate/TimestampValidationTest.java[tags=demo]
 ----
+
+[[AttestationQualification]]
+=== Verifying the qualified status of attestations
+
+DSS is able to determine a qualification level of an attestation if corresponding information about TrustServiceProviders is provided to a certificate verifier (loaded automatically to a trusted certificate source with <<tlValidationJob>>).
+
+The following qualification levels are supported and can be obtained on attestation validation:
+
+* `QEAA` - Qualified electronic attestation of attributes as defined in Regulation EU 2024/1183 <<R40>>, Article 45d.
+* `PuB-EAA` - Electronic attestation of attributes issued by or on behalf of a public sector body responsible for an authentic source as defined in Regulation EU 2024/1183<<R40>>, Article 45f.
+* `EAA` - Electronic attestation of attributes as defined in Regulation EU 2024/1183<<R40>>, without a qualified status.
+
+ETSI TS 119 615 (<<R14>>), section "4.12 EU qualified electronic attestation of attribute service
+determination", specifies standardized procedures for the determination of certificate qualification for the issuance of Qualified Electronic Attestation of Attributes (QEAA).
+
+Additionally, DSS is able to recognize a Person Identification Data (`PID`) token, should a corresponding data be derived from the ETSI TS 119 602 <<R33>> PID Providers List (loaded using a <<ListOfTrustedEntities>>).
+
+For validation and qualification determination of an attestation, an instance of `AttestationDocumentValidator` can be used.
+
+NOTE: An instance of an attestation presentation is usually expected as an input to the `AttestationDocumentValidator`. However, DSS is able to validate pure attestation's in certain cases.
+
+The example below verifies the qualification level of an attestation:
+
+[source,java,indent=0]
+.Validate an attestation and retrieve its qualification level
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/validate/AttestationValidationTest.java[tags=attestation-qualification]
+----
+
+NOTE: Unline signature or timestamp qualification results, an attestation qualification process may output more than one qualification statuses, e.g. when a PID status applies.
+
+See <<AttestationValidation>> chapter for more information about the validation process.

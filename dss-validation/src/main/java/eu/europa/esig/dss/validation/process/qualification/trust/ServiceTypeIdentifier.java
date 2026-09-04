@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,8 +21,8 @@
 package eu.europa.esig.dss.validation.process.qualification.trust;
 
 /**
- * Service type identifier (ETSI TS 119 612 V2.1.1)
- * 
+ * Service type identifier (ETSI TS 119 612 V2.1.1).
+ * <p>
  * It specifies the identifier of the service type.
  * 
  */
@@ -108,6 +108,38 @@ public enum ServiceTypeIdentifier {
 	 */
 	QESVALIDATION_Q("QESValidation/Q", "http://uri.etsi.org/TrstSvc/Svctype/QESValidation/Q", true, false),
 
+	// New eIDAS 2.0 qualified trust service types (ETSI TS 119 612 v.2.4.1)
+
+	/**
+	 * The management of remote qualified electronic signature creation devices as a qualified trust service carried out
+	 * by a qualified trust service provider, in accordance with Regulation (EU) No 910/2014 [i.10].
+	 */
+	REMOTE_QSIG_CD_MANAGEMENT_Q("RemoteQSigCDManagement/Q", "http://uri.etsi.org/TrstSvc/Svctype/RemoteQSigCDManagement/Q", true, false),
+
+	/**
+	 * The management of remote qualified electronic seal creation devices as a qualified trust service carried out by a
+	 * qualified trust service provider, in accordance with Regulation (EU) No 910/2014 [i.10].
+	 */
+	REMOTE_QSEAL_CD_MANAGEMENT_Q("RemoteQSealCDManagement/Q", "http://uri.etsi.org/TrstSvc/Svctype/RemoteQSealCDManagement/Q", true, false),
+
+	/**
+	 * The issuance of qualified electronic attestations of attributes by a qualified trust service provider in accordance
+	 * with Regulation (EU) No 910/2014 [i.10].
+	 */
+	EAA_Q("EAA/Q", "http://uri.etsi.org/TrstSvc/Svctype/EAA/Q", true, false),
+
+	/**
+	 * A qualified electronic archiving service provided by a qualified trust service provider in accordance with Regulation
+	 * (EU) No 910/2014 [i.10].
+	 */
+	ELECTRONIC_ARCHIVING_Q("ElectronicArchiving/Q", "http://uri.etsi.org/TrstSvc/Svctype/ElectronicArchiving/Q", true, false),
+
+	/**
+	 * A qualified trust service for the recording of electronic data in qualified electronic ledgers by a qualified trust
+	 * service provider in accordance with Regulation (EU) No 910/2014 [i.10]
+	 */
+	LEDGERS_Q("Ledgers/Q", "http://uri.etsi.org/TrstSvc/Svctype/Ledgers/Q", true, false),
+
 	// ---- 5.5.1.2 Regulation (EU) No 910/2014 non qualified trust service types
 
 	/**
@@ -181,6 +213,89 @@ public enum ServiceTypeIdentifier {
 	 * advanced electronic seals
 	 */
 	ADES_GENERATION("AdESGeneration", "http://uri.etsi.org/TrstSvc/Svctype/AdESGeneration", false, false),
+
+	// New eIDAS 2.0 non-qualified trust service types (ETSI TS 119 612 v.2.4.1)
+
+	/**
+	 * A not qualified trust service for the management of remote electronic signature creation devices, provided by a
+	 * trust service provider that generates or manages electronic signature creation data on behalf of the signatory.
+	 */
+	REMOTE_SIG_CD_MANAGEMENT("RemoteSigCDManagement", "http://uri.etsi.org/TrstSvc/Svctype/RemoteSigCDManagement", false, false),
+
+	/**
+	 * A not qualified trust service for the management of remote electronic seal creation devices, provided by a trust
+	 * service provider that generates or manages electronic seal creation data on behalf of the seal creator.
+	 */
+	REMOTE_SEAL_CD_MANAGEMENT("RemoteSealCDManagement", "http://uri.etsi.org/TrstSvc/Svctype/RemoteSealCDManagement", false, false),
+
+	/**
+	 * The issuance of not qualified electronic attestations of attributes by a trust service provider in accordance with
+	 * Regulation (EU) No 910/2014 [i.10].
+	 */
+	EAA("RemoteSealCDManagement", "http://uri.etsi.org/TrstSvc/Svctype/EAA", false, false),
+
+	/**
+	 * A not qualified electronic archiving service provided by a trust service provider in accordance with
+	 * Regulation (EU) No 910/2014 [i.10].
+	 */
+	ELECTRONIC_ARCHIVING("ElectronicArchiving", "http://uri.etsi.org/TrstSvc/Svctype/ElectronicArchiving", false, false),
+
+	/**
+	 * A not qualified trust service for the recording of electronic data in not qualified electronic ledgers by a trust service
+	 * provider in accordance with Regulation (EU) No 910/2014 [i.10].
+	 */
+	LEDGERS("Ledgers", "http://uri.etsi.org/TrstSvc/Svctype/Ledgers", false, false),
+
+	/**
+	 * A not qualified trust service for the validation of certificates for electronic signatures, certificates for electronic
+	 * seals, or certificates for website authentication.
+	 */
+	PKC_VALIDATION("PKCValidation", "http://uri.etsi.org/TrstSvc/Svctype/PKCValidation", false, false),
+
+	/**
+	 * A not qualified trust service for the preservation of certificates for electronic signatures or certificates for electronic
+	 * seals.
+	 */
+	PKC_PRESERVATION("PKCPreservation", "http://uri.etsi.org/TrstSvc/Svctype/PKCPreservation", false, false),
+
+	/**
+	 * A not qualified trust service for the validation of electronic attestation of attributes.
+	 */
+	EAA_VALIDATION("EAAValidation", "http://uri.etsi.org/TrstSvc/Svctype/EAAValidation", false, false),
+
+	/**
+	 * A not qualified trust service for the validation of electronic timestamps.
+	 */
+	TST_VALIDATION("TSTValidation", "http://uri.etsi.org/TrstSvc/Svctype/TSTValidation", false, false),
+
+	/**
+	 * A not qualified trust service for the validation of data transmitted through electronic registered delivery services
+	 * and the validation of related evidences.
+	 */
+	EDS_VALIDATION("EDSValidation", "http://uri.etsi.org/TrstSvc/Svctype/EDSValidation", false, false),
+
+	/**
+	 * The issuance of not qualified electronic attestation of attributes as defined in Article 3(46) of
+	 * Regulation (EU) No 910/2014 [i.10], issued by or on behalf of a public sector body responsible for an authentic
+	 * source, acting as a trust service provider and in accordance with that Regulation.
+	 */
+	EAA_PUBEAA("EAA/Pub-EAA", "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA", false, false),
+
+	/**
+	 * A certificate generation service, not qualified, creating and signing non-qualified public key certificates based on
+	 * the identity and other attributes verified by the relevant registration services.
+	 * The nature of those public key certificates for which the status has been granted are neither certificates for
+	 * electronic signatures, nor certificates for electronic seals, nor certificates for website authentication. They are
+	 * certificates for the provision of other trust services as referred to in Article 3(16) of
+	 * Regulation (EU) 910/2014 [i.10].
+	 */
+	CA_PKC_CERTSOFOTHERTYPESOFTS("CA/PKC/CertsforOtherTypesOfTS", "http://uri.etsi.org/TrstSvc/Svctype/CA/PKC/CertsforOtherTypesOfTS", false, false),
+
+	/**
+	 * A not qualified trust service for the validation of certificates for the provision of other trust services as referred to in
+	 * Article 3(16) of Regulation (EU) 910/2014 [i.10].
+	 */
+	PKC_VALIDATION_CERTSOFOTHERTYPESOFTS("PKCValidation/CertsforOtherTypesOfTS", "http://uri.etsi.org/TrstSvc/Svctype/PKCValidation/CertsforOtherTypesOfTS", false, false),
 	
 	// ---- 5.5.1.3 Trust service types not defined in Regulation (EU) No 910/2014
 	// but nationally defined
@@ -356,6 +471,16 @@ public enum ServiceTypeIdentifier {
 	 */
 	public static boolean isQTST(String serviceTypeIdentifier) {
 		return TSA_QTST.getUri().equals(serviceTypeIdentifier);
+	}
+
+	/**
+	 * Checks whether the {@code serviceTypeIdentifier} is EAA/Q
+	 *
+	 * @param serviceTypeIdentifier {@link String} identifier to check
+	 * @return TRUE of the identifier is EAA/Q, FALSE otherwise
+	 */
+	public static boolean isQEAA(String serviceTypeIdentifier) {
+		return EAA_Q.getUri().equals(serviceTypeIdentifier);
 	}
 
 	/**

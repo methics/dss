@@ -1,30 +1,31 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.cades.validation;
 
-import eu.europa.esig.dss.cades.CMSUtils;
+import eu.europa.esig.dss.cades.CAdESUtils;
 import eu.europa.esig.dss.enumerations.TimestampType;
-import eu.europa.esig.dss.utils.Utils;
+import eu.europa.esig.dss.spi.DSSASN1Utils;
 import eu.europa.esig.dss.spi.validation.SignatureAttribute;
 import eu.europa.esig.dss.spi.validation.identifier.SignatureAttributeIdentifier;
+import eu.europa.esig.dss.utils.Utils;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -33,6 +34,8 @@ import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
 
 /**
  * Represents a CAdES attribute, part of AttributeTable
@@ -73,12 +76,21 @@ public class CAdESAttribute implements SignatureAttribute {
 	
 	/**
 	 * Returns attribute values set
-	 * 
+	 *
 	 * @return {@link ASN1Set}
 	 */
 	public ASN1Set getAttrValues() {
 		return attribute.getAttrValues();
 	}
+
+    /**
+     * Returns the attribute
+     *
+     * @return {@link Attribute}
+     */
+    public Attribute getAttribute() {
+        return attribute;
+    }
 
 	/**
 	 * Returns the inner {@link ASN1Encodable} object
@@ -86,7 +98,7 @@ public class CAdESAttribute implements SignatureAttribute {
 	 * @return {@link ASN1Sequence} object
 	 */
 	public ASN1Encodable getASN1Object() {
-		return attribute.getAttrValues().getObjectAt(0);
+		return DSSASN1Utils.getAsn1Encodable(attribute);
 	}
 
 	/**
@@ -95,7 +107,7 @@ public class CAdESAttribute implements SignatureAttribute {
 	 * @return TRUE if the attribute is a timestamp, FALSE otherwise
 	 */
 	public boolean isTimeStampToken() {
-		return CMSUtils.getTimestampOids().contains(getASN1Oid());
+		return CAdESUtils.getTimestampOids().contains(getASN1Oid());
 	}
 
 	/**
@@ -105,7 +117,7 @@ public class CAdESAttribute implements SignatureAttribute {
 	 */
 	public TimestampType getTimestampTokenType() {
 		if (isTimeStampToken()) {
-			return CMSUtils.getTimestampTypeByOid(getASN1Oid());
+			return CAdESUtils.getTimestampTypeByOid(getASN1Oid());
 		}
 		return null;
 	}
@@ -118,7 +130,7 @@ public class CAdESAttribute implements SignatureAttribute {
 	public TimeStampToken toTimeStampToken() {
 		if (isTimeStampToken()) {
 			try {
-				return CMSUtils.getTimeStampToken(attribute);
+				return CAdESUtils.getTimeStampToken(attribute);
 			} catch (Exception e) {
 				LOG.warn("Unable to build a timestamp token from the attribute [{}] : {}", this, e.getMessage());
 			}
@@ -128,6 +140,42 @@ public class CAdESAttribute implements SignatureAttribute {
 		return null;
 	}
 	
+	/**
+	 * Checks if the given CAdES attribute represents an evidence record
+	 *
+	 * @return TRUE if the attribute is an evidence record, FALSE otherwise
+	 */
+	public boolean isEvidenceRecord() {
+		return CAdESUtils.getEvidenceRecordOids().contains(getASN1Oid());
+	}
+
+	/**
+	 * Returns a EvidenceRecord if possible
+	 *
+	 * @return a {@link org.bouncycastle.asn1.tsp.EvidenceRecord} or null
+	 */
+	public org.bouncycastle.asn1.tsp.EvidenceRecord toEvidenceRecord() {
+		if (isEvidenceRecord()) {
+			try {
+				return org.bouncycastle.asn1.tsp.EvidenceRecord.getInstance(getASN1Object());
+			} catch (Exception e) {
+				LOG.warn("Unable to build an evidence record from the attribute [{}] : {}", this, e.getMessage());
+			}
+		} else {
+			LOG.warn("The given attribute [{}] is not an evidence record! Unable to build an EvidenceRecord.", this);
+		}
+		return null;
+	}
+
+	/**
+	 * Gets order of the CAdES Attribute from the original AttributeTable
+	 *
+	 * @return {@link Integer}
+	 */
+	protected Integer getOrder() {
+		return order;
+	}
+
 	@Override
 	public SignatureAttributeIdentifier getIdentifier() {
 		if (identifier == null) {
@@ -143,6 +191,21 @@ public class CAdESAttribute implements SignatureAttribute {
 			return asn1Oid.toString();
 		}
 		return Utils.EMPTY_STRING;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		CAdESAttribute that = (CAdESAttribute) o;
+
+		return Objects.equals(this.getIdentifier(), that.getIdentifier());
+	}
+
+	@Override
+	public int hashCode() {
+		return identifier != null ? identifier.hashCode() : 0;
 	}
 
 }

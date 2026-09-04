@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -26,8 +26,7 @@ import eu.europa.esig.dss.enumerations.Indication;
 import eu.europa.esig.dss.enumerations.SubIndication;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
-import eu.europa.esig.dss.policy.RuleUtils;
-import eu.europa.esig.dss.policy.jaxb.TimeConstraint;
+import eu.europa.esig.dss.model.policy.DurationRule;
 import eu.europa.esig.dss.validation.process.ChainItem;
 
 import java.util.Date;
@@ -46,7 +45,7 @@ public class TimestampDelayCheck<T extends XmlConstraintsConclusion> extends Cha
 	private final Date bestSignatureTime;
 
 	/** Timestamp's delay constraint */
-	private final TimeConstraint timeConstraint;
+	private final DurationRule durationRule;
 
 	/**
 	 * Default constructor
@@ -55,16 +54,16 @@ public class TimestampDelayCheck<T extends XmlConstraintsConclusion> extends Cha
 	 * @param result {@link XmlConstraintsConclusion}
 	 * @param signature {@link SignatureWrapper}
 	 * @param bestSignatureTime {@link Date}
-	 * @param timeConstraint {@link TimeConstraint}
+	 * @param durationRule {@link DurationRule}
 	 */
 	public TimestampDelayCheck(I18nProvider i18nProvider, T result,
-							   SignatureWrapper signature, Date bestSignatureTime, TimeConstraint timeConstraint) {
-		super(i18nProvider, result, timeConstraint);
+							   SignatureWrapper signature, Date bestSignatureTime, DurationRule durationRule) {
+		super(i18nProvider, result, durationRule);
 
 		this.signature = signature;
 		this.bestSignatureTime = bestSignatureTime;
 
-		this.timeConstraint = timeConstraint;
+		this.durationRule = durationRule;
 	}
 
 	@Override
@@ -73,7 +72,7 @@ public class TimestampDelayCheck<T extends XmlConstraintsConclusion> extends Cha
 		if (signingTime == null) {
 			return false;
 		}
-		long delayMilliseconds = RuleUtils.convertDuration(timeConstraint);
+		long delayMilliseconds = durationRule.getDuration();
 		Date limit;
 		if (delayMilliseconds == Long.MAX_VALUE) {
 			limit = new Date(Long.MAX_VALUE);

@@ -1,25 +1,30 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.asic.cades.validation.evidencerecord;
 
+import eu.europa.esig.dss.diagnostic.DiagnosticData;
+import eu.europa.esig.dss.diagnostic.EvidenceRecordWrapper;
+import eu.europa.esig.dss.diagnostic.SignatureWrapper;
+import eu.europa.esig.dss.diagnostic.TimestampWrapper;
+import eu.europa.esig.dss.diagnostic.jaxb.XmlDigestMatcher;
 import eu.europa.esig.dss.enumerations.DigestMatcherType;
 import eu.europa.esig.dss.enumerations.Indication;
 import eu.europa.esig.dss.enumerations.SubIndication;
@@ -37,9 +42,10 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ASiCEWithCAdESLevelLTWithEvidenceRecordMultiFilesDifferentAlgoValidationTest extends AbstractASiCEWithCAdESWithEvidenceRecordTestValidation {
+class ASiCEWithCAdESLevelLTWithEvidenceRecordMultiFilesDifferentAlgoValidationTest extends AbstractASiCWithCAdESWithEvidenceRecordTestValidation {
 
     @Override
     protected DSSDocument getSignedDocument() {
@@ -54,6 +60,13 @@ class ASiCEWithCAdESLevelLTWithEvidenceRecordMultiFilesDifferentAlgoValidationTe
     @Override
     protected boolean allArchiveDataObjectsProvidedToValidation() {
         return false;
+    }
+
+    @Override
+    protected void checkEvidenceRecordCoverage(DiagnosticData diagnosticData, SignatureWrapper signature) {
+        for (EvidenceRecordWrapper evidenceRecordWrapper : signature.getEvidenceRecords()) {
+            assertFalse(Utils.isCollectionNotEmpty(evidenceRecordWrapper.getEvidenceRecordScopes()));
+        }
     }
 
     @Override
@@ -80,7 +93,7 @@ class ASiCEWithCAdESLevelLTWithEvidenceRecordMultiFilesDifferentAlgoValidationTe
         assertEquals(1, orphanReferencesCounter);
 
         List<TimestampedReference> timestampedReferences = evidenceRecord.getTimestampedReferences();
-        assertTrue(Utils.isCollectionNotEmpty(timestampedReferences));
+        assertFalse(Utils.isCollectionNotEmpty(timestampedReferences));
 
         int tstCounter = 0;
         List<TimestampToken> timestamps = evidenceRecord.getTimestamps();
@@ -91,6 +104,51 @@ class ASiCEWithCAdESLevelLTWithEvidenceRecordMultiFilesDifferentAlgoValidationTe
             ++tstCounter;
         }
         assertEquals(1, tstCounter);
+    }
+
+    @Override
+    protected void checkEvidenceRecordDigestMatchers(DiagnosticData diagnosticData) {
+        EvidenceRecordWrapper evidenceRecord = diagnosticData.getEvidenceRecords().get(0);
+
+        int foundRefsCounter = 0;
+        int validRefsCounter = 0;
+        int invalidRefsCounter = 0;
+        List<XmlDigestMatcher> digestMatcherList = evidenceRecord.getDigestMatchers();
+        assertEquals(5, Utils.collectionSize(digestMatcherList));
+        for (XmlDigestMatcher digestMatcher : digestMatcherList) {
+            if (digestMatcher.isDataFound()) {
+                assertNotNull(digestMatcher.getUri());
+                assertNotNull(digestMatcher.getDocumentName());
+                ++foundRefsCounter;
+            }
+            if (digestMatcher.isDataIntact()) {
+                ++validRefsCounter;
+            } else {
+                ++invalidRefsCounter;
+            }
+        }
+        assertEquals(4, foundRefsCounter);
+        assertEquals(0, validRefsCounter);
+        assertEquals(5, invalidRefsCounter);
+    }
+
+    @Override
+    protected void checkEvidenceRecordScopes(DiagnosticData diagnosticData) {
+        EvidenceRecordWrapper evidenceRecord = diagnosticData.getEvidenceRecords().get(0);
+        assertFalse(Utils.isCollectionNotEmpty(evidenceRecord.getEvidenceRecordScopes()));
+    }
+
+    @Override
+    protected void checkEvidenceRecordTimestamps(DiagnosticData diagnosticData) {
+        EvidenceRecordWrapper evidenceRecord = diagnosticData.getEvidenceRecords().get(0);
+        assertEquals(1, evidenceRecord.getTimestampList().size());
+
+        TimestampWrapper timestamp = evidenceRecord.getTimestampList().get(0);
+        assertTrue(timestamp.isMessageImprintDataFound());
+        assertTrue(timestamp.isMessageImprintDataIntact());
+        assertTrue(timestamp.isSignatureIntact());
+        assertTrue(timestamp.isSignatureValid());
+        assertTrue(Utils.isCollectionEmpty(timestamp.getTimestampScopes()));
     }
 
     @Override

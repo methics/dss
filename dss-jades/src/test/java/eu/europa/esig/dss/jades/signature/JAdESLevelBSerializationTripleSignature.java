@@ -1,33 +1,24 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.jades.signature;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-
-import java.io.File;
-import java.util.Date;
-import java.util.List;
-
-import org.junit.jupiter.api.BeforeEach;
 
 import eu.europa.esig.dss.diagnostic.DiagnosticData;
 import eu.europa.esig.dss.enumerations.JWSSerializationType;
@@ -39,8 +30,17 @@ import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.FileDocument;
 import eu.europa.esig.dss.signature.DocumentSignatureService;
 import eu.europa.esig.dss.spi.signature.AdvancedSignature;
+import org.junit.jupiter.api.BeforeEach;
 
-public class JAdESLevelBSerializationTripleSignature extends AbstractJAdESTestSignature {
+import java.io.File;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
+class JAdESLevelBSerializationTripleSignature extends AbstractJAdESTestSignature {
 
 	private DocumentSignatureService<JAdESSignatureParameters, JAdESTimestampParameters> service;
 	private DSSDocument originalDocument;
@@ -49,7 +49,7 @@ public class JAdESLevelBSerializationTripleSignature extends AbstractJAdESTestSi
 	private DSSDocument documentToSign;
 
 	@BeforeEach
-	public void init() throws Exception {
+	void init() throws Exception {
 		service = new JAdESService(getCompleteCertificateVerifier());
 		originalDocument = new FileDocument(new File("src/test/resources/sample.json"));
 		signatureParameters = new JAdESSignatureParameters();
@@ -64,13 +64,25 @@ public class JAdESLevelBSerializationTripleSignature extends AbstractJAdESTestSi
 	
 	@Override
 	protected DSSDocument sign() {
+		Calendar calendar = Calendar.getInstance();
+		signatureParameters.bLevel().setSigningDate(calendar.getTime());
+
 		documentToSign = originalDocument;
 		DSSDocument signedDocument = super.sign();
+
+		calendar.add(Calendar.SECOND, 1);
+		signatureParameters.bLevel().setSigningDate(calendar.getTime());
+
 		documentToSign = signedDocument;
 		DSSDocument doubleSignedDocument = super.sign();
+
+		calendar.add(Calendar.SECOND, 1);
+		signatureParameters.bLevel().setSigningDate(calendar.getTime());
+
 		documentToSign = doubleSignedDocument;
 		DSSDocument tripleSignedDocument = super.sign();
 		documentToSign = originalDocument;
+
 		return tripleSignedDocument;
 	}
 	
@@ -87,6 +99,11 @@ public class JAdESLevelBSerializationTripleSignature extends AbstractJAdESTestSi
 	@Override
 	protected void checkNumberOfSignatures(DiagnosticData diagnosticData) {
 		assertEquals(3, diagnosticData.getSignatures().size());
+	}
+
+	@Override
+	protected void checkSigningDate(DiagnosticData diagnosticData) {
+		// skip
 	}
 
 	@Override

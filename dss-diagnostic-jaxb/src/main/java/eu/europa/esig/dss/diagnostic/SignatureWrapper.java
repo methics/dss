@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -41,10 +41,12 @@ import eu.europa.esig.dss.diagnostic.jaxb.XmlSigningCertificate;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlStructuralValidation;
 import eu.europa.esig.dss.diagnostic.jaxb.XmlUserNotice;
 import eu.europa.esig.dss.enumerations.ArchiveTimestampType;
+import eu.europa.esig.dss.enumerations.COSESignatureType;
 import eu.europa.esig.dss.enumerations.CertificateOrigin;
 import eu.europa.esig.dss.enumerations.CertificateRefOrigin;
 import eu.europa.esig.dss.enumerations.DigestMatcherType;
 import eu.europa.esig.dss.enumerations.EndorsementType;
+import eu.europa.esig.dss.enumerations.JWSSerializationType;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.enumerations.TimestampType;
 
@@ -142,12 +144,14 @@ public class SignatureWrapper extends AbstractSignatureWrapper {
 		return new FoundRevocationsProxy(signature.getFoundRevocations());
 	}
 
+
 	/**
-	 * Returns a signature filename
+	 * Gets name of the signature file, when applicable
 	 *
-	 * @return {@link String}
+	 * @return {@link String} file name
 	 */
-	public String getSignatureFilename() {
+	@Override
+	public String getFilename() {
 		return signature.getSignatureFilename();
 	}
 
@@ -180,6 +184,18 @@ public class SignatureWrapper extends AbstractSignatureWrapper {
 	 */
 	public Date getClaimedSigningTime() {
 		return signature.getClaimedSigningTime();
+	}
+
+	/**
+	 * Gets the expiration time of the signature, after which it should not be accepted for processing.
+	 * NOTE: The value is currently used only for the ETSI TS 119 411-5 TLS Certificate Binding signature.
+	 * The maximum effective expiry time is whichever is soonest of this field, the longest-lived TLS certificate
+	 * identified in the sigD member payload (below), or the notAfter time of the signing certificate.
+	 *
+	 * @return {@link Date}
+	 */
+	public Date getExpirationTime() {
+		return signature.getExpirationTime();
 	}
 
 	/**
@@ -225,6 +241,15 @@ public class SignatureWrapper extends AbstractSignatureWrapper {
 	 */
 	public boolean isCounterSignature() {
 		return signature.isCounterSignature() != null && signature.isCounterSignature();
+	}
+
+	/**
+	 * Gets if the current signature is a key binding signature used to verify the authenticity of the token's holder
+	 *
+	 * @return TRUE if the signature is key binding signature, FALSE otherwise
+	 */
+	public boolean isKeyBindingSignature() {
+		return signature.isKeyBindingSignature() != null && signature.isKeyBindingSignature();
 	}
 
 	/**
@@ -323,6 +348,21 @@ public class SignatureWrapper extends AbstractSignatureWrapper {
 			result.addAll(evidenceRecordWrapper.getTimestampIdsList());
 		}
 		return result;
+	}
+
+	/**
+	 * Returns a list of {@code EvidenceRecordWrapper}s embedded within the signature
+	 *
+	 * @return a list of {@code EvidenceRecordWrapper}s
+	 */
+	public List<EvidenceRecordWrapper> getEmbeddedEvidenceRecords() {
+		List<EvidenceRecordWrapper> embeddedEvidenceRecords = new ArrayList<>();
+		for (EvidenceRecordWrapper evidenceRecord : getEvidenceRecords()) {
+			if (evidenceRecord.isEmbedded()) {
+				embeddedEvidenceRecords.add(evidenceRecord);
+			}
+		}
+		return embeddedEvidenceRecords;
 	}
 
 	/**
@@ -435,6 +475,40 @@ public class SignatureWrapper extends AbstractSignatureWrapper {
 	 */
 	public String getSignatureType() {
 		return signature.getSignatureType();
+	}
+
+	/**
+	 * Gets the JWS Serialization type
+	 * NOTE: JAdES only
+	 *
+	 * @return {@link JWSSerializationType}
+	 */
+	public JWSSerializationType getJWSSerializationType() {
+		return signature.getJWSSerializationType();
+	}
+
+	/**
+	 * Gets COSE signature structure's type, when applicable (CB-AdES only)
+	 *
+	 * @return {@link COSESignatureType}
+	 */
+	public COSESignatureType getCOSESignatureType() {
+		if (signature.getCOSESignatureType() != null) {
+			return signature.getCOSESignatureType().getValue();
+		}
+		return null;
+	}
+
+	/**
+	 * Gets whether the COSE signature structure is tagged
+	 *
+	 * @return TRUE if the COSE signature structure is tagged, FALSE otherwise
+	 */
+	public boolean isCOSETagged() {
+		if (signature.getCOSESignatureType() != null) {
+			return signature.getCOSESignatureType().isTagged();
+		}
+		return false;
 	}
 
 	/**
@@ -808,6 +882,9 @@ public class SignatureWrapper extends AbstractSignatureWrapper {
 
 	private boolean coversOwnRevocationData(TimestampWrapper timestampWrapper) {
 		CertificateWrapper signingCertificate = timestampWrapper.getSigningCertificate();
+		if (signingCertificate == null) {
+			return false; // invalid timestamp
+		}
 		if (signingCertificate.isSelfSigned() || signingCertificate.isTrusted()) {
 			return true; // no revocation data required
 		}
@@ -845,7 +922,17 @@ public class SignatureWrapper extends AbstractSignatureWrapper {
 	}
 
 	/**
-	 * This method returns a reference extracted from a 'kid' (key identifier) header (used in JAdES)
+	 * Returns if there is the ERS-Level within the signature
+	 *
+	 * @return TRUE if there is the ERS-Level, FALSE otherwise
+	 */
+	public boolean isThereERSLevel() {
+		List<EvidenceRecordWrapper> embeddedEvidenceRecords = getEmbeddedEvidenceRecords();
+		return embeddedEvidenceRecords != null && !embeddedEvidenceRecords.isEmpty();
+	}
+
+	/**
+	 * This method returns a reference extracted from a 'kid' (key identifier) header (used in JAdES, CB-AdES)
 	 *
 	 * @return {@link CertificateRefWrapper}
 	 */
@@ -858,6 +945,18 @@ public class SignatureWrapper extends AbstractSignatureWrapper {
 			return certificateRefs.iterator().next();
 		}
 		return null;
+	}
+
+	/**
+	 * This method returns a list of references extracted from a 'x5u' (X.509 URL) header (used in JAdES, CB-AdES)
+	 *
+	 * @return a list of {@link CertificateRefWrapper}s
+	 */
+	public List<CertificateRefWrapper> getX509UrlReferences() {
+		List<CertificateRefWrapper> certificateRefs = new ArrayList<>();
+		certificateRefs.addAll(foundCertificates().getRelatedCertificateRefsByRefOrigin(CertificateRefOrigin.X509_URL));
+		certificateRefs.addAll(foundCertificates().getOrphanCertificateRefsByRefOrigin(CertificateRefOrigin.X509_URL));
+		return certificateRefs;
 	}
 
 	/**

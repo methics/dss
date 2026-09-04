@@ -1,28 +1,26 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.ws.signature.common;
 
-import java.io.Serializable;
-import java.util.List;
-
+import eu.europa.esig.dss.enumerations.SignatureProfile;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.ws.dto.RemoteDocument;
 import eu.europa.esig.dss.ws.dto.SignatureValueDTO;
@@ -30,11 +28,14 @@ import eu.europa.esig.dss.ws.dto.ToBeSignedDTO;
 import eu.europa.esig.dss.ws.signature.dto.parameters.RemoteSignatureParameters;
 import eu.europa.esig.dss.ws.signature.dto.parameters.RemoteTimestampParameters;
 
+import java.io.Serializable;
+import java.util.List;
+
 /**
  * This interface {@code RemoteMultipleDocumentsSignatureService} provides operations for the signature creation.
- * 
+ * <p>
  * This interface allows to sign a set of documents.
- * 
+ * <p>
  * Supported implementations :
  * -XAdES Enveloping
  * -XAdES Detached
@@ -75,20 +76,25 @@ public interface RemoteMultipleDocumentsSignatureService extends Serializable {
 	 * @throws DSSException
 	 *             if an error occurred
 	 */
-	RemoteDocument signDocument(final List<RemoteDocument> toSignDocuments, final RemoteSignatureParameters parameters, SignatureValueDTO signatureValue) throws DSSException;
+	RemoteDocument signDocument(final List<RemoteDocument> toSignDocuments, final RemoteSignatureParameters parameters,
+								final SignatureValueDTO signatureValue) throws DSSException;
 
 	/**
-	 * Extends the level of the signatures in the {@code toExtendDocument}
+	 * Extends the level of the signatures in the {@code toExtendDocument} according
+	 * to the defined target {@code signatureProfile} and/or {@code parameters}
 	 *
 	 * @param toExtendDocument
 	 *            document to extend
+	 * @param signatureProfile
+	 *            (conditional presence) target signature augmentation profile
 	 * @param parameters
 	 *            set of the driving signing parameters
 	 * @return the extended signature
 	 * @throws DSSException
 	 *             if an error occurred
 	 */
-	RemoteDocument extendDocument(final RemoteDocument toExtendDocument, final RemoteSignatureParameters parameters) throws DSSException;
+	RemoteDocument extendDocument(final RemoteDocument toExtendDocument, final SignatureProfile signatureProfile,
+								  final RemoteSignatureParameters parameters) throws DSSException;
 	
 	/**
 	 * Adds timestamps to the given list of documents

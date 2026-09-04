@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -22,6 +22,7 @@ package eu.europa.esig.dss.crl;
 
 import eu.europa.esig.dss.model.DSSException;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1String;
@@ -34,6 +35,8 @@ import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.math.BigInteger;
 
 /**
  * The abstract class containing common code for CRL parsing
@@ -137,6 +140,28 @@ public abstract class AbstractCRLUtils {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Extracts the CRL Number extension and sets it in the CRLValidity object.
+	 *
+	 * @param crlValidity the {@link CRLValidity} object to populate
+	 * @param extensionContent the raw extension content from CRLInfo
+	 */
+	protected void extractCrlNumber(CRLValidity crlValidity, byte[] extensionContent) {
+		if (extensionContent != null) {
+			try {
+				ASN1OctetString octetString = (ASN1OctetString) ASN1Primitive.fromByteArray(extensionContent);
+				// The extension content from CRLInfo is the INTEGER
+				ASN1Primitive primitive = ASN1Primitive.fromByteArray(octetString.getOctets());
+				if (primitive instanceof ASN1Integer) {
+					BigInteger crlNumber = ((ASN1Integer) primitive).getPositiveValue();
+					crlValidity.setCRLNumber(crlNumber);
+				}
+			} catch (Exception e) {
+				LOG.warn("Unable to extract CRL Number extension : {}", e.getMessage(), e);
+			}
+		}
 	}
 
 }

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -24,16 +24,19 @@ import eu.europa.esig.dss.asic.common.ASiCContent;
 import eu.europa.esig.dss.asic.common.ASiCUtils;
 import eu.europa.esig.dss.asic.common.extract.DefaultASiCContainerExtractor;
 import eu.europa.esig.dss.enumerations.ASiCContainerType;
+import eu.europa.esig.dss.enumerations.EvidenceRecordOrigin;
 import eu.europa.esig.dss.enumerations.EvidenceRecordTypeEnum;
 import eu.europa.esig.dss.model.ContainerInfo;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.ManifestEntry;
 import eu.europa.esig.dss.model.ManifestFile;
+import eu.europa.esig.dss.model.ReferenceValidation;
 import eu.europa.esig.dss.model.scope.SignatureScope;
 import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.spi.signature.AdvancedSignature;
 import eu.europa.esig.dss.spi.validation.analyzer.DefaultDocumentAnalyzer;
+import eu.europa.esig.dss.spi.validation.analyzer.DocumentAnalyzer;
 import eu.europa.esig.dss.spi.validation.analyzer.evidencerecord.EvidenceRecordAnalyzer;
 import eu.europa.esig.dss.spi.validation.analyzer.evidencerecord.EvidenceRecordAnalyzerFactory;
 import eu.europa.esig.dss.spi.validation.analyzer.timestamp.TimestampAnalyzer;
@@ -178,8 +181,8 @@ public abstract class AbstractASiCContainerAnalyzer extends DefaultDocumentAnaly
 	@Override
 	protected List<AdvancedSignature> buildSignatures() {
 		final List<AdvancedSignature> signatureList = new ArrayList<>();
-		for (eu.europa.esig.dss.spi.validation.analyzer.DocumentAnalyzer validator : getSignatureAnalyzers()) {
-			signatureList.addAll(validator.getSignatures());
+		for (DocumentAnalyzer analyzer : getSignatureAnalyzers()) {
+			signatureList.addAll(analyzer.getSignatures());
 		}
 		
 		return signatureList;
@@ -190,7 +193,7 @@ public abstract class AbstractASiCContainerAnalyzer extends DefaultDocumentAnaly
 	 *
 	 * @return a list of {@link DocumentValidator}s
 	 */
-	protected abstract List<eu.europa.esig.dss.spi.validation.analyzer.DocumentAnalyzer> getSignatureAnalyzers();
+	protected abstract List<DocumentAnalyzer> getSignatureAnalyzers();
 
 	/**
 	 * Returns a container type
@@ -429,12 +432,13 @@ public abstract class AbstractASiCContainerAnalyzer extends DefaultDocumentAnaly
 				}
 			}
 
-			final EvidenceRecordAnalyzer evidenceRecordValidator = EvidenceRecordAnalyzerFactory.fromDocument(evidenceRecordDocument);
-			assertEvidenceRecordDocumentExtensionMatch(evidenceRecordDocument, evidenceRecordValidator.getEvidenceRecordType());
-			evidenceRecordValidator.setDetachedContents(detachedContents);
-			evidenceRecordValidator.setManifestFile(manifestFile);
-			evidenceRecordValidator.setCertificateVerifier(certificateVerifier);
-			return evidenceRecordValidator;
+			final EvidenceRecordAnalyzer evidenceRecordAnalyzer = EvidenceRecordAnalyzerFactory.fromDocument(evidenceRecordDocument);
+			assertEvidenceRecordDocumentExtensionMatch(evidenceRecordDocument, evidenceRecordAnalyzer.getEvidenceRecordType());
+			evidenceRecordAnalyzer.setDetachedContents(detachedContents);
+			evidenceRecordAnalyzer.setManifestFile(manifestFile);
+			evidenceRecordAnalyzer.setCertificateVerifier(certificateVerifier);
+			evidenceRecordAnalyzer.setEvidenceRecordOrigin(EvidenceRecordOrigin.CONTAINER);
+			return evidenceRecordAnalyzer;
 
 		} catch (Exception e) {
 			LOG.warn("Unable to load EvidenceRecordValidator for an evidence record document with name '{}' : {}",
@@ -469,21 +473,22 @@ public abstract class AbstractASiCContainerAnalyzer extends DefaultDocumentAnaly
 
 	@Override
 	protected boolean coversSignature(AdvancedSignature signature, EvidenceRecord evidenceRecord) {
-		ManifestFile evidenceRecordManifest = evidenceRecord.getManifestFile();
-		if (evidenceRecordManifest == null) {
-			// not embedded ER
-			return true;
-		}
-		return coversFile(evidenceRecordManifest, signature.getSignatureFilename());
+		return coversFile(evidenceRecord, document.getName()) || coversFile(evidenceRecord, signature.getFilename());
 	}
 
 	private boolean coversEvidenceRecord(EvidenceRecord coveredEvidenceRecord, EvidenceRecord coveringEvidenceRecord) {
-		ManifestFile evidenceRecordManifest = coveringEvidenceRecord.getManifestFile();
-		if (evidenceRecordManifest == null) {
-			return false;
-		}
-		return coversFile(evidenceRecordManifest, coveredEvidenceRecord.getFilename());
+		return coversFile(coveringEvidenceRecord, coveredEvidenceRecord.getFilename());
 	}
+
+	private boolean coversFile(EvidenceRecord evidenceRecord, String filename) {
+		for (ReferenceValidation referenceValidation : evidenceRecord.getReferenceValidation()) {
+			DSSDocument referenceDocument = referenceValidation.getDocument();
+			if (filename == null || (referenceDocument != null && filename.equals(referenceDocument.getName()))) {
+				return true;
+			}
+		}
+        return evidenceRecord.getManifestFile() != null && coversFile(evidenceRecord.getManifestFile(), filename);
+    }
 
 	private boolean coversFile(ManifestFile manifestFile, String filename) {
 		if (manifestFile != null) {

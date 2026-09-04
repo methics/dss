@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -22,10 +22,13 @@ package eu.europa.esig.dss.jades.signature;
 
 import eu.europa.esig.dss.diagnostic.DiagnosticData;
 import eu.europa.esig.dss.diagnostic.SignatureWrapper;
+import eu.europa.esig.dss.diagnostic.jaxb.XmlDigestMatcher;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.DigestMatcherType;
 import eu.europa.esig.dss.enumerations.JWSSerializationType;
 import eu.europa.esig.dss.enumerations.MimeType;
 import eu.europa.esig.dss.enumerations.MimeTypeEnum;
+import eu.europa.esig.dss.enumerations.SigDMechanism;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.jades.DSSJsonUtils;
 import eu.europa.esig.dss.jades.HTTPHeader;
@@ -53,6 +56,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -103,6 +107,28 @@ public abstract class AbstractJAdESMultipleDocumentSignatureTest extends Abstrac
 				fail(e);
 			}
 			
+		}
+	}
+
+	@Override
+	protected void checkDigestMatchers(DiagnosticData diagnosticData) {
+		super.checkDigestMatchers(diagnosticData);
+
+		for (SignatureWrapper signatureWrapper : diagnosticData.getSignatures()) {
+			for (XmlDigestMatcher xmlDigestMatcher : signatureWrapper.getDigestMatchers()) {
+				if (DigestMatcherType.JWS_SIGNING_INPUT == xmlDigestMatcher.getType() && SigDMechanism.OBJECT_ID_BY_URI == getSignatureParameters().getSigDMechanism()) {
+					assertTrue(Utils.isCollectionNotEmpty(xmlDigestMatcher.getDataObjectReferences()));
+				} else {
+					assertFalse(Utils.isCollectionNotEmpty(xmlDigestMatcher.getDataObjectReferences()));
+				}
+			}
+		}
+	}
+
+	@Override
+	protected void checkJWSSerializationType(DiagnosticData diagnosticData) {
+		for (SignatureWrapper signatureWrapper : diagnosticData.getSignatures()) {
+			assertEquals(getSignatureParameters().getJwsSerializationType(), signatureWrapper.getJWSSerializationType());
 		}
 	}
 
@@ -179,19 +205,21 @@ public abstract class AbstractJAdESMultipleDocumentSignatureTest extends Abstrac
 
 	@Override
 	protected boolean isBaselineT() {
-		// TODO Auto-generated method stub
-		return false;
+		SignatureLevel signatureLevel = getSignatureParameters().getSignatureLevel();
+		return SignatureLevel.JAdES_BASELINE_LTA.equals(signatureLevel)
+				|| SignatureLevel.JAdES_BASELINE_LT.equals(signatureLevel)
+				|| SignatureLevel.JAdES_BASELINE_T.equals(signatureLevel);
 	}
+
 
 	@Override
 	protected boolean isBaselineLTA() {
-		// TODO Auto-generated method stub
-		return false;
+		SignatureLevel signatureLevel = getSignatureParameters().getSignatureLevel();
+		return SignatureLevel.JAdES_BASELINE_LTA.equals(signatureLevel);
 	}
 
 	@Override
 	protected String getSigningAlias() {
-		// TODO Auto-generated method stub
 		return GOOD_USER;
 	}
 

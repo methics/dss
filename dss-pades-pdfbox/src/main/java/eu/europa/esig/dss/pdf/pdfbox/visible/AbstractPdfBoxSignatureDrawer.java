@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -93,12 +93,31 @@ public abstract class AbstractPdfBoxSignatureDrawer implements PdfBoxSignatureDr
 	 * @return {@link SignatureFieldDimensionAndPosition}
 	 */
 	public SignatureFieldDimensionAndPosition buildSignatureFieldBox() {
-		PDPage originalPage = document.getPage(parameters.getFieldParameters().getPage() - ImageUtils.DEFAULT_FIRST_PAGE);
-		PDRectangle mediaBox = originalPage.getMediaBox();
-		AnnotationBox pageBox = new AnnotationBox(mediaBox.getLowerLeftX(), mediaBox.getLowerLeftY(),
-				mediaBox.getUpperRightX(), mediaBox.getUpperRightY());
+		PDPage originalPage = getPage();
+		AnnotationBox pageBox = getPageAnnotationBox(originalPage);
 		return new SignatureFieldDimensionAndPositionBuilder(parameters, getDSSFontMetrics(), pageBox,
 				originalPage.getRotation()).setSignatureFieldAnnotationBox(getSignatureFieldAnnotationBox()).build();
+	}
+
+	/**
+	 * Gets the page to create a new signature field in
+	 *
+	 * @return {@link PDPage}
+	 */
+	protected PDPage getPage() {
+		return document.getPage(parameters.getFieldParameters().getPage() - ImageUtils.DEFAULT_FIRST_PAGE);
+	}
+
+	/**
+	 * Gets a page annotation box
+	 *
+	 * @param pdPage {@link PDPage}
+	 * @return {@link AnnotationBox}
+	 */
+	protected AnnotationBox getPageAnnotationBox(PDPage pdPage) {
+		PDRectangle mediaBox = pdPage.getMediaBox();
+		return new AnnotationBox(mediaBox.getLowerLeftX(), mediaBox.getLowerLeftY(),
+				mediaBox.getUpperRightX(), mediaBox.getUpperRightY());
 	}
 
 	/**

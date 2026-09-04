@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -23,13 +23,15 @@ package eu.europa.esig.dss.xades.reference;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DigestDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.xades.DSSXMLUtils;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xml.common.definition.DSSNamespace;
-import eu.europa.esig.dss.xml.utils.DomUtils;
 import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigAttribute;
 import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigElement;
+import eu.europa.esig.dss.xml.utils.DomUtils;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -96,6 +98,11 @@ public class ReferenceProcessor {
 
     private Node dereferenceNode(DSSReference reference) {
         Document document = getDocumentToTransform(reference);
+        if (document == null) {
+            // not XML, return NULL node
+            return null;
+        }
+
         /*
          * 4.4.3.3 Same-Document URI-References
          *
@@ -108,7 +115,7 @@ public class ReferenceProcessor {
          * 4. if the URI has no fragment identifier or the fragment identifier is a shortname XPointer,
          *    then delete all comment nodes
          */
-        if (document != null && DSSXMLUtils.isSameDocumentReference(reference.getUri()) && !DomUtils.isXPointerQuery(reference.getUri())) {
+        if (DSSXMLUtils.isSameDocumentReference(reference.getUri()) && !DomUtils.isXPointerQuery(reference.getUri())) {
             document = DomUtils.excludeComments(document);
         }
         // extract the target Node after performing comments removal (otherwise the relation to parent nodes can be lost)
@@ -139,7 +146,7 @@ public class ReferenceProcessor {
 
         } else if (DomUtils.isElementReference(uri)) {
             final String targetId = DomUtils.getId(uri);
-            Element elementById = DomUtils.getElementById(doc, targetId);
+            Element elementById = XPathUtils.getElementById(doc, targetId);
             if (elementById != null) {
                 return elementById;
             }
@@ -177,8 +184,11 @@ public class ReferenceProcessor {
                 if (dssReference.getId() != null) {
                     referenceDom.setAttribute(XMLDSigAttribute.ID.getAttributeName(), dssReference.getId());
                 }
-                final String uri = dssReference.getUri();
+                String uri = dssReference.getUri();
                 if (uri != null) {
+                    if (!DSSXMLUtils.isSameDocumentReference(uri)) {
+                        uri = DSSUtils.encodeURI(uri);
+                    }
                     referenceDom.setAttribute(XMLDSigAttribute.URI.getAttributeName(), uri);
                 }
                 final String referenceType = dssReference.getType();

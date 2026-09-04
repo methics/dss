@@ -1,0 +1,260 @@
+{
+  "LoTE": {
+    "ListAndSchemeInformation": {
+      "LoTEVersionIdentifier": 1,
+      "LoTESequenceNumber": 42,
+      "LoTEType": "http://example.org/LoTE/type",
+      "SchemeOperatorName": [
+        {
+          "lang": "fr",
+          "value": "Agence Nationale de la Confiance Numérique"
+        },
+        {
+          "lang": "en",
+          "value": "National Agency for Digital Trust"
+        }
+      ],
+      "SchemeOperatorAddress": {
+        "SchemeOperatorPostalAddress": [
+          {
+            "lang": "fr",
+            "StreetAddress": "12 Boulevard Sécurité",
+            "Locality": "Paris",
+            "StateOrProvince": "Île-de-France",
+            "PostalCode": "75015",
+            "Country": "FR"
+          }
+        ],
+        "SchemeOperatorElectronicAddress": [
+          {
+            "lang": "fr",
+            "uriValue": "mailto:contact@trust.gov.fr"
+          },
+          {
+            "lang": "en",
+            "uriValue": "mailto:support@trust.gov.fr"
+          }
+        ]
+      },
+      "SchemeName": [
+        {
+          "lang": "fr",
+          "value": "Schéma de Confiance Européen"
+        },
+        {
+          "lang": "en",
+          "value": "European Trust Scheme"
+        }
+      ],
+      "SchemeInformationURI": [
+        {
+          "lang": "fr",
+          "uriValue": "https://trust.gov.fr/info"
+        },
+        {
+          "lang": "en",
+          "uriValue": "https://trust.gov.fr/en/info"
+        }
+      ],
+      "StatusDeterminationApproach": "http://example.org/status/automated",
+      "SchemeTypeCommunityRules": [
+        {
+          "lang": "en",
+          "uriValue": "https://rules.eutrust.org"
+        }
+      ],
+      "SchemeTerritory": "FR",
+      "PolicyOrLegalNotice": [
+
+          {
+            "LoTEPolicy": {
+              "lang": "fr",
+              "uriValue": "https://trust.gov.fr/politique"
+            }
+          }
+
+      ],
+      "HistoricalInformationPeriod": 24,
+      "PointersToOtherLoTE": [
+        {
+          "LoTELocation": "https://other-lote.example.org/lotefile.xml",
+          "ServiceDigitalIdentities": [
+            {
+              "X509Certificates": [
+                {
+                  "encoding": "https://www.w3.org/2000/09/xmldsig#base64",
+                  "specRef": "ETSI TS 119 612",
+                  "val": "MIIDdzCCAl+gAwIBAgIEb1t8gTANBgkqhkiG9w0BAQsFADBz"
+                }
+              ],
+              "X509SubjectName": "CN=TrustService, O=Other LoTE",
+              "PublicKeyValue": {
+                "kty": "RSA",
+                "use": "sig",
+                "kid": "example-key-1",
+                "alg": "RS256",
+                "n": "sXchK8OZq6Ki1GmP6i5mtcO3Gi4lCG9rm-YqgYkmGld0b0AYa1V5fCqQhMd5W-QjlIR1B2WwQkp8nfb-JQaTjijV0EFMrnRWVVzGpi6eCeYQjXrTV_5eZ6X8OgGoGiRytN2ozGEoRDe8rDd2xl7U3PAXF3fjhA8Eo0IQqU3O96t8",
+                "e": "AQAB"
+              },
+              "X509SKI": "MII12345678BASE64==",
+              "OtherId": "1234567890"
+            }
+          ],
+          "LoTEQualifiers": [
+            {
+              "LoTEType": "http://example.org/LoTE/type/qualified",
+              "SchemeOperatorName": [
+                {
+                  "lang": "fr",
+                  "value": "Autorité de Certification Européenne"
+                }
+              ],
+              "SchemeTypeCommunityRules": [
+                {
+                  "lang": "fr",
+                  "uriValue": "https://european.rules.eu"
+                }
+              ],
+              "SchemeTerritory": "EU",
+              "MimeType": "application/xml"
+            }
+          ]
+        }
+      ],
+      "ListIssueDateTime": "2025-07-17T10:00:00Z",
+      "NextUpdate": "2026-07-17T10:00:00Z",
+      "DistributionPoints": [
+        "https://trust.gov.fr/distribution.xml"
+      ],
+      "SchemeExtensions": [
+        {
+          "key": "remark",
+          "value": "Extension personnalisée"
+        }
+      ]
+    },
+    "TrustedEntitiesList": [
+      {
+        "TrustedEntityInformation": {
+          "TEName": [
+            {
+              "lang": "fr",
+              "value": "Prestataire de Services Certifié"
+            },
+            {
+              "lang": "en",
+              "value": "Certified Service Provider"
+            }
+          ],
+          "TETradeName": [
+            {
+              "lang": "fr",
+              "value": "PSC France"
+            }
+          ],
+          "TEAddress": {
+            "TEPostalAddress": [
+              {
+                "lang": "fr",
+                "StreetAddress": "7 Rue de la Sécurité",
+                "Locality": "Lyon",
+                "StateOrProvince": "Auvergne-Rhône-Alpes",
+                "PostalCode": "69001",
+                "Country": "FR"
+              }
+            ],
+            "TEElectronicAddress": [
+              {
+                "lang": "fr",
+                "uriValue": "mailto:support@psc.fr"
+              }
+            ]
+          },
+          "TEInformationURI": [
+            {
+              "lang": "fr",
+              "uriValue": "https://psc.fr/info"
+            }
+          ],
+          "TEInformationExtensions": [
+            {
+              "key": "certificationDate",
+              "value": "2023-01-10"
+            }
+          ]
+        },
+        "TrustedEntityServices": [
+          {
+            "ServiceInformation": {
+              "ServiceName": [
+                {
+                  "lang":  "en",
+                "value":  "Signature Qualifiée"
+                }
+
+              ],
+              "ServiceDigitalIdentity": {
+                "X509Certificates": [
+                  {
+                    "val": "MIIFazCCA1OgAwIBAgISA7H+gAAAA..."
+                  }
+                ]
+              },
+              "ServiceTypeIdentifier": "http://uri.etsi.org/TrstSvc/Svctype/QES",
+              "ServiceStatus": "http://uri.etsi.org/TrstSvc/Status/underSupervision",
+              "StatusStartingTime": "2024-01-01T00:00:00Z",
+              "SchemeServiceDefinitionURI": [
+                {
+                  "lang": "en",
+                  "uriValue": "https://psc.fr/services/signature"
+                }
+              ],
+              "ServiceSupplyPoints": [
+                {
+                  "uriValue": "https://psc.fr/api/sign"
+                }
+              ],
+              "ServiceDefinitionURI": [
+                {
+                  "lang": "en",
+                  "uriValue": "https://psc.fr/docs/signature.pdf"
+                }
+              ],
+              "ServiceInformationExtensions": [
+                {
+                  "note": "Service audité par ANSSI"
+                }
+              ]
+            },
+            "ServiceHistory": [
+              {
+                "ServiceName": [
+                  {
+                    "lang":  "en",
+                    "value":  "Signature Qualifiée"
+                  }
+
+                ],
+                "ServiceDigitalIdentity": {
+                  "X509Certificates": [
+                    {
+                      "val": "MIIFazHISTORICDATA...."
+                    }
+                  ]
+                },
+                "ServiceStatus": "http://uri.etsi.org/TrstSvc/Status/recognised",
+                "StatusStartingTime": "2022-01-01T00:00:00Z",
+                "ServiceTypeIdentifier": "http://uri.etsi.org/TrstSvc/Svctype/QES",
+                "ServiceInformationExtensions": [
+                  {
+                    "audit": "2022-Q4"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

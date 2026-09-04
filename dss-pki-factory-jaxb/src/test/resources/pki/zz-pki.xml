@@ -127,7 +127,7 @@
             <qcType>0.4.0.1862.1.6.1</qcType>
         </qcTypes>
         <qcCClegislation>
-            <CountryName>ZZ</CountryName>
+            <countryName>ZZ</countryName>
         </qcCClegislation>
         <crl>Test-Qualified-CA1-from-ZZ</crl>
         <ocsp>Test-Qualified-CA1-from-ZZ</ocsp>
@@ -159,7 +159,7 @@
             <qcType>0.4.0.1862.1.6.1</qcType>
         </qcTypes>
         <qcCClegislation>
-            <CountryName>ZZ</CountryName>
+            <countryName>ZZ</countryName>
         </qcCClegislation>
         <crl>Test-Qualified-CA1-from-ZZ</crl>
         <ocsp>Test-Qualified-CA1-from-ZZ</ocsp>
@@ -188,7 +188,7 @@
             <qcStatement>0.4.0.1862.1.1</qcStatement>
         </qcStatementIds>
         <qcCClegislation>
-            <CountryName>ZZ</CountryName>
+            <countryName>ZZ</countryName>
         </qcCClegislation>
         <crl>Test-Qualified-CA1-from-ZZ</crl>
         <ocsp>Test-Qualified-CA1-from-ZZ</ocsp>
@@ -238,11 +238,46 @@
             <qcType>0.4.0.1862.1.6.1</qcType>
         </qcTypes>
         <qcCClegislation>
-            <CountryName>ZZ</CountryName>
+            <countryName>ZZ</countryName>
         </qcCClegislation>
         <crl>Test-Non-Qualified-CA-from-ZZ</crl>
         <ocsp>Test-Non-Qualified-CA-from-ZZ</ocsp>
         <caIssuers>Test-Non-Qualified-CA-from-ZZ</caIssuers>
+    </certificate>
+
+    <!-- End-Entity Non-Qualified Certificate having qcStatement, qcType and qcQSCDlegislation -->
+    <certificate>
+        <serialNumber>100115</serialNumber>
+        <subject>Charlie Doe</subject>
+        <organization>Test Qualified Trust Service Provider 1 from ZZ</organization>
+        <country>ZZ</country>
+        <issuer serialNumber="100110">Test-QTSP-1-RootCA-from-ZZ</issuer>
+        <notBefore month="-11"/>
+        <notAfter month="11"/>
+        <keyAlgo encryption="RSA" length="2048"/>
+        <digestAlgo>SHA256</digestAlgo>
+        <keyUsages>
+            <keyUsage>nonRepudiation</keyUsage>
+        </keyUsages>
+        <certificatePolicies>
+            <certificatePolicy>1.3.6.1.4.1.314159.1.2</certificatePolicy>
+        </certificatePolicies>
+        <qcStatementIds>
+            <qcStatement>0.4.0.1862.1.1</qcStatement>
+            <qcStatement>0.4.0.1862.1.4</qcStatement>
+        </qcStatementIds>
+        <qcTypes>
+            <qcType>0.4.0.1862.1.6.1</qcType>
+        </qcTypes>
+        <qcCClegislation>
+            <countryName>ZZ</countryName>
+        </qcCClegislation>
+        <qcQSCDlegislation>
+            <countryName>ZZ</countryName>
+        </qcQSCDlegislation>
+        <crl>Test-Qualified-CA1-from-ZZ</crl>
+        <ocsp>Test-Qualified-CA1-from-ZZ</ocsp>
+        <caIssuers>Test-Qualified-CA1-from-ZZ</caIssuers>
     </certificate>
 
     <!-- TSA-->

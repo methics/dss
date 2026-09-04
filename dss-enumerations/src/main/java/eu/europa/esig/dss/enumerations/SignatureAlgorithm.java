@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -26,6 +26,7 @@ import java.security.GeneralSecurityException;
 import java.security.spec.PSSParameterSpec;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -431,6 +432,10 @@ public enum SignatureAlgorithm implements OidAndUriBasedEnum {
         xmlAlgorithms.put("http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256", ECDSA_SHA256);
         xmlAlgorithms.put("http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384", ECDSA_SHA384);
         xmlAlgorithms.put("http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512", ECDSA_SHA512);
+        xmlAlgorithms.put("http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-224", ECDSA_SHA3_224);
+        xmlAlgorithms.put("http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-256", ECDSA_SHA3_256);
+        xmlAlgorithms.put("http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-384", ECDSA_SHA3_384);
+        xmlAlgorithms.put("http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-512", ECDSA_SHA3_512);
         xmlAlgorithms.put("http://www.w3.org/2007/05/xmldsig-more#ecdsa-ripemd160", ECDSA_RIPEMD160);
 
         xmlAlgorithms.put("http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519", ED25519);
@@ -725,6 +730,64 @@ public enum SignatureAlgorithm implements OidAndUriBasedEnum {
     }
 
     /**
+     * Map of COSE signature algorithm keys
+     */
+    private static final Map<Long, SignatureAlgorithm> COSE_ALGORITHMS = registerCoseAlgorithms();
+
+    /**
+     * Map of JWA signature algorithm URIs by algorithm
+     */
+    private static final Map<SignatureAlgorithm, Long> COSE_ALGORITHMS_FOR_KEY = registerCoseAlgorithmsForKey();
+
+    private static Map<Long, SignatureAlgorithm> registerCoseAlgorithms() {
+        // https://www.iana.org/assignments/cose/cose.xml
+        final Map<Long, SignatureAlgorithm> coseAlgorithms = new LinkedHashMap<>();
+
+        coseAlgorithms.put(-257L, RSA_SHA256);
+        coseAlgorithms.put(-258L, RSA_SHA384);
+        coseAlgorithms.put(-259L, RSA_SHA512);
+
+        coseAlgorithms.put(-37L, RSA_SSA_PSS_SHA256_MGF1);
+        coseAlgorithms.put(-38L, RSA_SSA_PSS_SHA384_MGF1);
+        coseAlgorithms.put(-39L, RSA_SSA_PSS_SHA512_MGF1);
+
+        // RFC 9864, ECDSA definitions with a specified curve
+        coseAlgorithms.put(-9L, ECDSA_SHA256); // ECDSA using P-256 curve
+        coseAlgorithms.put(-51L, ECDSA_SHA384); // ECDSA using P-384
+        coseAlgorithms.put(-52L, ECDSA_SHA512); // ECDSA using P-521
+
+        coseAlgorithms.put(-265L, ECDSA_SHA256); // ECDSA using BrainpoolP256r1
+        coseAlgorithms.put(-266L, ECDSA_SHA384); // ECDSA using BrainpoolP320r1
+        coseAlgorithms.put(-267L, ECDSA_SHA384); // ECDSA using BrainpoolP384r1
+        coseAlgorithms.put(-268L, ECDSA_SHA512); // ECDSA using BrainpoolP512r1
+
+        // RFC 9053, polymorphic ECDSA definitions
+        coseAlgorithms.put(-7L, ECDSA_SHA256);
+        coseAlgorithms.put(-35L, ECDSA_SHA384);
+        coseAlgorithms.put(-36L, ECDSA_SHA512);
+
+        // RFC 9864
+        coseAlgorithms.put(-19L, ED25519);
+        coseAlgorithms.put(-53L, ED448);
+
+        // RFC 9053, deprecated
+        coseAlgorithms.put(-8L, ED25519);
+
+        return coseAlgorithms;
+    }
+
+    private static Map<SignatureAlgorithm, Long> registerCoseAlgorithmsForKey() {
+        final Map<SignatureAlgorithm, Long> coseAlgorithms = new EnumMap<>(SignatureAlgorithm.class);
+        for (Entry<Long, SignatureAlgorithm> entry : COSE_ALGORITHMS.entrySet()) {
+            coseAlgorithms.put(entry.getValue(), entry.getKey());
+            ensurePlainECDSA(coseAlgorithms, entry.getValue(), entry.getKey());
+        }
+        // TODO : ED448 -8 key left for legacy reasons, to be removed when upgrading to new default algorithm identifiers
+        coseAlgorithms.put(SignatureAlgorithm.ED448, -8L);
+        return coseAlgorithms;
+    }
+
+    /**
      * Returns a corresponding {@code SignatureAlgorithm} by the XML URI string
      *
      * @param xmlName {@link String} XML URI
@@ -820,7 +883,22 @@ public enum SignatureAlgorithm implements OidAndUriBasedEnum {
         return algorithm;
     }
 
-    private static void ensurePlainECDSA(Map<SignatureAlgorithm, String> algMap, SignatureAlgorithm signatureAlgorithm, String key) {
+    /**
+     * This method return the {@code SignatureAlgorithm} or the default value if the algorithm is unknown.
+     *
+     * @param algorithmKey {@link Long} COSE algorithm key
+     * @param defaultValue the default value to be returned if not found
+     * @return {@code SignatureAlgorithm} or default value
+     */
+    public static SignatureAlgorithm forCOSE(Long algorithmKey, final SignatureAlgorithm defaultValue) {
+        final SignatureAlgorithm algorithm = COSE_ALGORITHMS.get(algorithmKey);
+        if (algorithm == null) {
+            return defaultValue;
+        }
+        return algorithm;
+    }
+
+    private static <T> void ensurePlainECDSA(Map<SignatureAlgorithm, T> algMap, SignatureAlgorithm signatureAlgorithm, T key) {
         if (signatureAlgorithm != null && EncryptionAlgorithm.ECDSA.equals(signatureAlgorithm.getEncryptionAlgorithm())) {
             algMap.put(SignatureAlgorithm.getAlgorithm(EncryptionAlgorithm.PLAIN_ECDSA, signatureAlgorithm.getDigestAlgorithm()), key);
         }
@@ -895,26 +973,6 @@ public enum SignatureAlgorithm implements OidAndUriBasedEnum {
     }
 
     /**
-     * For given encryption algorithm and digest algorithm this function returns the signature algorithm.
-     *
-     * @param encryptionAlgorithm the encryption algorithm
-     * @param digestAlgorithm     the digest algorithm
-     * @param mgf                 the mask generation function
-     * @return the corresponding combination of both algorithms
-     * @deprecated since DSS 6.1. Please use {@code #getAlgorithm(encryptionAlgorithm, digestAlgorithm)} method instead.
-     *             Use {@code EncryptionAlgorithm.RSA} or {@code EncryptionAlgorithm.RSASSA_PSS} to differentiate between MGF use.
-     */
-    @Deprecated
-    public static SignatureAlgorithm getAlgorithm(final EncryptionAlgorithm encryptionAlgorithm, final DigestAlgorithm digestAlgorithm,
-                                                  final MaskGenerationFunction mgf) {
-        EncryptionAlgorithm targetEncryptionAlgorithm = encryptionAlgorithm;
-        if (EncryptionAlgorithm.RSA == encryptionAlgorithm && MaskGenerationFunction.MGF1 == mgf) {
-            targetEncryptionAlgorithm = EncryptionAlgorithm.RSASSA_PSS;
-        }
-        return getAlgorithm(targetEncryptionAlgorithm, digestAlgorithm);
-    }
-
-    /**
      * The default constructor.
      *
      * @param encryptionAlgorithm the encryption algorithm
@@ -944,21 +1002,6 @@ public enum SignatureAlgorithm implements OidAndUriBasedEnum {
     }
 
     /**
-     * This method returns the mask generation function.
-     *
-     * @return the mask generation function
-     * @deprecated since DSS 6.1. Please use {@code #getEncryptionAlgorithm} in order to differentiate between 
-     *             MGF values (use RSA for none MGF, RSASSA_PSS for MGF1)
-     */
-    @Deprecated
-    public MaskGenerationFunction getMaskGenerationFunction() {
-        if (EncryptionAlgorithm.RSASSA_PSS == encryptionAlgo) {
-            return MaskGenerationFunction.MGF1;
-        }
-        return null;
-    }
-
-    /**
      * Returns the XML ID of the signature algorithm.
      *
      * @return the XML URI for the current signature algorithm.
@@ -980,9 +1023,9 @@ public enum SignatureAlgorithm implements OidAndUriBasedEnum {
 
     /**
      * Returns the URI of the signature algorithm generated from its OID:
-     *
+     * <p>
      * Ex.: OID = 1.2.4.5.6.8 becomes URI = urn:oid:1.2.4.5.6.8
-     *
+     * <p>
      * Note: see RFC 3061 "A URN Namespace of Object Identifiers"
      *
      * @return URI based on the algorithm's OID
@@ -1007,6 +1050,15 @@ public enum SignatureAlgorithm implements OidAndUriBasedEnum {
      */
     public String getJWAId() {
         return JWA_ALGORITHMS_FOR_KEY.get(this);
+    }
+
+    /**
+     * Returns algorithm identifier corresponding to COSE accepted algorithms (RFC 9053)
+     *
+     * @return the COSE algorithm identifier
+     */
+    public Long getCOSEId() {
+        return COSE_ALGORITHMS_FOR_KEY.get(this);
     }
 
     /**

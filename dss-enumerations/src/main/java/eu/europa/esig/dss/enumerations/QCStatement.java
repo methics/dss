@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -75,7 +75,28 @@ public enum QCStatement implements OidDescription {
 	 * esi4-qcStatement-7 QC-STATEMENT ::= { SYNTAX QcCClegislation IDENTIFIED BY id-etsi-qcsQcCClegislation }
 	 * id-etsi-qcs-QcCClegislation OBJECT IDENTIFIER ::= { id-etsi-qcs 7 }
 	 */
-	QC_CCLEGISLATION("qc-cclegislation", "0.4.0.1862.1.7");
+	QC_CCLEGISLATION("qc-cclegislation", "0.4.0.1862.1.7"),
+
+	/**
+	 * esi4-qcStatement-8 QC-STATEMENT ::= { SYNTAX QcIdentMethod IDENTIFIED BY id-etsi-qcs-QcIdentMethod }
+	 * QcIdentMethod ::= SEQUENCE SIZE (1) OF OBJECT IDENTIFIER ( id-etsi-qct-eIDAS1-ab |
+	 * id-etsi-qct-eIDAS1-cd | id-etsi-qct-eIDAS2-acd | id-etsi-qct-eIDAS2-b | ...)
+	 */
+	QC_IDENT_METHOD("qc-identMethod", "0.4.0.1862.1.8"),
+
+	/**
+	 * id-etsi-qcs-QcQSCDlegislation OBJECT IDENTIFIER ::= { id-etsi-qcs 9 }
+	 * QcQSCDlegislation ::= SEQUENCE SIZE (1..MAX) OF CountryName
+	 * CountryName ::= PrintableString (SIZE (2)) (CONSTRAINED BY { -- ISO 3166-1 [6] alpha-2 codes only
+	 */
+	QC_QSCD_LEGISLATION("qc-qscdLegislation", "0.4.0.1862.1.9"),
+
+	/**
+	 * -- PSB certificate mandatory data
+	 * id-etsi-qcs-QcPSB   OBJECT IDENTIFIER ::= { id-etsi-eidas2-qct-extensions 3 }
+	 * esi4-qcStatement-10 QC-STATEMENT ::= { SYNTAX QcPSB IDENTIFIED BY id-etsi-qcs-QcPSB }
+	 */
+	QC_PSB("qc-psb", "0.4.0.194126.1.3");
 
 	/** User-friendly identifier */
 	private final String description;

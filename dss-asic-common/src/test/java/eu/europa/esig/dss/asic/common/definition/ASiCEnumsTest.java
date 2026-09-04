@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -24,7 +24,9 @@ import eu.europa.esig.asic.manifest.ASiCManifestUtils;
 import eu.europa.esig.dss.xml.common.definition.DSSAttribute;
 import eu.europa.esig.dss.xml.common.definition.DSSElement;
 import eu.europa.esig.dss.xml.common.definition.DSSNamespace;
+import eu.europa.esig.dss.xml.common.xpath.XPathQueryBuilder;
 import eu.europa.esig.dss.xml.utils.DomUtils;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import eu.europa.esig.xades.XAdESUtils;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
@@ -42,18 +44,17 @@ class ASiCEnumsTest {
 
 	@Test
 	void getAllElements() throws Exception {
-		DomUtils.registerNamespace(XSD_NS);
+		XPathUtils.registerNamespace(XSD_NS);
 
 		try (InputStream is = XAdESUtils.class.getResourceAsStream(ASiCManifestUtils.ASIC_MANIFEST)) {
 			Document xsdDom = DomUtils.buildDOM(is);
 			checkElementSynchronization(xsdDom, ASiCManifestElement.values());
 		}
-
 	}
 
 	@Test
 	void getAllAttributes() throws Exception {
-		DomUtils.registerNamespace(XSD_NS);
+		XPathUtils.registerNamespace(XSD_NS);
 
 		try (InputStream is = XAdESUtils.class.getResourceAsStream(ASiCManifestUtils.ASIC_MANIFEST)) {
 			Document xsdDom = DomUtils.buildDOM(is);
@@ -63,7 +64,7 @@ class ASiCEnumsTest {
 	}
 
 	private void checkElementSynchronization(Document xsdDom, DSSElement[] elements) {
-		NodeList nodeList = DomUtils.getNodeList(xsdDom, "//xsd:element");
+		NodeList nodeList = XPathUtils.getNodeList(xsdDom, XPathQueryBuilder.all().element(DSSElement.fromDefinition("element", XSD_NS)).build());
 		assertTrue(nodeList.getLength() > 0);
 		for (int i = 0; i < nodeList.getLength(); i++) {
 			Node item = nodeList.item(i);
@@ -84,13 +85,15 @@ class ASiCEnumsTest {
 		}
 
 		for (DSSElement dssElement : elements) {
-			NodeList nodeListByTagName = DomUtils.getNodeList(xsdDom, "//xsd:element[@name=\"" + dssElement.getTagName() + "\"]");
+			NodeList nodeListByTagName = XPathUtils.getNodeList(xsdDom, XPathQueryBuilder.all()
+					.element(DSSElement.fromDefinition("element", XSD_NS))
+					.attribute(DSSAttribute.fromDefinition("name"), dssElement.getTagName()).build());
 			assertTrue(nodeListByTagName.getLength() > 0, "Element [" + dssElement.getTagName() + "] not found in XSD");
 		}
 	}
 
 	private void checkAttributesSynchronization(Document xsdDom, DSSAttribute[] attributes) {
-		NodeList nodeList = DomUtils.getNodeList(xsdDom, "//xsd:attribute");
+		NodeList nodeList = XPathUtils.getNodeList(xsdDom, XPathQueryBuilder.all().element(DSSElement.fromDefinition("attribute", XSD_NS)).build());
 		assertTrue(nodeList.getLength() > 0);
 
 		for (int i = 0; i < nodeList.getLength(); i++) {
@@ -112,7 +115,9 @@ class ASiCEnumsTest {
 		}
 
 		for (DSSAttribute dssAttribute : attributes) {
-			NodeList nodeListByTagName = DomUtils.getNodeList(xsdDom, "//xsd:attribute[@name=\"" + dssAttribute.getAttributeName() + "\"]");
+			NodeList nodeListByTagName = XPathUtils.getNodeList(xsdDom, XPathQueryBuilder.all()
+					.element(DSSElement.fromDefinition("attribute", XSD_NS))
+					.attribute(DSSAttribute.fromDefinition("name"), dssAttribute.getAttributeName()).build());
 			assertTrue(nodeListByTagName.getLength() > 0, "Attribute [" + dssAttribute.getAttributeName() + "] not found in XSD");
 		}
 	}

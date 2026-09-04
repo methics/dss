@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -58,12 +58,12 @@ class ASiCSWithCAdESAsn1EvidenceRecordFullRenewalWithManifestValidationTest exte
         boolean notFoundArchiveObject = false;
         for (ReferenceValidation referenceValidation : referenceValidationList) {
             if (DigestMatcherType.EVIDENCE_RECORD_ARCHIVE_OBJECT == referenceValidation.getType()) {
-                assertNotNull(referenceValidation.getDocumentName());
+                assertNotNull(referenceValidation.getDocument());
                 assertTrue(referenceValidation.isFound());
                 assertTrue(referenceValidation.isIntact());
                 foundArchiveObject = true;
             } else if (DigestMatcherType.EVIDENCE_RECORD_ORPHAN_REFERENCE == referenceValidation.getType()) {
-                assertNull(referenceValidation.getDocumentName());
+                assertNull(referenceValidation.getDocument());
                 assertFalse(referenceValidation.isFound());
                 assertFalse(referenceValidation.isIntact());
                 notFoundArchiveObject = true;
@@ -94,12 +94,12 @@ class ASiCSWithCAdESAsn1EvidenceRecordFullRenewalWithManifestValidationTest exte
         assertEquals(2, Utils.collectionSize(tstRenewal.getReferenceValidations()));
         for (ReferenceValidation referenceValidation : tstRenewal.getReferenceValidations()) {
             if (DigestMatcherType.EVIDENCE_RECORD_ARCHIVE_TIME_STAMP == referenceValidation.getType()) {
-                assertNull(referenceValidation.getDocumentName());
+                assertNull(referenceValidation.getDocument());
                 assertTrue(referenceValidation.isFound());
                 assertTrue(referenceValidation.isIntact());
                 arcTstRefFound = true;
             } else if (DigestMatcherType.EVIDENCE_RECORD_ORPHAN_REFERENCE == referenceValidation.getType()) {
-                assertNull(referenceValidation.getDocumentName());
+                assertNull(referenceValidation.getDocument());
                 assertFalse(referenceValidation.isFound());
                 assertFalse(referenceValidation.isIntact());
                 orphanRefFound = true;
@@ -116,7 +116,7 @@ class ASiCSWithCAdESAsn1EvidenceRecordFullRenewalWithManifestValidationTest exte
         assertEquals(1, Utils.collectionSize(tstChainRenewal.getReferenceValidations()));
         ReferenceValidation referenceValidation = tstChainRenewal.getReferenceValidations().get(0);
         assertEquals(DigestMatcherType.EVIDENCE_RECORD_ARCHIVE_OBJECT, referenceValidation.getType());
-        assertNotNull(referenceValidation.getDocumentName());
+        assertNotNull(referenceValidation.getDocument());
         assertTrue(referenceValidation.isFound());
         assertTrue(referenceValidation.isIntact());
     }

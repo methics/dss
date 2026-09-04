@@ -6,7 +6,7 @@
 		<jaxb:serializable uid="1" />
 	</jaxb:globalBindings>
 
-	<jaxb:bindings schemaLocation="mra/mra_schema_v2.xsd" node="/xs:schema">
+	<jaxb:bindings schemaLocation="mra/mra_schema_v2_19612v020401.xsd" node="/xs:schema">
 		<jaxb:schemaBindings>
 			<jaxb:package name="eu.europa.esig.trustedlist.jaxb.mra" />
 		</jaxb:schemaBindings>
@@ -31,7 +31,7 @@
 				printMethod="eu.europa.esig.trustedlist.mra.parsers.MRAEquivalenceContextParser.print" />
 		</jaxb:bindings>
 			
-		<jaxb:bindings schemaLocation="https://uri.etsi.org/19612/v2.2.1/ts_119612v020101_sie_xsd.xsd" node="/xs:schema">
+		<jaxb:bindings schemaLocation="https://uri.etsi.org/19612/v2.4.1/ts_119612v020401_sie_xsd.xsd" node="/xs:schema">
 			<jaxb:schemaBindings>
 				<jaxb:package name="eu.europa.esig.trustedlist.jaxb.ecc" />
 			</jaxb:schemaBindings>
@@ -54,9 +54,9 @@
 					<jaxb:property>
 						<jaxb:baseType>
 							<jaxb:javaType
-								name="eu.europa.esig.trustedlist.enums.Assert"
-								parseMethod="eu.europa.esig.trustedlist.parsers.AssertParser.parse"
-								printMethod="eu.europa.esig.trustedlist.parsers.AssertParser.print" />
+									name="eu.europa.esig.dss.enumerations.Assert"
+									parseMethod="eu.europa.esig.dss.jaxb.parsers.AssertParser.parse"
+									printMethod="eu.europa.esig.dss.jaxb.parsers.AssertParser.print" />
 						</jaxb:baseType>
 					</jaxb:property>
 				</jaxb:bindings>
@@ -66,11 +66,11 @@
 		
 	</jaxb:bindings>
 
-	<jaxb:bindings schemaLocation="ts_119612v020101_additionaltypes_xsd.xsd" node="/xs:schema">
+	<jaxb:bindings schemaLocation="ts_119612v020401_additionaltypes_xsd.xsd" node="/xs:schema">
 		<jaxb:schemaBindings>
 			<jaxb:package name="eu.europa.esig.trustedlist.jaxb.tslx" />
 		</jaxb:schemaBindings>
-	    <jaxb:bindings schemaLocation="http://uri.etsi.org/19612/v1.2.1/tsl.xsd" node="/xs:schema">
+	    <jaxb:bindings schemaLocation="https://forge.etsi.org/rep/esi/x19_612_trusted_lists/-/raw/v2.4.1/19612_xsd.xsd" node="/xs:schema">
 	      <jaxb:schemaBindings>
 	        <jaxb:package name="eu.europa.esig.trustedlist.jaxb.tsl" />
 	      </jaxb:schemaBindings>

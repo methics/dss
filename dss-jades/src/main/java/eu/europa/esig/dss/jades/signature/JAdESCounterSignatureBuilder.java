@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -65,13 +65,13 @@ public class JAdESCounterSignatureBuilder extends JAdESExtensionBuilder {
 	 */
 	public DSSDocument getSignatureValueToBeSigned(DSSDocument signatureDocument, JAdESCounterSignatureParameters parameters) {
 
-		JWSDocumentAnalyzerFactory documentValidatorFactory = new JWSDocumentAnalyzerFactory();
-		AbstractJWSDocumentAnalyzer documentValidator = documentValidatorFactory.create(signatureDocument);
+		JWSDocumentAnalyzerFactory documentAnalyzerFactory = new JWSDocumentAnalyzerFactory();
+		AbstractJWSDocumentAnalyzer documentAnalyzer = documentAnalyzerFactory.create(signatureDocument);
 
-		JWSJsonSerializationObject jwsJsonSerializationObject = documentValidator.getJwsJsonSerializationObject();
+		JWSJsonSerializationObject jwsJsonSerializationObject = documentAnalyzer.getJwsJsonSerializationObject();
 		assertJSONSerializationObjectMayBeExtended(jwsJsonSerializationObject);
 
-		List<AdvancedSignature> signatures = documentValidator.getSignatures();
+		List<AdvancedSignature> signatures = documentAnalyzer.getSignatures();
 
 		JAdESSignature jadesSignature = (JAdESSignature) extractSignatureById(signatures, parameters.getSignatureIdToCounterSign());
 		return new InMemoryDocument(jadesSignature.getSignatureValue());
@@ -88,21 +88,21 @@ public class JAdESCounterSignatureBuilder extends JAdESExtensionBuilder {
 	public DSSDocument buildEmbeddedCounterSignature(DSSDocument signatureDocument, DSSDocument counterSignature, 
 			JAdESCounterSignatureParameters parameters) {
 
-		JWSDocumentAnalyzerFactory documentValidatorFactory = new JWSDocumentAnalyzerFactory();
-		AbstractJWSDocumentAnalyzer documentValidator = documentValidatorFactory.create(signatureDocument);
+		JWSDocumentAnalyzerFactory documentAnalyzerFactory = new JWSDocumentAnalyzerFactory();
+		AbstractJWSDocumentAnalyzer documentAnalyzer = documentAnalyzerFactory.create(signatureDocument);
 
-		JWSJsonSerializationObject jwsJsonSerializationObject = documentValidator.getJwsJsonSerializationObject();
+		JWSJsonSerializationObject jwsJsonSerializationObject = documentAnalyzer.getJwsJsonSerializationObject();
 		assertJSONSerializationObjectMayBeExtended(jwsJsonSerializationObject);
 
-		List<AdvancedSignature> signatures = documentValidator.getSignatures();
+		List<AdvancedSignature> signatures = documentAnalyzer.getSignatures();
 
 		JAdESSignature jadesSignature = (JAdESSignature) extractSignatureById(signatures, parameters.getSignatureIdToCounterSign());
-		assertEtsiUComponentsConsistent(jadesSignature.getJws(), parameters.isBase64UrlEncodedEtsiUComponents());
+		assertEtsiUComponentsConsistent(jadesSignature.getJws(), parameters);
 
 		Object cSig = getCSig(counterSignature, parameters.getJwsSerializationType());
 		
 		JAdESEtsiUHeader etsiUHeader = jadesSignature.getEtsiUHeader();
-		etsiUHeader.addComponent(JAdESHeaderParameterNames.C_SIG, cSig, parameters.isBase64UrlEncodedEtsiUComponents());
+		etsiUHeader.addComponent(JAdESHeaderParameterNames.C_SIG, cSig, Utils.isTrue(parameters.isBase64UrlEncodedEtsiUComponents()));
 		
 		updateMasterSignatureRecursively(jadesSignature);
 

@@ -1,0 +1,324 @@
+{
+  "LoTE": {
+    "SchemeInformation": {
+      "LoTEVersionIdentifier": 1,
+      "LoTESequenceNumber": 1,
+      "LoTEType": "http://uri.etsi.org/LoTE/ListOfTrustedEntities/LoTEType/PIDProviderList",
+      "SchemeOperatorName": [
+        {
+          "lang": "en",
+          "value": "European Commission"
+        },
+        {
+          "lang": "bg",
+          "value": "Европейска комисия"
+        },
+        {
+          "lang": "es",
+          "value": "Comisión Europea"
+        },
+        {
+          "lang": "cs",
+          "value": "Evropská komise"
+        },
+        {
+          "lang": "da",
+          "value": "Europa-Kommissionen"
+        },
+        {
+          "lang": "de",
+          "value": "Europäische Kommission"
+        },
+        {
+          "lang": "et",
+          "value": "Euroopa Komisjon"
+        },
+        {
+          "lang": "el",
+          "value": "Ευρωπαϊκή Επιτροπή"
+        },
+        {
+          "lang": "fr",
+          "value": "Commission européenne"
+        },
+        {
+          "lang": "it",
+          "value": "Commissione europea"
+        },
+        {
+          "lang": "lv",
+          "value": "Eiropas Komisija"
+        },
+        {
+          "lang": "lt",
+          "value": "Europos Komisija"
+        },
+        {
+          "lang": "hu",
+          "value": "Európai Bizottság"
+        },
+        {
+          "lang": "mt",
+          "value": "Il-Kummissjoni Ewropea"
+        },
+        {
+          "lang": "nl",
+          "value": "Europese Commissie"
+        },
+        {
+          "lang": "pl",
+          "value": "Komisja Europejska"
+        },
+        {
+          "lang": "pt",
+          "value": "Comissão Europeia"
+        },
+        {
+          "lang": "ro",
+          "value": "Comisia Europeană"
+        },
+        {
+          "lang": "sk",
+          "value": "Európska komisia"
+        },
+        {
+          "lang": "sl",
+          "value": "Evropska komisija"
+        },
+        {
+          "lang": "fi",
+          "value": "Euroopan komissio"
+        },
+        {
+          "lang": "sv",
+          "value": "Europeiska kommissionen"
+        },
+        {
+          "lang": "hr",
+          "value": "Europska komisija"
+        }
+      ],
+      "SchemeOperatorAddress": {
+        "SchemeOperatorPostalAddress": [
+          {
+            "lang": "fr",
+            "StreetAddress": "Rue de la Loi 200",
+            "Locality": "Bruxelles",
+            "PostalCode": "1049",
+            "Country": "BE"
+          },
+          {
+            "lang": "nl",
+            "StreetAddress": "Wetstraat 200",
+            "Locality": "Brussel",
+            "PostalCode": "1049",
+            "Country": "BE"
+          },
+          {
+            "lang": "en",
+            "StreetAddress": "Rue de la Loi/Wetstraat 200",
+            "Locality": "Brussels",
+            "PostalCode": "1049",
+            "Country": "BE"
+          }
+        ],
+        "SchemeOperatorElectronicAddress": [
+          [
+            {
+              "lang": "en",
+              "uriValue": "mailto:EC-TL-Service@ec.europa.eu"
+            },
+            {
+              "lang": "en",
+              "uriValue": "https://digital-strategy.ec.europa.eu/en/policies/eu-trusted-lists"
+            }
+          ]
+        ]
+      },
+      "SchemeName": [
+        {
+          "lang": "en",
+          "value": "Temporary scheme name"
+        }
+      ],
+      "SchemeInformationURI": [
+        {
+          "lang": "EN",
+          "uriValue": "http://ec.europa.eu/tools/eudi/pidproviderlote/Schemeinformation"
+        }
+      ],
+      "StatusDeterminationApproach": "http://uri.etsi.org/LoTE/ListOfTrustedEntities/StatusDetn/PIDProviderList",
+      "SchemeTypeCommunityRules": [
+        {
+          "lang": "EN",
+          "uriValue": "http://uri.etsi.org/LoTE/ListOfTrustedEntities/schemerules/PIDProviderList"
+        }
+      ],
+      "SchemeTerritory": "EU",
+      "HistoricalInformationPeriod": 65535,
+      "ListIssueDateTime": "2025-09-04T07:37:11Z",
+      "NextUpdate": "2026-03-04T07:37:11Z",
+      "DistributionPoints": [
+        "http://asd"
+      ],
+      "SchemeExtensions": [
+      ]
+    },
+    "TrustedEntitiesList": [
+      {
+        "TrustedEntityInformation": {
+          "TEName": [
+            {
+              "lang": "en",
+              "value": "asd123"
+            }
+          ],
+          "TETradeName": [
+            {
+              "lang": "en",
+              "value": "asd1"
+            }
+          ],
+          "TEAddress": {
+            "TEPostalAddress": {
+              "lang": "en",
+              "StreetAddress": "asd",
+              "Locality": "",
+              "StateOrProvince": "",
+              "PostalCode": "",
+              "Country": "BE"
+            },
+            "TEElectronicAddress": [
+              {
+                "lang": "en",
+                "uriValue": "mailto:asd"
+              },
+              {
+                "lang": "de",
+                "uriValue": "tel:123"
+              }
+            ]
+          },
+          "TEInformationURI": [
+            {
+              "lang": "en",
+              "uriValue": "tel:asd"
+            }
+          ],
+          "TEInformationExtensions": [
+            {
+              "OtherAssociatedBodiesExtension": [
+                [
+                  {
+                    "AssociatedBodyName": [
+                      {
+                        "lang": "en",
+                        "value": "asd"
+                      }
+                    ],
+                    "AssociatedBodyTradeName": [
+                      {
+                        "lang": "en",
+                        "value": "asd"
+                      }
+                    ],
+                    "AssociatedBodyAddress": {
+                      "AssociatedBodyPostalAddress": [
+                        {
+                          "lang": "ga",
+                          "StreetAddress": "asd",
+                          "Locality": "",
+                          "StateOrProvince": "",
+                          "PostalCode": "",
+                          "Country": "AT"
+                        }
+                      ],
+                      "AssociatedBodyElectronicAddress": [
+                        {
+                          "lang": "en",
+                          "uriValue": "mailto:asd"
+                        },
+                        {
+                          "lang": "en",
+                          "uriValue": "tel:as"
+                        }
+                      ]
+                    },
+                    "AssociatedBodyInformationURI": [
+                      {
+                        "lang": "en",
+                        "uriValue": "https://asd"
+                      }
+                    ],
+                    "AssociatedBodyTypeIdentifier": [
+                      {
+                        "lang": "is",
+                        "uriValue": "https://asd"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          ]
+        },
+        "TrustedEntityServices": [
+          {
+            "ServiceInformation": {
+              "ServiceName": [
+                {
+                  "lang": "en",
+                  "value": "SN2223333"
+                }
+              ],
+              "ServiceDigitalIdentity": {
+                "X509Certificates": [
+                  {
+                    "val": "MIIFfDCCA2SgAwIBAgICAyQwDQYJKoZIhvcNAQELBQAwazELMAkGA1UEBhMCSVMxEzARBgNVBAUTCjU1MDE2OTI4MjkxGjAYBgNVBAoTEUZqYXJtYWxhcmFkdW5leXRpMRYwFAYDVQQLEw1Sb3RhcnNraWxyaWtpMRMwEQYDVQQDEwpJc2xhbmRzcm90MB4XDTE3MTExNjEzMjgzM1oXDTMyMTExNjEzMjgzM1owfjELMAkGA1UEBhMCSVMxEzARBgNVBAUTCjUyMTAwMDI3OTAxFTATBgNVBAoTDEF1ZGtlbm5pIGhmLjEnMCUGA1UECxMeVXRnZWZhbmRpIGZ1bGxnaWxkcmEgc2tpbHJpa2phMRowGAYDVQQDExFGdWxsZ2lsdCBhdWRrZW5uaTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMyn5tktN9C5QTrErtjS5YM+0k29pTy5a8TYl56Ma70OJT6aO17z5NsPjwSnTswlEZ34+zjzZm5MVxi8/fQpbDZlE/4N4YZlYBD1rm8AZB3mJUyPVNYQpTirnWPAIXUjYD0B25K7NU6V7MTibr5Z0VRgljvSbaKut4Y2ld3bx6Kmzc4pHKLU2hjbK+BSrPTbKuLH8Xae9WP6O2Zxd2d3elDUmh+0uhFexf3DuBNxvp4ildmISdDG2x538i+jBOUyv9GXwwbPGadt2FIdI15xgC0Y4L/AC8snfjEMcwH0xuaqdmAA/iOSWiprgTLQUmcnQQyT6lpM21Ai/EaqDvT1AWkCAwEAAaOCARUwggERMBIGA1UdEwEB/wQIMAYBAf8CAQAwagYDVR0gBGMwYTBfBgdggmABAQEBMFQwLQYIKwYBBQUHAgIwIRofSW50ZXJtZWRpYXRlIENlcnRpZmljYXRlIFBvbGljeTAjBggrBgEFBQcCARYXaHR0cDovL2NwLmlzbGFuZHNyb3QuaXMwDgYDVR0PAQH/BAQDAgEGMB8GA1UdIwQYMBaAFGV8Ul8MuWrF0jBaAr2g+4BAsh66MD8GA1UdHwQ4MDYwNKAyoDCGLmh0dHA6Ly9jcmwuaXNsYW5kc3JvdC5pcy9pc2xhbmRzcm90L2xhdGVzdC5jcmwwHQYDVR0OBBYEFMIpPob/hsTaNR9ppqT/AYM8SjOpMA0GCSqGSIb3DQEBCwUAA4ICAQBOBaAGxLPntnC3fVeHeQsD13AT2a3+Ry9R3AFP063Cwnc4+SYlCt+LSPa2wTCcDXAjvPgaxjRrTuTF1sCfj1uu8GVMeo7e6suYggf2PLxsKWjaGOJhUtZnNC1rh2mt4TVYTR2D0AHYju0nNjzZlXU31Ea//HDCQkV9+sSINTTrFL0Y5kB05WyVBXLHSTl/bKY8ULik2JImofrF+nI7GifHCMLFkCOkAUDsI3Fd0Fh7v3NguxpOM4sov2jowMZzxqkS9B8B0qRO41h6spuLvsNStnFZHIbTrMaINUm9X6C49lr0fpRri4UNQa2prMgNsK9dwsYurlMga1WpO6fwkzU3mLYjitUxV9iYJ1VWj2jhJt0ofDsB4xLCVu8n0gekde09P5EdWzLvXD03PLtkEiGtHElpluMFYaFjHhofYhai3u5eLVFTcNkEcyZO470EZTZ123dP3JQpSBKFjH7Z5CSSwgvFB/zOOdnEDS49Iidetk5y2D8Pg2NB4qGJcmkit9Zjv2cOj9b5gKu7XMzkja9vMahgfOrAKZJS7nrxr6NNR4rTMw8Rb9nvkS2sGk9ZGnbMLM+j84LDpT0rFMLNkegDFVob63pewil6mH43mVOLq6tyYMiU7mgzYcui1rGnhtLiSqpI6L1UaQ2IqT4PJGdXPIeO6oWVJpZaF7hWABD7sw=="
+                  }
+                ],
+                "X509SubjectName": "CN=Fullgilt audkenni, OU=Utgefandi fullgildra skilrikja, O=Audkenni hf., SERIALNUMBER=5210002790, C=IS",
+                "X509SKI": "wik+hv+GxNo1H2mmpP8BgzxKM6k="
+              },
+              "ServiceTypeIdentifier": "http://uri.etsi.org/LoTE/SvcType/PIDProvider",
+              "ServiceStatus": "http://uri.etsi.org/LoTE/PIDProviderList/SvcStatus/approved",
+              "StatusStartingTime": "2025-08-30T22:00:00Z",
+              "SchemeServiceDefinitionURI": [
+                "http://asd"
+              ],
+              "ServiceSupplyPoint": [
+                "https://SPV"
+              ],
+              "ServiceDefinitionURI": [
+                "http://asd"
+              ],
+              "ServiceInformationExtensions": [
+                "http://asd"
+              ]
+            },
+            "ServiceHistory":
+              {
+                "ServiceName": [
+                  {
+                    "lang": "en",
+                    "value": "H3"
+                  }
+                ],
+                "ServiceDigitalIdentity": {
+                  "X509Certificates": [
+                    {
+                      "val": "MIIFfDCCA2SgAwIBAgICAyQwDQYJKoZIhvcNAQELBQAwazELMAkGA1UEBhMCSVMxEzARBgNVBAUTCjU1MDE2OTI4MjkxGjAYBgNVBAoTEUZqYXJtYWxhcmFkdW5leXRpMRYwFAYDVQQLEw1Sb3RhcnNraWxyaWtpMRMwEQYDVQQDEwpJc2xhbmRzcm90MB4XDTE3MTExNjEzMjgzM1oXDTMyMTExNjEzMjgzM1owfjELMAkGA1UEBhMCSVMxEzARBgNVBAUTCjUyMTAwMDI3OTAxFTATBgNVBAoTDEF1ZGtlbm5pIGhmLjEnMCUGA1UECxMeVXRnZWZhbmRpIGZ1bGxnaWxkcmEgc2tpbHJpa2phMRowGAYDVQQDExFGdWxsZ2lsdCBhdWRrZW5uaTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMyn5tktN9C5QTrErtjS5YM+0k29pTy5a8TYl56Ma70OJT6aO17z5NsPjwSnTswlEZ34+zjzZm5MVxi8/fQpbDZlE/4N4YZlYBD1rm8AZB3mJUyPVNYQpTirnWPAIXUjYD0B25K7NU6V7MTibr5Z0VRgljvSbaKut4Y2ld3bx6Kmzc4pHKLU2hjbK+BSrPTbKuLH8Xae9WP6O2Zxd2d3elDUmh+0uhFexf3DuBNxvp4ildmISdDG2x538i+jBOUyv9GXwwbPGadt2FIdI15xgC0Y4L/AC8snfjEMcwH0xuaqdmAA/iOSWiprgTLQUmcnQQyT6lpM21Ai/EaqDvT1AWkCAwEAAaOCARUwggERMBIGA1UdEwEB/wQIMAYBAf8CAQAwagYDVR0gBGMwYTBfBgdggmABAQEBMFQwLQYIKwYBBQUHAgIwIRofSW50ZXJtZWRpYXRlIENlcnRpZmljYXRlIFBvbGljeTAjBggrBgEFBQcCARYXaHR0cDovL2NwLmlzbGFuZHNyb3QuaXMwDgYDVR0PAQH/BAQDAgEGMB8GA1UdIwQYMBaAFGV8Ul8MuWrF0jBaAr2g+4BAsh66MD8GA1UdHwQ4MDYwNKAyoDCGLmh0dHA6Ly9jcmwuaXNsYW5kc3JvdC5pcy9pc2xhbmRzcm90L2xhdGVzdC5jcmwwHQYDVR0OBBYEFMIpPob/hsTaNR9ppqT/AYM8SjOpMA0GCSqGSIb3DQEBCwUAA4ICAQBOBaAGxLPntnC3fVeHeQsD13AT2a3+Ry9R3AFP063Cwnc4+SYlCt+LSPa2wTCcDXAjvPgaxjRrTuTF1sCfj1uu8GVMeo7e6suYggf2PLxsKWjaGOJhUtZnNC1rh2mt4TVYTR2D0AHYju0nNjzZlXU31Ea//HDCQkV9+sSINTTrFL0Y5kB05WyVBXLHSTl/bKY8ULik2JImofrF+nI7GifHCMLFkCOkAUDsI3Fd0Fh7v3NguxpOM4sov2jowMZzxqkS9B8B0qRO41h6spuLvsNStnFZHIbTrMaINUm9X6C49lr0fpRri4UNQa2prMgNsK9dwsYurlMga1WpO6fwkzU3mLYjitUxV9iYJ1VWj2jhJt0ofDsB4xLCVu8n0gekde09P5EdWzLvXD03PLtkEiGtHElpluMFYaFjHhofYhai3u5eLVFTcNkEcyZO470EZTZ123dP3JQpSBKFjH7Z5CSSwgvFB/zOOdnEDS49Iidetk5y2D8Pg2NB4qGJcmkit9Zjv2cOj9b5gKu7XMzkja9vMahgfOrAKZJS7nrxr6NNR4rTMw8Rb9nvkS2sGk9ZGnbMLM+j84LDpT0rFMLNkegDFVob63pewil6mH43mVOLq6tyYMiU7mgzYcui1rGnhtLiSqpI6L1UaQ2IqT4PJGdXPIeO6oWVJpZaF7hWABD7sw=="
+                    }
+                  ],
+                  "X509SubjectName": "CN=Fullgilt audkenni, OU=Utgefandi fullgildra skilrikja, O=Audkenni hf., SERIALNUMBER=5210002790, C=IS",
+                  "X509SKI": "wik+hv+GxNo1H2mmpP8BgzxKM6k="
+                },
+                "ServiceStatus": "http://uri.etsi.org/LoTE/PIDProviderList/SvcStatus/approved",
+                "StatusStartingTime": "2025-08-25T10:00:00Z"
+              }
+          }
+        ]
+      }
+    ]
+  }
+}

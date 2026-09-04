@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -28,6 +28,7 @@ import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.Digest;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.scope.SignatureScope;
+import eu.europa.esig.dss.model.signature.SignatureDigestReference;
 import eu.europa.esig.dss.model.x509.revocation.crl.CRL;
 import eu.europa.esig.dss.model.x509.revocation.ocsp.OCSP;
 import eu.europa.esig.dss.pades.validation.dss.PdfVriDictSource;
@@ -38,19 +39,17 @@ import eu.europa.esig.dss.pdf.PdfDssDict;
 import eu.europa.esig.dss.pdf.PdfSignatureRevision;
 import eu.europa.esig.dss.spi.DSSASN1Utils;
 import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.spi.SignatureCertificateSource;
+import eu.europa.esig.dss.spi.signature.AdvancedSignature;
+import eu.europa.esig.dss.spi.signature.identifier.SignatureIdentifierBuilder;
+import eu.europa.esig.dss.spi.validation.CertificateVerifier;
 import eu.europa.esig.dss.spi.x509.ListCertificateSource;
+import eu.europa.esig.dss.spi.x509.revocation.ListRevocationSource;
 import eu.europa.esig.dss.spi.x509.revocation.crl.OfflineCRLSource;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OfflineOCSPSource;
-import eu.europa.esig.dss.utils.Utils;
-import eu.europa.esig.dss.spi.signature.AdvancedSignature;
-import eu.europa.esig.dss.spi.x509.revocation.ListRevocationSource;
-import eu.europa.esig.dss.spi.SignatureCertificateSource;
-import eu.europa.esig.dss.spi.validation.CertificateVerifier;
-import eu.europa.esig.dss.model.signature.SignatureDigestReference;
-import eu.europa.esig.dss.spi.signature.identifier.SignatureIdentifierBuilder;
 import eu.europa.esig.dss.spi.x509.tsp.TimestampToken;
+import eu.europa.esig.dss.utils.Utils;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -89,10 +88,10 @@ public class PAdESSignature extends CAdESSignature {
 	 * 
 	 */
 	protected PAdESSignature(final PdfSignatureRevision pdfSignatureRevision, final List<PdfRevision> documentRevisions) {
-		super(pdfSignatureRevision.getCMSSignedData(), DSSASN1Utils.getFirstSignerInformation(pdfSignatureRevision.getCMSSignedData()));
+		super(pdfSignatureRevision.getCMS(), DSSASN1Utils.getFirstSignerInformation(pdfSignatureRevision.getCMS().getSignerInfos()));
 		this.pdfSignatureRevision = pdfSignatureRevision;
 		this.documentRevisions = documentRevisions;
-		this.detachedContents = Arrays.asList(pdfSignatureRevision.getSignedData());
+		this.detachedContents = Collections.singletonList(pdfSignatureRevision.getSignedData());
 	}
 
 	/**
@@ -257,22 +256,40 @@ public class PAdESSignature extends CAdESSignature {
 
 	/**
 	 * TS 119 442 - V1.1.1 - Electronic Signatures and Infrastructures (ESI), ch. 5.1.4.2.1.3 XML component:
-	 * 
+	 * <p>
 	 * In case of PAdES signatures, the input of the digest value computation shall be the result of decoding the
 	 * hexadecimal string present within the Contents field of the Signature PDF dictionary enclosing one PAdES
 	 * digital signature. 
 	 */
 	@Override
-	public SignatureDigestReference getSignatureDigestReference(DigestAlgorithm digestAlgorithm) {
+	public SignatureDigestReference buildSignatureDigestReference(DigestAlgorithm digestAlgorithm) {
 		byte[] contents = getPdfSignatureDictionary().getContents();
 		byte[] digestValue = DSSUtils.digest(digestAlgorithm, contents);
 		return new SignatureDigestReference(new Digest(digestAlgorithm, digestValue));
 	}
 
+	/**
+	 * Checks if the LTV-level is present in the signature
+	 *
+	 * @return TRUE if the LTV-level is present, FALSE otherwise
+	 */
+	public boolean hasLTVProfile() {
+		return getBaselineRequirementsChecker().hasExtendedLTVProfile();
+	}
+
 	@Override
 	public SignatureLevel getDataFoundUpToLevel() {
 		SignatureForm signatureForm = getSignatureForm();
-		if (SignatureForm.PAdES.equals(signatureForm) && hasBProfile()) {
+		if (SignatureForm.PAdES.equals(signatureForm) && hasBESProfile()) {
+			if (!hasBProfile()) {
+				if (hasLTVProfile()) {
+					return SignatureLevel.PAdES_LTV;
+				}
+				if (hasEPESProfile()) {
+					return SignatureLevel.PAdES_EPES;
+				}
+				return SignatureLevel.PAdES_BES;
+			}
 			if (!hasTProfile()) {
 				return SignatureLevel.PAdES_BASELINE_B;
 			}

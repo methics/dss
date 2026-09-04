@@ -1,41 +1,42 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.xades.validation;
 
-import eu.europa.esig.dss.xml.utils.DomUtils;
-import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigPath;
 import eu.europa.esig.dss.enumerations.CertificateOrigin;
 import eu.europa.esig.dss.enumerations.CertificateRefOrigin;
 import eu.europa.esig.dss.model.Digest;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.spi.SignatureCertificateSource;
 import eu.europa.esig.dss.spi.x509.CandidatesForSigningCertificate;
 import eu.europa.esig.dss.spi.x509.CertificateRef;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.CertificateValidity;
 import eu.europa.esig.dss.spi.x509.SignerIdentifier;
 import eu.europa.esig.dss.utils.Utils;
-import eu.europa.esig.dss.spi.SignatureCertificateSource;
 import eu.europa.esig.dss.xades.DSSXMLUtils;
 import eu.europa.esig.dss.xades.definition.XAdESPath;
+import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigPath;
+import eu.europa.esig.dss.xml.common.xpath.XPathQuery;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
@@ -82,6 +83,7 @@ public class XAdESCertificateSource extends SignatureCertificateSource {
 		extractCertificates(xadesPaths.getEncapsulatedCertificateValuesPath(), CertificateOrigin.CERTIFICATE_VALUES);
 		extractCertificates(xadesPaths.getEncapsulatedAttrAuthoritiesCertValuesPath(), CertificateOrigin.ATTR_AUTHORITIES_CERT_VALUES);
 		extractCertificates(xadesPaths.getEncapsulatedTimeStampValidationDataCertValuesPath(), CertificateOrigin.TIMESTAMP_VALIDATION_DATA);
+		extractCertificates(xadesPaths.getEncapsulatedAnyValidationDataCertValuesPath(), CertificateOrigin.ANY_VALIDATION_DATA);
 
 		extractCertificateRefs(xadesPaths.getSigningCertificateChildren(), xadesPaths.getSigningCertificateV2Children(),
 				CertificateRefOrigin.SIGNING_CERTIFICATE);
@@ -101,11 +103,11 @@ public class XAdESCertificateSource extends SignatureCertificateSource {
 	 * @param xPathQuery XPath query
 	 * @param origin     the certificate origin
 	 */
-	private void extractCertificates(final String xPathQuery, CertificateOrigin origin) {
+	private void extractCertificates(final XPathQuery xPathQuery, CertificateOrigin origin) {
 		if (xPathQuery == null) {
 			return;
 		}
-		final NodeList nodeList = DomUtils.getNodeList(signatureElement, xPathQuery);
+		final NodeList nodeList = XPathUtils.getNodeList(signatureElement, xPathQuery);
 		for (int ii = 0; ii < nodeList.getLength(); ii++) {
 			final Element certificateElement = (Element) nodeList.item(ii);
 			String base64EncodedCertificate = certificateElement.getTextContent();
@@ -127,15 +129,15 @@ public class XAdESCertificateSource extends SignatureCertificateSource {
 	 * @param xpathV2 XPath query for certificate reference V2
 	 * @param origin  the certificate reference origin
 	 */
-	private void extractCertificateRefs(String xpathV1, String xpathV2, CertificateRefOrigin origin) {
+	private void extractCertificateRefs(XPathQuery xpathV1, XPathQuery xpathV2, CertificateRefOrigin origin) {
 		if (xpathV1 != null) {
-			NodeList certRefNodeList = DomUtils.getNodeList(signatureElement, xpathV1);
+			NodeList certRefNodeList = XPathUtils.getNodeList(signatureElement, xpathV1);
 			if (certRefNodeList != null) {
 				extractXAdESCertsV1(certRefNodeList, origin);
 			}
 		}
 		if (xpathV2 != null) {
-			NodeList certRefNodeList = DomUtils.getNodeList(signatureElement, xpathV2);
+			NodeList certRefNodeList = XPathUtils.getNodeList(signatureElement, xpathV2);
 			if (certRefNodeList != null) {
 				extractXAdESCertsV2(certRefNodeList, origin);
 			}
@@ -167,10 +169,11 @@ public class XAdESCertificateSource extends SignatureCertificateSource {
 			CertificateSource signingCertificateSource) {
 		CandidatesForSigningCertificate candidatesForSigningCertificate = new CandidatesForSigningCertificate();
 		
-		/**
-		 * 5.1.4.1 XAdES processing<br>
-		 * <i>Candidates for the signing certificate extracted from ds:KeyInfo
-		 * element</i> shall be checked against all references present in the
+		/*
+		 * 5.1.4.1 XAdES processing
+		 *
+		 * Candidates for the signing certificate extracted from ds:KeyInfo
+		 * element shall be checked against all references present in the
 		 * ds:SigningCertificate property, if present, since one of these references
 		 * shall be a reference to the signing certificate.
 		 */

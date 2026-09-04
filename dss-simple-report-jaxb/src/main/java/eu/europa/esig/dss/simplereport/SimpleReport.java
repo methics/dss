@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,6 +21,7 @@
 package eu.europa.esig.dss.simplereport;
 
 import eu.europa.esig.dss.enumerations.ASiCContainerType;
+import eu.europa.esig.dss.enumerations.AttestationQualification;
 import eu.europa.esig.dss.enumerations.Indication;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.enumerations.SignatureQualification;
@@ -28,6 +29,8 @@ import eu.europa.esig.dss.enumerations.SubIndication;
 import eu.europa.esig.dss.enumerations.TimestampQualification;
 import eu.europa.esig.dss.jaxb.object.Message;
 import eu.europa.esig.dss.simplereport.jaxb.XmlCertificateChain;
+import eu.europa.esig.dss.simplereport.jaxb.XmlAttestationLevel;
+import eu.europa.esig.dss.simplereport.jaxb.XmlAttestation;
 import eu.europa.esig.dss.simplereport.jaxb.XmlEvidenceRecord;
 import eu.europa.esig.dss.simplereport.jaxb.XmlEvidenceRecords;
 import eu.europa.esig.dss.simplereport.jaxb.XmlMessage;
@@ -47,7 +50,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * A SimpleReport holder to fetch values from a JAXB SimpleReport.
+ * A SimpleReport holder to fetch values from a JAXB SimpleReport
+ *
  */
 public class SimpleReport {
 
@@ -171,6 +175,24 @@ public class SimpleReport {
 	}
 
 	/**
+	 * This method retrieves the attestation ids
+	 *
+	 * @return the {@code List} of attestation id(s) contained in the simpleReport
+	 */
+	public List<String> getAttestationIdList() {
+		final List<String> attestationIdList = new ArrayList<>();
+		List<XmlToken> tokens = wrapped.getSignatureOrTimestampOrEvidenceRecord();
+		if (tokens != null) {
+			for (XmlToken token : tokens) {
+				if (token instanceof XmlAttestation) {
+					attestationIdList.add(token.getId());
+				}
+			}
+		}
+		return attestationIdList;
+	}
+
+	/**
 	 * This method returns the first signature id.
 	 *
 	 * @return the first signature id
@@ -205,6 +227,19 @@ public class SimpleReport {
 		final List<String> evidenceRecordIdList = getEvidenceRecordIdList();
 		if (!evidenceRecordIdList.isEmpty()) {
 			return evidenceRecordIdList.get(0);
+		}
+		return null;
+	}
+
+	/**
+	 * This method returns the first  id.
+	 *
+	 * @return the first evidence record id
+	 */
+	public String getFirstAttestationId() {
+		final List<String> attestationIdList = getAttestationIdList();
+		if (!attestationIdList.isEmpty()) {
+			return attestationIdList.get(0);
 		}
 		return null;
 	}
@@ -414,35 +449,41 @@ public class SimpleReport {
 	}
 
 	/**
-	 * If the signature validation is TOTAL_PASSED, the result date is the date from
-	 * when a signature extension is possible to ensure the revocation freshness
+	 * If the token validation is TOTAL_PASSED or PASSED, the result is a date indicating
+	 * when the token extension becomes possible ensuring the revocation freshness
 	 * (all certificates can be covered by a usable revocation data).
 	 * When certificate chain(s) do not require fresh revocation data
 	 * (e.g. if signature contains all necessary revocation data), NULL is returned.
-	 * 
-	 * @param signatureId the signature id
-	 * @return the minimal useful date for a signature extension (or null)
+	 * <p>
+	 * NOTE: The extension period is not computed for timestamps unambiguously
+	 *       related to other tokens (e.g. signature timestamps, etc.)
+	 *
+	 * @param tokenId {@link String} the token identifier
+	 * @return the minimal useful date for the token extension (or null)
 	 */
-	public Date getSignatureExtensionPeriodMin(final String signatureId) {
-		XmlSignature xmlSignature = getSignatureById(signatureId);
-		if (xmlSignature != null) {
-			return xmlSignature.getExtensionPeriodMin();
+	public Date getExtensionPeriodMin(final String tokenId) {
+		XmlToken token = getTokenById(tokenId);
+		if (token != null) {
+			return token.getExtensionPeriodMin();
 		}
 		return null;
 	}
 
 	/**
-	 * If the signature validation is TOTAL_PASSED, the result date is the maximum
-	 * possible date to extend the signature (before the expiration of the signing
-	 * certificate or the latest timestamping certificate).
-	 * 
-	 * @param signatureId the signature id
-	 * @return the maximum useful date for a signature extension (or null)
+	 * If the token validation is TOTAL_PASSED or PASSED, the result is a date indicating
+	 * the latest datetime when it is possible date to extend the token (i.e. before
+	 * expiration of the signing certificate or the latest timestamping certificate).
+	 * <p>
+	 * NOTE: The extension period is not computed for timestamps unambiguously
+	 *       related to other tokens (e.g. signature timestamps, etc.)
+	 *
+	 * @param tokenId {@link String} the token identifier
+	 * @return the maximum useful date for the token extension (or null)
 	 */
-	public Date getSignatureExtensionPeriodMax(final String signatureId) {
-		XmlSignature xmlSignature = getSignatureById(signatureId);
-		if (xmlSignature != null) {
-			return xmlSignature.getExtensionPeriodMax();
+	public Date getExtensionPeriodMax(final String tokenId) {
+		XmlToken token = getTokenById(tokenId);
+		if (token != null) {
+			return token.getExtensionPeriodMax();
 		}
 		return null;
 	}
@@ -526,6 +567,41 @@ public class SimpleReport {
 	}
 
 	/**
+	 * This method returns the first determined attestation's qualification.
+	 * This method could be used for a simple AttestationQualification result extraction, suitable for the most use cases.
+	 * Should you need a more comprehensive validation output, please use the {@code #getAttestationQualifications} method.
+	 *
+	 * @param attestationPresentationId
+	 *                    the attestation presentation id
+	 * @return {@link AttestationQualification} for a given attestation
+	 */
+	public AttestationQualification getAttestationQualification(final String attestationPresentationId) {
+		XmlAttestation xmlAttestation = getAttestationById(attestationPresentationId);
+		if (xmlAttestation != null && xmlAttestation.getAttestationLevel() != null && !xmlAttestation.getAttestationLevel().isEmpty()) {
+			return xmlAttestation.getAttestationLevel().iterator().next().getValue();
+		}
+		return null;
+	}
+
+	/**
+	 * This method returns a list of determined attestation's qualifications.
+	 * This list should be used if a comprehensive result of attestation validation is required,
+	 * as potentially a token may be qualified with different outputs during the validation process,
+	 * even thought it should not happen in production environments.
+	 *
+	 * @param attestationPresentationId
+	 *                    the attestation presentation id
+	 * @return a list of {@link AttestationQualification}s for a given attestation
+	 */
+	public List<AttestationQualification> getAttestationQualifications(final String attestationPresentationId) {
+		XmlAttestation xmlAttestation = getAttestationById(attestationPresentationId);
+		if (xmlAttestation != null && xmlAttestation.getAttestationLevel() != null && !xmlAttestation.getAttestationLevel().isEmpty()) {
+			return xmlAttestation.getAttestationLevel().stream().map(XmlAttestationLevel::getValue).collect(Collectors.toList());
+		}
+		return null;
+	}
+
+	/**
 	 * This method returns a wrapper for the given token id
 	 * 
 	 * @param tokenId
@@ -561,6 +637,11 @@ public class SimpleReport {
 					if (timestampById != null) {
 						return timestampById;
 					}
+				} else if (token instanceof XmlAttestation) {
+					XmlToken signatureById = getAttestationSignatureById((XmlAttestation) token, tokenId);
+					if (signatureById != null) {
+						return signatureById;
+					}
 				}
 			}
 		}
@@ -595,6 +676,24 @@ public class SimpleReport {
 		XmlTimestamps timestamps = evidenceRecord.getTimestamps();
 		if (timestamps != null && timestamps.getTimestamp() != null) {
 			return getEmbeddedTokenById(timestamps.getTimestamp(), tokenId);
+		}
+		return null;
+	}
+
+	private XmlToken getAttestationSignatureById(XmlAttestation attestation, String tokenId) {
+		List<XmlSignature> signatures = attestation.getAttestationSignature();
+		if (signatures != null && !signatures.isEmpty()) {
+			XmlToken embeddedTokenById = getEmbeddedTokenById(signatures, tokenId);
+			if (embeddedTokenById != null) {
+				return embeddedTokenById;
+			}
+		}
+		XmlSignature keyBindingSignature = attestation.getKeyBindingSignature();
+		if (keyBindingSignature != null) {
+			XmlToken embeddedTokenById = getEmbeddedTokenById(Collections.singletonList(keyBindingSignature), tokenId);
+			if (embeddedTokenById != null) {
+				return embeddedTokenById;
+			}
 		}
 		return null;
 	}
@@ -640,6 +739,21 @@ public class SimpleReport {
 		XmlToken token = getTokenById(evidenceRecordId);
 		if (token instanceof XmlEvidenceRecord) {
 			return (XmlEvidenceRecord) token;
+		}
+		return null;
+	}
+
+	/**
+	 * This method returns a wrapper for the given attestation
+	 *
+	 * @param attestationId
+	 *            the attestation id
+	 * @return the wrapper for the given attestation id
+	 */
+	public XmlAttestation getAttestationById(String attestationId) {
+		XmlToken token = getTokenById(attestationId);
+		if (token instanceof XmlAttestation) {
+			return (XmlAttestation) token;
 		}
 		return null;
 	}
@@ -702,6 +816,38 @@ public class SimpleReport {
 			return xmlEvidenceRecord.getTimestamps().getTimestamp();
 		}
 		return Collections.emptyList();
+	}
+
+	/**
+	 * This method returns a list of signatures used to create the attestation with the given Id
+	 * NOTE: This method does not return key binding signature. To extract the latest, please use
+	 *       {@code #getAttestationKeyBindingSignature} method
+	 *
+	 * @param attestationId
+	 *            the evidence record id
+	 * @return list if signature wrappers
+	 */
+	public List<XmlSignature> getAttestationSignatures(String attestationId) {
+		XmlAttestation attestationById = getAttestationById(attestationId);
+		if (attestationById != null && attestationById.getAttestationSignature() != null) {
+			return attestationById.getAttestationSignature();
+		}
+		return Collections.emptyList();
+	}
+
+	/**
+	 * This method returns a key binding signature for the attestation, when present
+	 *
+	 * @param attestationPresentationId
+	 *            the evidence record id
+	 * @return {@link XmlSignature}
+	 */
+	public XmlSignature getAttestationKeyBindingSignature(String attestationPresentationId) {
+		XmlAttestation attestation = getAttestationById(attestationPresentationId);
+		if (attestation != null) {
+			return attestation.getKeyBindingSignature();
+		}
+		return null;
 	}
 
 	/**

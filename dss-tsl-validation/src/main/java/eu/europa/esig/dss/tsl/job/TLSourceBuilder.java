@@ -1,33 +1,33 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.tsl.job;
 
-import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.model.tsl.OtherTSLPointer;
+import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.CommonCertificateSource;
-import eu.europa.esig.dss.tsl.cache.CacheKey;
-import eu.europa.esig.dss.tsl.dto.ParsingCacheDTO;
+import eu.europa.esig.dss.tsl.dto.TLParsingCacheDTO;
 import eu.europa.esig.dss.tsl.source.LOTLSource;
 import eu.europa.esig.dss.tsl.source.TLSource;
+import eu.europa.esig.dss.validation.job.cache.CacheKey;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +42,7 @@ public class TLSourceBuilder {
 	private final List<LOTLSource> lotlList;
 
 	/** The parsing LOTL results */
-	private final Map<CacheKey, ParsingCacheDTO> parsingResults;
+	private final Map<CacheKey, TLParsingCacheDTO> parsingResults;
 
 	/**
 	 * Default constructor
@@ -50,7 +50,7 @@ public class TLSourceBuilder {
 	 * @param lotlList a list of {@link LOTLSource}s
 	 * @param parsingResults a map of LOTL parsing results
 	 */
-	public TLSourceBuilder(List<LOTLSource> lotlList, Map<CacheKey, ParsingCacheDTO> parsingResults) {
+	public TLSourceBuilder(List<LOTLSource> lotlList, Map<CacheKey, TLParsingCacheDTO> parsingResults) {
 		this.lotlList = lotlList;
 		this.parsingResults = parsingResults;
 	}
@@ -64,7 +64,7 @@ public class TLSourceBuilder {
 		List<TLSource> result = new ArrayList<>();
 		if (lotlList != null) {
 			for (LOTLSource lotlSource : lotlList) {
-				ParsingCacheDTO cachedResult = parsingResults.get(lotlSource.getCacheKey());
+				TLParsingCacheDTO cachedResult = parsingResults.get(lotlSource.getCacheKey());
 				if (cachedResult != null && cachedResult.isResultExist()) {
 					List<OtherTSLPointer> tlPointers = cachedResult.getTlOtherPointers();
 					for (OtherTSLPointer otherTSLPointerDTO : tlPointers) {
@@ -82,6 +82,7 @@ public class TLSourceBuilder {
 		tlSource.setCertificateSource(getCertificateSource(otherTSLPointerDTO.getSdiCertificates()));
 		tlSource.setTrustServiceProviderPredicate(lotlSource.getTrustServiceProviderPredicate());
 		tlSource.setTrustServicePredicate(lotlSource.getTrustServicePredicate());
+		tlSource.setTLVersions(lotlSource.getTLVersions());
 		return tlSource;
 	}
 

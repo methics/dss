@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -23,10 +23,10 @@ package eu.europa.esig.dss.validation.executor.signature;
 import eu.europa.esig.dss.detailedreport.DetailedReport;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlDetailedReport;
 import eu.europa.esig.dss.diagnostic.DiagnosticData;
+import eu.europa.esig.dss.enumerations.ValidationLevel;
 import eu.europa.esig.dss.simplereport.jaxb.XmlSimpleReport;
 import eu.europa.esig.dss.validation.executor.AbstractProcessExecutor;
 import eu.europa.esig.dss.validation.executor.DocumentProcessExecutor;
-import eu.europa.esig.dss.enumerations.ValidationLevel;
 import eu.europa.esig.dss.validation.reports.Reports;
 import eu.europa.esig.validationreport.jaxb.ValidationReportType;
 
@@ -95,24 +95,56 @@ public class DefaultSignatureProcessExecutor extends AbstractProcessExecutor imp
 	 */
 	protected Reports buildReports(final DiagnosticData diagnosticData) {
 
-		DetailedReportBuilder detailedReportBuilder = new DetailedReportBuilder(getI18nProvider(), currentTime, policy,
-				validationLevel, diagnosticData, includeSemantics);
+		DetailedReportBuilder detailedReportBuilder = getDetailedReportBuilder(diagnosticData);
 		XmlDetailedReport jaxbDetailedReport = detailedReportBuilder.build();
 
 		DetailedReport detailedReportWrapper = new DetailedReport(jaxbDetailedReport);
 
-		SimpleReportBuilder simpleReportBuilder = new SimpleReportBuilder(getI18nProvider(), currentTime, policy,
-				diagnosticData, detailedReportWrapper, includeSemantics);
+		SimpleReportBuilder simpleReportBuilder = getSimpleReportBuilder(diagnosticData, detailedReportWrapper);
 		XmlSimpleReport simpleReport = simpleReportBuilder.build();
 
 		ValidationReportType validationReport = null;
 		if (enableEtsiValidationReport) {
-			ETSIValidationReportBuilder etsiValidationReportBuilder = new ETSIValidationReportBuilder(currentTime,
-					diagnosticData, detailedReportWrapper);
+			ETSIValidationReportBuilder etsiValidationReportBuilder = getETSIValidationReportBuilder(diagnosticData, detailedReportWrapper);
 			validationReport = etsiValidationReportBuilder.build();
 		}
 
 		return new Reports(jaxbDiagnosticData, jaxbDetailedReport, simpleReport, validationReport);
+	}
+
+	/**
+	 * Instantiates a builder for Detailed Report
+	 *
+	 * @param diagnosticData {@link DiagnosticData}
+	 * @return {@link DetailedReportBuilder}
+	 */
+	protected DetailedReportBuilder getDetailedReportBuilder(final DiagnosticData diagnosticData) {
+		return new DetailedReportBuilder(getI18nProvider(), currentTime, policy,
+				validationLevel, diagnosticData, includeSemantics);
+	}
+
+	/**
+	 * Instantiates a builder for Simple Report
+	 *
+	 * @param diagnosticData {@link DiagnosticData}
+	 * @param detailedReport {@link DetailedReport}
+	 * @return {@link SimpleReportBuilder}
+	 */
+	protected SimpleReportBuilder getSimpleReportBuilder(final DiagnosticData diagnosticData, final DetailedReport detailedReport) {
+		return new SimpleReportBuilder(getI18nProvider(), currentTime, policy,
+				diagnosticData, detailedReport, includeSemantics);
+	}
+
+	/**
+	 * Instantiates a builder for ETSI Validation Report 102-2
+	 *
+	 * @param diagnosticData {@link DiagnosticData}
+	 * @param detailedReport {@link DetailedReport}
+	 * @return {@link ETSIValidationReportBuilder}
+	 */
+	protected ETSIValidationReportBuilder getETSIValidationReportBuilder(final DiagnosticData diagnosticData,
+																		 final DetailedReport detailedReport) {
+		return new ETSIValidationReportBuilder(currentTime, diagnosticData, detailedReport);
 	}
 
 }

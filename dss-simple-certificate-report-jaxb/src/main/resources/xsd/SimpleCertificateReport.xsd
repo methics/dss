@@ -11,7 +11,8 @@
 	<xs:complexType name="SimpleCertificateReport">
 		<xs:sequence>
 			<xs:element name="ValidationPolicy" type="ValidationPolicy" />
-			<xs:element name="Chain" type="Chain" maxOccurs="1" minOccurs="0" />
+			<xs:element name="Certificate" type="ChainItem" maxOccurs="1" minOccurs="0" />
+			<xs:element name="ConnectionDetails" type="ConnectionDetails" maxOccurs="1" minOccurs="0" />
 		</xs:sequence>
 		<xs:attribute name="ValidationTime" type="xs:dateTime" />
 	</xs:complexType>
@@ -31,7 +32,6 @@
 	
 	<xs:complexType name="ChainItem">
 		<xs:sequence>
-			<xs:element name="id" type="xs:string" />
 			<xs:element name="subject" type="Subject" />
 			<xs:element name="issuerId" type="xs:string" minOccurs="0" />
 			<xs:element name="notBefore" type="xs:dateTime" />
@@ -77,13 +77,23 @@
 			<xs:element name="qualificationDetailsAtIssuance" type="Details" minOccurs="0" />
 			<xs:element name="qualificationAtValidation" type="CertificateQualification" minOccurs="0" />
 			<xs:element name="qualificationDetailsAtValidation" type="Details" minOccurs="0" />
+			<xs:element name="qwacProfile" type="QWACProfile" minOccurs="0" />
+			<xs:element name="qwacDetails" type="Details" minOccurs="0" />
+			<xs:element name="certificateApprovalStatusAtIssuanceTime" type="CertificateApprovalStatusAtIssuanceTime" minOccurs="0" />
+			<xs:element name="certificateApprovalStatusAtValidationTime" type="CertificateApprovalStatusAtValidationTime" minOccurs="0" />
 			<xs:element name="enactedMRA" type="xs:boolean" minOccurs="0" />
 			<xs:element name="revocation" type="Revocation" minOccurs="0" />
 			<xs:element name="trustAnchors" type="TrustAnchors" minOccurs="0" />
+			<xs:element name="trustStartDate" type="xs:dateTime" minOccurs="0" />
+			<xs:element name="trustSunsetDate" type="xs:dateTime" minOccurs="0" />
 			<xs:element name="Indication" type="Indication" />
 			<xs:element name="SubIndication" type="SubIndication" minOccurs="0" />
 			<xs:element name="X509ValidationDetails" type="Details" minOccurs="0" />
+
+			<xs:element name="Chain" type="Chain" minOccurs="0" />
+			<xs:element name="TLSBindingSignature" type="Signature" minOccurs="0" />
 		</xs:sequence>
+		<xs:attribute name="Id" type="xs:string" use="required" />
 	</xs:complexType>
 	
 	<xs:complexType name="Subject">
@@ -162,7 +172,7 @@
 			<xs:element name="countryCode" type="xs:string" />
 			<xs:element name="tslType" type="xs:string" minOccurs="0" />
 			<xs:element name="trustServiceProvider" type="xs:string" />
-			<xs:element name="trustServiceProviderRegistrationId" type="xs:string" />
+			<xs:element name="trustServiceProviderRegistrationId" type="xs:string" minOccurs="0" />
 			<xs:element name="trustServiceName" type="xs:string" />
 		</xs:sequence>
 	</xs:complexType>
@@ -188,12 +198,23 @@
 			<xs:enumeration value="N/A" />
 		</xs:restriction>
 	</xs:simpleType>
+
+	<xs:simpleType name="QWACProfile" final="restriction">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="1-QWAC" />
+			<xs:enumeration value="2-QWAC" />
+			<xs:enumeration value="TLS certificate supported by 2-QWAC" />
+			<xs:enumeration value="Not QWAC" />
+		</xs:restriction>
+	</xs:simpleType>
 	
 	<xs:simpleType name="Indication" final="restriction">
 		<xs:restriction base="xs:string">
+			<xs:enumeration value="TOTAL_PASSED" />
 			<xs:enumeration value="PASSED" />
 			<xs:enumeration value="INDETERMINATE" />
 			<xs:enumeration value="FAILED" />
+			<xs:enumeration value="TOTAL_FAILED" />
 		</xs:restriction>
 	</xs:simpleType>
 	
@@ -207,6 +228,7 @@
 			<xs:enumeration value="OUT_OF_BOUNDS_NOT_REVOKED" />
 			<xs:enumeration value="REVOCATION_OUT_OF_BOUNDS_NO_POE" />
 			<xs:enumeration value="NO_CERTIFICATE_CHAIN_FOUND" />
+			<xs:enumeration value="NO_CERTIFICATE_CHAIN_FOUND_NO_POE" />
 			<xs:enumeration value="TRY_LATER" />
 			<xs:enumeration value="REVOKED_NO_POE" />
 			<xs:enumeration value="REVOKED_CA_NO_POE" />
@@ -227,6 +249,34 @@
 		</xs:restriction>
 	</xs:simpleType>
 
+	<xs:complexType name="CertificateApprovalStatusAtIssuanceTime">
+		<xs:complexContent>
+			<xs:extension base="CertificateApprovalStatusAtTime" />
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="CertificateApprovalStatusAtValidationTime">
+		<xs:complexContent>
+			<xs:extension base="CertificateApprovalStatusAtTime" />
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="CertificateApprovalStatusAtTime">
+		<xs:sequence>
+			<xs:element name="certificateApprovalStatus" type="CertificateApprovalStatus" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="CertificateApprovalStatus">
+		<xs:sequence>
+			<xs:element name="ListType" type="xs:string" minOccurs="0" />
+			<xs:element name="ServiceTypeIdentifier" type="xs:string" minOccurs="0" />
+			<xs:element name="ServiceStatus" type="xs:string" minOccurs="0" />
+			<xs:element name="Details" type="Details" minOccurs="0" />
+		</xs:sequence>
+		<xs:attribute name="label" type="xs:string" />
+	</xs:complexType>
+
 	<xs:complexType name="Details">
 		<xs:sequence>
 			<xs:element name="Error" type="Message" minOccurs="0" maxOccurs="unbounded" />
@@ -241,6 +291,100 @@
 				<xs:attribute name="Key" type="xs:string" />
 			</xs:extension>
 		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="Signature">
+		<xs:sequence>
+			<xs:element name="Url" type="xs:string" minOccurs="0" />
+			<xs:element name="Indication" type="Indication" />
+			<xs:element name="SubIndication" type="SubIndication" minOccurs="0" />
+			<xs:element name="AdESValidationDetails" type="Details" minOccurs="0" />
+			<xs:element name="SigningTime" type="xs:dateTime" minOccurs="0" />
+			<xs:element name="SignatureScope" type="SignatureScope" minOccurs="0" maxOccurs="unbounded" />
+
+			<xs:element name="Chain" type="Chain" minOccurs="0" />
+		</xs:sequence>
+		<xs:attribute name="Id" type="xs:string" use="required" />
+		<xs:attribute name="SignatureFormat" type="SignatureFormat" use="required" />
+	</xs:complexType>
+
+	<xs:simpleType name="SignatureFormat" final="restriction">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="XML-NOT-ETSI" />
+			<xs:enumeration value="XAdES-BES" />
+			<xs:enumeration value="XAdES-EPES" />
+			<xs:enumeration value="XAdES-T" />
+			<xs:enumeration value="XAdES-LT" />
+			<xs:enumeration value="XAdES-C" />
+			<xs:enumeration value="XAdES-X" />
+			<xs:enumeration value="XAdES-XL" />
+			<xs:enumeration value="XAdES-A" />
+			<xs:enumeration value="XAdES-ERS" />
+			<xs:enumeration value="XAdES-BASELINE-LTA" />
+			<xs:enumeration value="XAdES-BASELINE-LT" />
+			<xs:enumeration value="XAdES-BASELINE-T" />
+			<xs:enumeration value="XAdES-BASELINE-B" />
+			<xs:enumeration value="CMS-NOT-ETSI" />
+			<xs:enumeration value="CAdES-BES" />
+			<xs:enumeration value="CAdES-EPES" />
+			<xs:enumeration value="CAdES-T" />
+			<xs:enumeration value="CAdES-LT" />
+			<xs:enumeration value="CAdES-C" />
+			<xs:enumeration value="CAdES-X" />
+			<xs:enumeration value="CAdES-XL" />
+			<xs:enumeration value="CAdES-A" />
+			<xs:enumeration value="CAdES-ERS" />
+			<xs:enumeration value="CAdES-BASELINE-LTA" />
+			<xs:enumeration value="CAdES-BASELINE-LT" />
+			<xs:enumeration value="CAdES-BASELINE-T" />
+			<xs:enumeration value="CAdES-BASELINE-B" />
+			<xs:enumeration value="PDF-NOT-ETSI" />
+			<xs:enumeration value="PAdES-BES" />
+			<xs:enumeration value="PAdES-EPES" />
+			<xs:enumeration value="PAdES-LTV" />
+			<xs:enumeration value="PAdES-BASELINE-LTA" />
+			<xs:enumeration value="PAdES-BASELINE-LT" />
+			<xs:enumeration value="PAdES-BASELINE-T" />
+			<xs:enumeration value="PAdES-BASELINE-B" />
+			<xs:enumeration value="PKCS7-B" />
+			<xs:enumeration value="PKCS7-T" />
+			<xs:enumeration value="PKCS7-LT" />
+			<xs:enumeration value="PKCS7-LTA" />
+			<xs:enumeration value="JSON-NOT-ETSI" />
+			<xs:enumeration value="JAdES-BASELINE-B" />
+			<xs:enumeration value="JAdES-BASELINE-T" />
+			<xs:enumeration value="JAdES-BASELINE-LT" />
+			<xs:enumeration value="JAdES-BASELINE-LTA" />
+			<xs:enumeration value="UNKNOWN" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="SignatureScope">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="Id" type="xs:string" use="required" />
+				<xs:attribute type="xs:string" name="name"/>
+				<xs:attribute type="ScopeType" name="scope"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:simpleType name="ScopeType" final="restriction">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="FULL" />
+			<xs:enumeration value="PARTIAL" />
+			<xs:enumeration value="DIGEST" />
+			<xs:enumeration value="ARCHIVED" />
+			<xs:enumeration value="COUNTER_SIGNATURE" />
+			<xs:enumeration value="SIGNATURE" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="ConnectionDetails">
+		<xs:sequence>
+			<xs:element name="Url" type="xs:string" minOccurs="0" />
+			<xs:element name="TLSCertificateBindingLink" type="xs:string" minOccurs="0" />
+		</xs:sequence>
 	</xs:complexType>
 
 </xs:schema>

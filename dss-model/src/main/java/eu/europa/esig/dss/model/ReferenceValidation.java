@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -28,9 +28,9 @@ import java.util.List;
 
 /**
  * This class is used to store individual reference validations.
- * 
+ * <p>
  * For XAdES, that means reference tag(s) validation
- * 
+ * <p>
  * For CAdES, that means message-digest validation
  *
  */
@@ -50,28 +50,29 @@ public class ReferenceValidation implements Serializable {
 	/** The digest value embedded in reference element */
 	private Digest digest;
 
-	/**
-	 * Name of the reference
-	 *
-	 * @deprecated since DSS 6.1. Please see {@code id} and {@code uri}
-	 */
-	@Deprecated
-	private String name;
-
 	/** The unique identifier of the reference. (E.g. for XAdES : reference Id attribute value) */
 	private String id;
 
 	/** The reference to the original document. (E.g. for XAdES : reference URI attribute value) */
 	private String uri;
 
-	/** Name of the matching document (when applicable) */
-	private String documentName;
+	/**
+	 * List of data object references covered by the current reference validation
+	 * (e.g. used in JAdES for {@code SigDMechanism.OBJECT_ID_BY_URI}
+	 */
+	private List<String> dataObjectReferences;
+
+	/** The matching document (when applicable) */
+	private DSSDocument document;
 
 	/** List of used transforms to compute digest of the reference */
 	protected List<String> transforms;
 
 	/** The reference points to more than one element */
 	private boolean isDuplicated;
+
+	/** List of errors occurred during the reference validation */
+	private List<String> errorMessages = new ArrayList<>();
 
 	/**
 	 * List of dependent {@code ReferenceValidation}s (used in case of manifest type
@@ -159,28 +160,6 @@ public class ReferenceValidation implements Serializable {
 	}
 
 	/**
-	 * Gets name of the reference
-	 *
-	 * @return {@link String}
-	 * @deprecated since DSS 6.1. Please see {@code #getId} and {@code #getUri} methods
-	 */
-	@Deprecated
-	public String getName() {
-		return name;
-	}
-
-	/**
-	 * Sets name of the reference
-	 *
-	 * @param name {@link String}
-	 * @deprecated since DSS 6.1. Please see {@code #setId} and {@code #setUri} methods
-	 */
-	@Deprecated
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	/**
 	 * Gets the unique identifier of a reference. (E.g. for XAdES : reference Id attribute value)
 	 *
 	 * @return {@link String}
@@ -217,27 +196,47 @@ public class ReferenceValidation implements Serializable {
 	}
 
 	/**
-	 * Gets matching document name
+	 * Gets extracted data object reference URIs, covered by the current reference
+	 * Example: JAdES signatures with {@code SigDMechanism.OBJECT_ID_BY_URI}
 	 *
-	 * @return {@link String}
+	 * @return a list of {@link String}s
 	 */
-	public String getDocumentName() {
-		return documentName;
+	public List<String> getDataObjectReferences() {
+		return dataObjectReferences;
 	}
 
 	/**
-	 * Sets the matching document name
+	 * Sets extracted data object reference URIs, covered by the current reference
+	 * Example: JAdES signatures with {@code SigDMechanism.OBJECT_ID_BY_URI}
 	 *
-	 * @param documentName {@link String}
+	 * @param dataObjectReferences a list of {@link String}s
 	 */
-	public void setDocumentName(String documentName) {
-		this.documentName = documentName;
+	public void setDataObjectReferences(List<String> dataObjectReferences) {
+		this.dataObjectReferences = dataObjectReferences;
+	}
+
+	/**
+	 * Gets matching document
+	 *
+	 * @return {@link DSSDocument}
+	 */
+	public DSSDocument getDocument() {
+		return document;
+	}
+
+	/**
+	 * Sets the matching document
+	 *
+	 * @param document {@link DSSDocument}
+	 */
+	public void setDocument(DSSDocument document) {
+		this.document = document;
 	}
 
 	/**
 	 * Returns a list of transformations contained in the {@code reference}
 	 * 
-	 * @return list of {@link String} transfor names
+	 * @return list of {@link String} transform names
 	 */
 	public List<String> getTransformationNames() {
 		return transforms;
@@ -281,6 +280,24 @@ public class ReferenceValidation implements Serializable {
 			dependentReferenceValidations = new ArrayList<>();
 		}
 		return dependentReferenceValidations;
+	}
+
+	/**
+	 * Gets error messages occurred during the reference validation
+	 *
+	 * @return a list of {@link String} messages
+	 */
+	public List<String> getErrorMessages() {
+		return errorMessages;
+	}
+
+	/**
+	 * Sets error messages occurred during the reference validation
+	 *
+	 * @param errorMessages a list of {@link String} messages
+	 */
+	public void setErrorMessages(List<String> errorMessages) {
+		this.errorMessages = errorMessages;
 	}
 
 }

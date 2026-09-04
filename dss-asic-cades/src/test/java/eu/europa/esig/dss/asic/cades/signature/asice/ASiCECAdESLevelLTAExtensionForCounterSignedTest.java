@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -152,12 +152,12 @@ class ASiCECAdESLevelLTAExtensionForCounterSignedTest extends AbstractASiCWithCA
 		counterSignatureParameters.bLevel().setSigningDate(new Date());
 		counterSignatureParameters.setSignatureIdToCounterSign(counterSignatureId);
 		Exception exception = assertThrows(IllegalInputException.class, () -> service.getDataToBeCounterSigned(ltaCAdES, counterSignatureParameters));
-		assertEquals("The counter signature is not possible! Reason : " +
-					"a signature with a filename 'META-INF/signature001.p7s' is covered by another manifest.", exception.getMessage());
+		assertEquals("The modification of the signature is not possible! Reason : a signature " +
+				"with a filename 'META-INF/signature001.p7s' is covered by another manifest.", exception.getMessage());
 		
 		FoundCertificatesProxy foundCertificates = signatureWrapper.foundCertificates();
 		List<String> certificateValuesIds = foundCertificates.getRelatedCertificatesByOrigin(CertificateOrigin.SIGNED_DATA)
-				.stream().map(c -> c.getId()).collect(Collectors.toList());
+				.stream().map(CertificateWrapper::getId).collect(Collectors.toList());
 		for (CertificateWrapper certificateWrapper : counterSignature.getCertificateChain()) {
 			assertTrue(certificateValuesIds.contains(certificateWrapper.getId()));
 		}
@@ -170,8 +170,8 @@ class ASiCECAdESLevelLTAExtensionForCounterSignedTest extends AbstractASiCWithCA
 		counterSignatureParameters.setSignatureIdToCounterSign(mainSignatureId);
 		
 		exception = assertThrows(IllegalInputException.class, () -> service.getDataToBeCounterSigned(ltaCAdES, counterSignatureParameters));
-		assertEquals("The counter signature is not possible! Reason : " +
-					"a signature with a filename 'META-INF/signature001.p7s' is covered by another manifest.", exception.getMessage());
+		assertEquals("The modification of the signature is not possible! Reason : a signature " +
+				"with a filename 'META-INF/signature001.p7s' is covered by another manifest.", exception.getMessage());
 	}
 	
 	@Override
@@ -204,18 +204,18 @@ class ASiCECAdESLevelLTAExtensionForCounterSignedTest extends AbstractASiCWithCA
 		for (TimestampWrapper timestampWrapper : timestampList) {
 			if (TimestampType.SIGNATURE_TIMESTAMP.equals(timestampWrapper.getType())) {
 				assertEquals(1, timestampWrapper.getTimestampedSignatures().size());
-				assertFalse(timestampWrapper.getTimestampedSignatures().stream().map(s -> s.getId()).collect(Collectors.toList())
+				assertFalse(timestampWrapper.getTimestampedSignatures().stream().map(SignatureWrapper::getId).collect(Collectors.toList())
 						.contains(counterSignature.getId()));
-				assertFalse(timestampWrapper.getTimestampedCertificates().stream().map(c -> c.getId()).collect(Collectors.toList())
+				assertFalse(timestampWrapper.getTimestampedCertificates().stream().map(CertificateWrapper::getId).collect(Collectors.toList())
 						.contains(counterSignature.getSigningCertificate().getId()));
 				sigTstFound = true;
 				
 			} else if (TimestampType.CONTAINER_TIMESTAMP.equals(timestampWrapper.getType())) {
 				assertEquals(ArchiveTimestampType.CAdES_DETACHED, timestampWrapper.getArchiveTimestampType());
 				assertEquals(2, timestampWrapper.getTimestampedSignatures().size());
-				assertTrue(timestampWrapper.getTimestampedSignatures().stream().map(s -> s.getId()).collect(Collectors.toList())
+				assertTrue(timestampWrapper.getTimestampedSignatures().stream().map(SignatureWrapper::getId).collect(Collectors.toList())
 						.contains(counterSignature.getId()));
-				assertTrue(timestampWrapper.getTimestampedCertificates().stream().map(c -> c.getId()).collect(Collectors.toList())
+				assertTrue(timestampWrapper.getTimestampedCertificates().stream().map(CertificateWrapper::getId).collect(Collectors.toList())
 						.contains(counterSignature.getSigningCertificate().getId()));
 				arcTstFound = true;
 				

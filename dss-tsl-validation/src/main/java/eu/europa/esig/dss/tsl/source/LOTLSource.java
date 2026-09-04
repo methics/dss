@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -43,14 +43,14 @@ public class LOTLSource extends TLSource {
 
 	/**
 	 * Predicate which filters the LOTL
-	 * 
+	 * <p>
 	 * Default : filter the XML European list of trusted list (LOTL)
 	 */
 	private Predicate<OtherTSLPointerType> lotlPredicate = TLPredicateFactory.createEULOTLPredicate();
 
 	/**
 	 * Predicate which filters the TLs
-	 * 
+	 * <p>
 	 * Default : filter all XML trusted lists (TL) for European countries
 	 */
 	private Predicate<OtherTSLPointerType> tlPredicate = TLPredicateFactory.createEUTLPredicate();
@@ -98,10 +98,10 @@ public class LOTLSource extends TLSource {
 	/**
 	 * Sets if the LOTL shall support MRA (Mutual Recognition Agreement) scheme defining trust service equivalence
 	 * mapping between the LOTL and a third-country Trusted List
-	 *
+	 * <p>
 	 * Setting this condition to TRUE will allow to process LOTL containing pointers to a third-country trusted lists,
 	 * including a special scheme for transition the qualification scope rules.
-	 *
+	 * <p>
 	 * Default : FALSE (LOTL MRA is not supported)
 	 *
 	 * @param mraSupport if LOTL shall support MRA

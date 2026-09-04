@@ -1,37 +1,40 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.ws.signature.common;
 
-import eu.europa.esig.dss.signature.AbstractSignatureParameters;
 import eu.europa.esig.dss.asic.cades.ASiCWithCAdESSignatureParameters;
 import eu.europa.esig.dss.asic.cades.ASiCWithCAdESTimestampParameters;
 import eu.europa.esig.dss.asic.xades.ASiCWithXAdESSignatureParameters;
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESCounterSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESTimestampParameters;
+import eu.europa.esig.dss.cbades.signature.CBAdESCounterSignatureParameters;
+import eu.europa.esig.dss.cbades.signature.CBAdESTimestampParameters;
 import eu.europa.esig.dss.enumerations.ASiCContainerType;
 import eu.europa.esig.dss.enumerations.CommitmentType;
 import eu.europa.esig.dss.enumerations.CommitmentTypeEnum;
+import eu.europa.esig.dss.enumerations.JWSSerializationType;
 import eu.europa.esig.dss.enumerations.SignatureForm;
 import eu.europa.esig.dss.enumerations.TimestampContainerForm;
+import eu.europa.esig.dss.jades.JAdESSignatureParameters;
 import eu.europa.esig.dss.jades.JAdESTimestampParameters;
 import eu.europa.esig.dss.jades.signature.JAdESCounterSignatureParameters;
 import eu.europa.esig.dss.model.BLevelParameters;
@@ -50,6 +53,7 @@ import eu.europa.esig.dss.pades.PAdESTimestampParameters;
 import eu.europa.esig.dss.pades.SignatureFieldParameters;
 import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.signature.AbstractSignatureParameters;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.ws.converter.ColorConverter;
 import eu.europa.esig.dss.ws.converter.RemoteCertificateConverter;
@@ -65,6 +69,8 @@ import eu.europa.esig.dss.ws.signature.dto.parameters.RemoteTimestampParameters;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.XAdESTimestampParameters;
 import eu.europa.esig.dss.xades.signature.XAdESCounterSignatureParameters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.util.Collections;
@@ -76,6 +82,8 @@ import java.util.stream.Collectors;
  * The abstract remote signature service
  */
 public abstract class AbstractRemoteSignatureServiceImpl {
+
+	private static final Logger LOG = LoggerFactory.getLogger(AbstractRemoteSignatureServiceImpl.class);
 
 	/**
 	 * Default constructor
@@ -113,7 +121,6 @@ public abstract class AbstractRemoteSignatureServiceImpl {
 	 * @param remoteParameters {@link RemoteSignatureParameters}
 	 * @return {@link SerializableSignatureParameters}
 	 */
-	@SuppressWarnings("unchecked")
 	protected SerializableSignatureParameters createParameters(RemoteSignatureParameters remoteParameters) {
 		SerializableSignatureParameters parameters;
 		ASiCContainerType asicContainerType = remoteParameters.getAsicContainerType();
@@ -121,30 +128,53 @@ public abstract class AbstractRemoteSignatureServiceImpl {
 		if (asicContainerType != null) {
 			parameters = getASiCSignatureParameters(asicContainerType, signatureForm);
 		} else {
-			switch (signatureForm) {
+			parameters = getSignatureParameters(signatureForm, remoteParameters);
+		}
+		fillParameters(parameters, remoteParameters, signatureForm);
+		return parameters;
+	}
+
+	/**
+	 * Creates parameters for a signature creation (not container)
+	 *
+	 * @param signatureForm {@link SignatureForm}
+	 * @param remoteParameters {@link RemoteSignatureParameters}
+	 * @return {@link SerializableSignatureParameters}
+	 */
+	protected SerializableSignatureParameters getSignatureParameters(SignatureForm signatureForm, RemoteSignatureParameters remoteParameters) {
+		switch (signatureForm) {
 			case XAdES:
-				parameters = getXAdESSignatureParameters(remoteParameters);
-				break;
+				return getXAdESSignatureParameters(remoteParameters);
 			case CAdES:
-				parameters = new CAdESSignatureParameters();
-				break;
+				return new CAdESSignatureParameters();
 			case PAdES:
-				parameters = getPAdESSignatureParameters(remoteParameters);
-				break;
+				return getPAdESSignatureParameters(remoteParameters);
 			case JAdES:
-				parameters = getJAdESSignatureParameters(remoteParameters);
-				break;
+				return getJAdESSignatureParameters(remoteParameters);
+			case CBAdES:
+				return getCBAdESSignatureParameters(remoteParameters);
 			default:
 				throw new UnsupportedOperationException("Unsupported signature form : " + signatureForm);
+		}
+	}
+
+	/**
+	 * Creates parameters for a signature extension
+	 *
+	 * @param signatureForm {@link SignatureForm}
+	 * @param remoteParameters {@link RemoteSignatureParameters}
+	 * @return {@link SerializableSignatureParameters}
+	 */
+	protected SerializableSignatureParameters getExtensionParameters(SignatureForm signatureForm, RemoteSignatureParameters remoteParameters) {
+		SerializableSignatureParameters parameters = getSignatureParameters(signatureForm, remoteParameters);
+		if (SignatureForm.JAdES == signatureForm) {
+			JAdESSignatureParameters jadesParameters = (JAdESSignatureParameters) parameters;
+			if (remoteParameters.getJwsSerializationType() == null) {
+				LOG.info("No JAdES related signature parameters found within the configuration. " +
+						"Fallback to '{}' JwsSerializationType", JWSSerializationType.JSON_SERIALIZATION);
+				jadesParameters.setJwsSerializationType(JWSSerializationType.JSON_SERIALIZATION);
 			}
 		}
-
-		if (parameters instanceof AbstractSignatureParameters<?>) {
-			AbstractSignatureParameters<TimestampParameters> abstractSignatureParameters = (AbstractSignatureParameters<TimestampParameters>) parameters;
-			fillParameters(abstractSignatureParameters, remoteParameters);
-			return abstractSignatureParameters;
-		}
-
 		return parameters;
 	}
 
@@ -187,20 +217,77 @@ public abstract class AbstractRemoteSignatureServiceImpl {
 		if (remoteParameters.getJwsSerializationType() != null) {
 			jadesParameters.setJwsSerializationType(remoteParameters.getJwsSerializationType());
 		}
-		jadesParameters.setSigDMechanism(remoteParameters.getSigDMechanism());
-		jadesParameters.setBase64UrlEncodedPayload(remoteParameters.isBase64UrlEncodedPayload());
-		jadesParameters.setBase64UrlEncodedEtsiUComponents(remoteParameters.isBase64UrlEncodedEtsiUComponents());
+		if (remoteParameters.getSigDMechanism() != null) {
+			jadesParameters.setSigDMechanism(remoteParameters.getSigDMechanism());
+		}
+		if (remoteParameters.isBase64UrlEncodedPayload() != null) {
+			jadesParameters.setBase64UrlEncodedPayload(remoteParameters.isBase64UrlEncodedPayload());
+		}
+		if (remoteParameters.isBase64UrlEncodedEtsiUComponents() != null) {
+			jadesParameters.setBase64UrlEncodedEtsiUComponents(remoteParameters.isBase64UrlEncodedEtsiUComponents());
+		}
+		if (remoteParameters.getSignatureType() != null) {
+			jadesParameters.setSignatureType(remoteParameters.getSignatureType());
+		}
+		if (remoteParameters.getKeyIdentifier() != null) {
+			jadesParameters.setKeyIdentifier(remoteParameters.getKeyIdentifier());
+		}
+		if (remoteParameters.getX509Url() != null) {
+			jadesParameters.setX509Url(remoteParameters.getX509Url());
+		}
 		return jadesParameters;
+	}
+
+	/**
+	 * Return {@code SerializableCounterSignatureParameters} in order to support
+	 * counter signature
+	 *
+	 * @param remoteParameters {@link RemoteSignatureParameters}
+	 * @return {@link SerializableCounterSignatureParameters}
+	 */
+	protected SerializableCounterSignatureParameters getCBAdESSignatureParameters(
+			RemoteSignatureParameters remoteParameters) {
+		CBAdESCounterSignatureParameters cbadesParameters = new CBAdESCounterSignatureParameters();
+		if (remoteParameters.getCoseStructureType() != null) {
+			cbadesParameters.setCoseStructureType(remoteParameters.getCoseStructureType());
+		}
+		if (remoteParameters.getTagged() != null) {
+			cbadesParameters.setTagged(remoteParameters.getTagged());
+		}
+		if (remoteParameters.getExternallySuppliedData() != null) {
+			cbadesParameters.setExternallySuppliedData(RemoteDocumentConverter.toDSSDocument(remoteParameters.getExternallySuppliedData()));
+		}
+		if (remoteParameters.getSigDMechanism() != null) {
+			cbadesParameters.setSigDMechanism(remoteParameters.getSigDMechanism());
+		}
+		if (remoteParameters.getSignatureType() != null) {
+			cbadesParameters.setSignatureType(remoteParameters.getSignatureType());
+		}
+		if (remoteParameters.getKeyIdentifier() != null) {
+			cbadesParameters.setKeyIdentifier(remoteParameters.getKeyIdentifier().getBytes());
+		}
+		if (remoteParameters.getX509Url() != null) {
+			cbadesParameters.setX509Url(remoteParameters.getX509Url());
+		}
+		return cbadesParameters;
 	}
 
 	/**
 	 * Fills the parameters
 	 *
-	 * @param parameters {@link AbstractSignatureParameters} to fill
+	 * @param signatureParameters {@link SerializableSignatureParameters} to fill
 	 * @param remoteParameters {@link RemoteSignatureParameters} to get values from
+	 * @param signatureForm {@link SignatureForm}
 	 */
-	protected void fillParameters(AbstractSignatureParameters<TimestampParameters> parameters,
-								  RemoteSignatureParameters remoteParameters) {
+	@SuppressWarnings("unchecked")
+	protected void fillParameters(SerializableSignatureParameters signatureParameters,
+								  RemoteSignatureParameters remoteParameters, SignatureForm signatureForm) {
+		if (!(signatureParameters instanceof AbstractSignatureParameters<?>)) {
+			return;
+		}
+
+		AbstractSignatureParameters<TimestampParameters> parameters =
+				(AbstractSignatureParameters<TimestampParameters>) signatureParameters;
 		// certificate shall be provided first
 		RemoteCertificate signingCertificate = remoteParameters.getSigningCertificate();
 		if (signingCertificate != null) { // extends do not require signing certificate
@@ -222,26 +309,27 @@ public abstract class AbstractRemoteSignatureServiceImpl {
 		if (remoteParameters.getEncryptionAlgorithm() != null) {
 			parameters.setEncryptionAlgorithm(remoteParameters.getEncryptionAlgorithm());
 		}
-		// TODO : To be removed in DSS 6.2
-		if (remoteParameters.getMaskGenerationFunction() != null) {
-			parameters.setMaskGenerationFunction(remoteParameters.getMaskGenerationFunction());
-		}
 		if (remoteParameters.getReferenceDigestAlgorithm() != null) {
 			parameters.setReferenceDigestAlgorithm(remoteParameters.getReferenceDigestAlgorithm());
 		}
 
-		parameters.setSignatureLevel(remoteParameters.getSignatureLevel());
-		parameters.setSignaturePackaging(remoteParameters.getSignaturePackaging());
+		if (remoteParameters.getSignatureLevel() != null) {
+			parameters.setSignatureLevel(remoteParameters.getSignatureLevel());
+		}
+		if (remoteParameters.getSignaturePackaging() != null) {
+			parameters.setSignaturePackaging(remoteParameters.getSignaturePackaging());
+		}
 		if (remoteParameters.getContentTimestamps() != null) {
 			parameters.setContentTimestamps(TimestampTokenConverter.toTimestampTokens(remoteParameters.getContentTimestamps()));
 		}
-		parameters.setSignatureTimestampParameters(toTimestampParameters(remoteParameters.getSignatureTimestampParameters(), 
-				remoteParameters.getSignatureLevel().getSignatureForm(), remoteParameters.getAsicContainerType()));
-		parameters.setArchiveTimestampParameters(toTimestampParameters(remoteParameters.getArchiveTimestampParameters(), 
-				remoteParameters.getSignatureLevel().getSignatureForm(), remoteParameters.getAsicContainerType()));
-		parameters.setContentTimestampParameters(toTimestampParameters(remoteParameters.getContentTimestampParameters(), 
-				remoteParameters.getSignatureLevel().getSignatureForm(), remoteParameters.getAsicContainerType()));
-		parameters.setSignWithExpiredCertificate(remoteParameters.isSignWithExpiredCertificate()); // TODO : To be removed in DSS 6.2
+		if (signatureForm != null) {
+			parameters.setSignatureTimestampParameters(toTimestampParameters(remoteParameters.getSignatureTimestampParameters(),
+					signatureForm, remoteParameters.getAsicContainerType()));
+			parameters.setArchiveTimestampParameters(toTimestampParameters(remoteParameters.getArchiveTimestampParameters(),
+					signatureForm, remoteParameters.getAsicContainerType()));
+			parameters.setContentTimestampParameters(toTimestampParameters(remoteParameters.getContentTimestampParameters(),
+					signatureForm, remoteParameters.getAsicContainerType()));
+		}
 		parameters.setGenerateTBSWithoutCertificate(remoteParameters.isGenerateTBSWithoutCertificate());
 	}
 
@@ -258,7 +346,9 @@ public abstract class AbstractRemoteSignatureServiceImpl {
 		if (remoteBLevelParameters.getCommitmentTypeIndications() != null) {
 			bLevelParameters.setCommitmentTypeIndications(toCommitmentTypeList(remoteBLevelParameters.getCommitmentTypeIndications()));
 		}
-		bLevelParameters.setSigningDate(remoteBLevelParameters.getSigningDate());
+		if (remoteBLevelParameters.getSigningDate() != null) {
+			bLevelParameters.setSigningDate(remoteBLevelParameters.getSigningDate());
+		}
 		bLevelParameters.setTrustAnchorBPPolicy(remoteBLevelParameters.isTrustAnchorBPPolicy());
 		
 		Policy policy = new Policy();
@@ -347,6 +437,9 @@ public abstract class AbstractRemoteSignatureServiceImpl {
 					break;
 				case JAdES:
 					timestampParameters = new JAdESTimestampParameters(remoteTimestampParameters.getDigestAlgorithm());
+					break;
+				case CBAdES:
+					timestampParameters = new CBAdESTimestampParameters(remoteTimestampParameters.getDigestAlgorithm());
 					break;
 				default:
 					throw new UnsupportedOperationException("Unsupported signature form : " + signatureForm);
@@ -520,6 +613,9 @@ public abstract class AbstractRemoteSignatureServiceImpl {
 			case JAdES:
 				parameters = getJAdESSignatureParameters(remoteParameters);
 				break;
+			case CBAdES:
+				parameters = getCBAdESSignatureParameters(remoteParameters);
+				break;
 			default:
 				throw new UnsupportedOperationException("Unsupported signature form for counter signature : " + signatureForm);
 		}
@@ -534,7 +630,7 @@ public abstract class AbstractRemoteSignatureServiceImpl {
 		parameters.setSignatureIdToCounterSign(remoteParameters.getSignatureIdToCounterSign());
 		if (parameters instanceof AbstractSignatureParameters<?>) {
 			AbstractSignatureParameters<TimestampParameters> abstractSignatureParameters = (AbstractSignatureParameters<TimestampParameters>) parameters;
-			fillParameters(abstractSignatureParameters, remoteParameters);
+			fillParameters(abstractSignatureParameters, remoteParameters, remoteParameters.getSignatureLevel().getSignatureForm());
 		}
 	}
 

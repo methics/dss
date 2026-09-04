@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -37,25 +37,25 @@ import java.util.Objects;
 public class XmlDiagnosticDataFactory {
 
     /** The corresponding diagnostic data builder */
-    private final SignedDocumentDiagnosticDataBuilder diagnosticDataBuilder;
+    protected final SignedDocumentDiagnosticDataBuilder diagnosticDataBuilder;
 
     /** The document to be validated */
-    private DSSDocument document;
+    protected DSSDocument document;
 
     /** The validation time */
-    private Date validationTime;
+    protected Date validationTime;
 
     /** The current validation context */
-    private ValidationContext validationContext;
+    protected ValidationContext validationContext;
 
     /** The used default digest algorithm for tokens definition */
-    private DigestAlgorithm defaultDigestAlgorithm;
+    protected DigestAlgorithm defaultDigestAlgorithm;
 
     /** The token extraction strategy to be used (i.e. binaries vs digest) */
-    private TokenExtractionStrategy tokenExtractionStrategy;
+    protected TokenExtractionStrategy tokenExtractionStrategy;
 
     /** The class to compute identifiers for tokens to be returned in the reports */
-    private TokenIdentifierProvider tokenIdentifierProvider;
+    protected TokenIdentifierProvider tokenIdentifierProvider;
 
     /**
      * Default constructor
@@ -139,6 +139,15 @@ public class XmlDiagnosticDataFactory {
      * @return {@link XmlDiagnosticData}
      */
     public XmlDiagnosticData create() {
+        return initBuilder().build();
+    }
+
+    /**
+     * Instantiates the Diagnostic Data builder with the validation context
+     *
+     * @return {@link DiagnosticDataBuilder}
+     */
+    protected DiagnosticDataBuilder initBuilder() {
         return diagnosticDataBuilder
                 .document(document)
                 .validationDate(validationTime)
@@ -153,8 +162,7 @@ public class XmlDiagnosticDataFactory {
                 .usedRevocations(validationContext.getProcessedRevocations())
                 .defaultDigestAlgorithm(defaultDigestAlgorithm)
                 .tokenExtractionStrategy(tokenExtractionStrategy)
-                .tokenIdentifierProvider(tokenIdentifierProvider)
-                .build();
+                .tokenIdentifierProvider(tokenIdentifierProvider);
     }
 
 }

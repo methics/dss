@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -29,6 +29,9 @@ import eu.europa.esig.dss.pdf.AnnotationBox;
 public class SignatureFieldDimensionAndPosition implements VisualSignatureFieldAppearance {
 
 	private static final long serialVersionUID = 5513776649702929990L;
+
+	/** Represents a page box */
+	private final AnnotationBox pageBox;
 
 	/** Upper left X coordinate of the signature bounding box */
 	private float boxX = 0;
@@ -88,9 +91,11 @@ public class SignatureFieldDimensionAndPosition implements VisualSignatureFieldA
 
 	/**
 	 * Default constructor instantiating object with null parameters
+	 *
+	 * @param pageBox {@link AnnotationBox} page box
 	 */
-	public SignatureFieldDimensionAndPosition() {
-		// empty
+	public SignatureFieldDimensionAndPosition(final AnnotationBox pageBox) {
+		this.pageBox = pageBox;
 	}
 
 	/**
@@ -527,7 +532,8 @@ public class SignatureFieldDimensionAndPosition implements VisualSignatureFieldA
 
 	@Override
 	public AnnotationBox getAnnotationBox() {
-		return new AnnotationBox(boxX, boxY, boxX + boxWidth, boxY + boxHeight);
+		AnnotationBox annotationBox = new AnnotationBox(boxX, boxY, boxX + boxWidth, boxY + boxHeight);
+		return annotationBox.toPdfPageCoordinates(pageBox);
 	}
 	
 }

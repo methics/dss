@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -29,26 +29,29 @@ import eu.europa.esig.dss.asic.common.ASiCContent;
 import eu.europa.esig.dss.asic.common.ASiCUtils;
 import eu.europa.esig.dss.asic.common.validation.ASiCManifestParser;
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
+import eu.europa.esig.dss.cades.signature.CAdESLevelBaselineLT;
+import eu.europa.esig.dss.cades.signature.CAdESSignatureExtension;
+import eu.europa.esig.dss.cms.CMSBuilder;
+import eu.europa.esig.dss.cms.CMS;
+import eu.europa.esig.dss.cms.CMSUtils;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.MimeTypeEnum;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
-import eu.europa.esig.dss.spi.exception.IllegalInputException;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.ManifestFile;
 import eu.europa.esig.dss.model.TimestampBinary;
 import eu.europa.esig.dss.spi.DSSASN1Utils;
 import eu.europa.esig.dss.spi.DSSUtils;
-import eu.europa.esig.dss.spi.x509.CMSSignedDataBuilder;
-import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
-import eu.europa.esig.dss.spi.x509.tsp.TimestampToken;
-import eu.europa.esig.dss.utils.Utils;
+import eu.europa.esig.dss.spi.exception.IllegalInputException;
 import eu.europa.esig.dss.spi.signature.AdvancedSignature;
 import eu.europa.esig.dss.spi.validation.CertificateVerifier;
 import eu.europa.esig.dss.spi.validation.ValidationData;
 import eu.europa.esig.dss.spi.validation.ValidationDataContainer;
 import eu.europa.esig.dss.spi.validation.executor.CompleteValidationContextExecutor;
-import org.bouncycastle.cms.CMSSignedData;
+import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
+import eu.europa.esig.dss.spi.x509.tsp.TimestampToken;
+import eu.europa.esig.dss.utils.Utils;
 
 import java.util.List;
 
@@ -97,7 +100,7 @@ public class ASiCWithCAdESLevelBaselineLTA extends ASiCWithCAdESSignatureExtensi
 
     /**
      * Extends {@code asicContent} with an ArchiveManifest timestamp
-     *
+     * <p>
      * NOTE: This method is to be used for a direct timestamping with an ArchiveManifest,
      *       without in-depth signature attributes (the signature extension is still applied).
      *       Use {@code extend(ASiCContent, CAdESSignatureParameters)} method for a proper signature(s) extension
@@ -131,6 +134,9 @@ public class ASiCWithCAdESLevelBaselineLTA extends ASiCWithCAdESSignatureExtensi
         List<DSSDocument> timestampDocuments = asicContent.getTimestampDocuments();
         DSSDocument lastTimestamp = getLastTimestampDocument(lastManifestFile, timestampDocuments);
         if (lastTimestamp != null) {
+            boolean coveredByAnyManifest = isCoveredByAnyManifest(asicContent, lastTimestamp);
+            assertExtendTimestampPossible(coveredByAnyManifest);
+
             ASiCContainerWithCAdESAnalyzer validator = new ASiCContainerWithCAdESAnalyzer(asicContent);
             validator.setCertificateVerifier(certificateVerifier);
             validator.setValidationContextExecutor(CompleteValidationContextExecutor.INSTANCE);
@@ -210,14 +216,13 @@ public class ASiCWithCAdESLevelBaselineLTA extends ASiCWithCAdESSignatureExtensi
     }
 
     private DSSDocument extendTimestamp(DSSDocument archiveTimestamp, ValidationData validationDataForInclusion) {
-        CMSSignedData cmsSignedData = DSSUtils.toCMSSignedData(archiveTimestamp);
-        CMSSignedDataBuilder cmsSignedDataBuilder = new CMSSignedDataBuilder().setOriginalCMSSignedData(cmsSignedData);
-        CMSSignedData extendedCMSSignedData = cmsSignedDataBuilder.extendCMSSignedData(
+        CMS timestampCMS = CMSUtils.parseToCMS(archiveTimestamp);
+        CMSBuilder cmsBuilder = new CMSBuilder().setOriginalCMS(timestampCMS);
+        CMS extendedCMS = cmsBuilder.extendCMSSignedData(
                 validationDataForInclusion.getCertificateTokens(), validationDataForInclusion.getCrlTokens(),
                 validationDataForInclusion.getOcspTokens());
-        return new InMemoryDocument(DSSASN1Utils.getEncoded(extendedCMSSignedData), archiveTimestamp.getName(), MimeTypeEnum.TST);
+        return new InMemoryDocument(extendedCMS.getDEREncoded(), archiveTimestamp.getName(), MimeTypeEnum.TST);
     }
-
 
     private CAdESSignatureParameters getEmptyLTLevelSignatureParameters() {
         CAdESSignatureParameters parameters = new CAdESSignatureParameters();
@@ -231,10 +236,27 @@ public class ASiCWithCAdESLevelBaselineLTA extends ASiCWithCAdESSignatureExtensi
     }
 
     @Override
+    protected CAdESSignatureExtension getLTAExtensionProfile(TSPSource tspSource, CertificateVerifier certificateVerifier) {
+        return new CAdESLevelBaselineLT(tspSource, certificateVerifier);
+    }
+
+    @Override
     protected void assertExtendSignaturePossible(CAdESSignatureParameters parameters, boolean coveredByManifest) {
         if (coveredByManifest) {
             throw new IllegalInputException(String.format(
-                    "Cannot extend signature to '%s'. The signature is already covered by an archive manifest.", parameters.getSignatureLevel()));
+                    "Cannot extend signature to '%s'. The signature is already covered by a manifest file.",
+                    SignatureLevel.CAdES_BASELINE_LTA));
+        }
+    }
+
+    /**
+     * Checks if the timestamp extension is possible
+     *
+     * @param coveredByManifest defines whether the timestamp document is covered by a manifest file
+     */
+    protected void assertExtendTimestampPossible(boolean coveredByManifest) {
+        if (coveredByManifest) {
+            throw new IllegalInputException("Cannot extend the last timestamp. The timestamp is already covered by a manifest file.");
         }
     }
 

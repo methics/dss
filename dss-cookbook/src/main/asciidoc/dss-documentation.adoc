@@ -3,7 +3,7 @@
 :icon-set: far
 = Digital Signature Service
 :description: Documentation of the open source project DSS (Digital Signature Service). This project allows producing/validation of Advanced electronic signatures (AdES).
-:keywords: electronic signature, XAdES, CAdES, PAdES, JAdES, ASiC, open source, validation
+:keywords: electronic signature, XAdES, CAdES, PAdES, JAdES, CB-AdES, ASiC, EAA, SD-JWT, mdoc, open source, validation
 version : {dssVersion} - {docdate}
 :sectnums:
 :sectnumlevels: 5
@@ -36,7 +36,11 @@ include::_chapters/standalone-timestamping.adoc[]
 
 include::_chapters/signature-augmentation.adoc[]
 
+include::_chapters/attestation.adoc[]
+
 include::_chapters/trusted-lists.adoc[]
+
+include::_chapters/lists-of-trusted-entities.adoc[]
 
 include::_chapters/eIDAS.adoc[]
 

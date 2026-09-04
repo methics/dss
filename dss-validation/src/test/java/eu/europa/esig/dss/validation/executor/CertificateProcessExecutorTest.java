@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -28,6 +28,7 @@ import eu.europa.esig.dss.detailedreport.DetailedReport;
 import eu.europa.esig.dss.detailedreport.DetailedReportFacade;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlBasicBuildingBlocks;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlCertificate;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlCertificateQualificationProcess;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlConstraint;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlDetailedReport;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlStatus;
@@ -41,16 +42,15 @@ import eu.europa.esig.dss.enumerations.CertificateType;
 import eu.europa.esig.dss.enumerations.ExtendedKeyUsage;
 import eu.europa.esig.dss.enumerations.Indication;
 import eu.europa.esig.dss.enumerations.KeyUsageBit;
+import eu.europa.esig.dss.enumerations.Level;
 import eu.europa.esig.dss.enumerations.RevocationReason;
 import eu.europa.esig.dss.enumerations.SubIndication;
 import eu.europa.esig.dss.enumerations.ValidationTime;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
-import eu.europa.esig.dss.policy.ValidationPolicy;
-import eu.europa.esig.dss.policy.ValidationPolicyFacade;
+import eu.europa.esig.dss.policy.EtsiValidationPolicy;
 import eu.europa.esig.dss.policy.jaxb.CertificateConstraints;
 import eu.europa.esig.dss.policy.jaxb.EIDAS;
-import eu.europa.esig.dss.policy.jaxb.Level;
 import eu.europa.esig.dss.policy.jaxb.LevelConstraint;
 import eu.europa.esig.dss.policy.jaxb.MultiValuesConstraint;
 import eu.europa.esig.dss.simplecertificatereport.SimpleCertificateReport;
@@ -59,6 +59,7 @@ import eu.europa.esig.dss.simplecertificatereport.jaxb.XmlChainItem;
 import eu.europa.esig.dss.simplecertificatereport.jaxb.XmlSimpleCertificateReport;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.validation.executor.certificate.DefaultCertificateProcessExecutor;
+import eu.europa.esig.dss.validation.policy.ValidationPolicyLoader;
 import eu.europa.esig.dss.validation.reports.CertificateReports;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -80,6 +81,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CertificateProcessExecutorTest.class);
+
+	/** The path for default certificate validation policy */
+	private static final String CERTIFICATE_VALIDATION_POLICY_LOCATION = "/diag-data/policy/certificate-constraint.xml";
 
 	private static I18nProvider i18nProvider;
 
@@ -134,16 +138,16 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 
 		XmlSimpleCertificateReport simpleReportJaxb = reports.getSimpleReportJaxb();
 		assertNotNull(simpleReportJaxb);
-		assertNotNull(simpleReportJaxb.getChain());
-		assertEquals(2, simpleReportJaxb.getChain().size());
+		assertNotNull(simpleReportJaxb.getCertificate());
+		assertEquals(1, simpleReportJaxb.getCertificate().getChain().size());
 
-		XmlChainItem cert = simpleReportJaxb.getChain().get(0);
+		XmlChainItem cert = simpleReportJaxb.getCertificate();
 		assertEquals(certificateId, cert.getId());
 		assertNotNull(cert.getQualificationAtIssuance());
 		assertNotNull(cert.getQualificationAtValidation());
 		assertTrue(Utils.isCollectionEmpty(cert.getTrustAnchors()));
 
-		XmlChainItem ca = simpleReportJaxb.getChain().get(1);
+		XmlChainItem ca = simpleReportJaxb.getCertificate().getChain().get(0);
 		assertNull(ca.getQualificationAtIssuance());
 		assertNull(ca.getQualificationAtValidation());
 		assertNotNull(ca.getTrustAnchors());
@@ -175,16 +179,16 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 
 		XmlSimpleCertificateReport simpleReportJaxb = reports.getSimpleReportJaxb();
 		assertNotNull(simpleReportJaxb);
-		assertNotNull(simpleReportJaxb.getChain());
-		assertEquals(2, simpleReportJaxb.getChain().size());
+		assertNotNull(simpleReportJaxb.getCertificate());
+		assertEquals(1, simpleReportJaxb.getCertificate().getChain().size());
 
-		XmlChainItem cert = simpleReportJaxb.getChain().get(0);
+		XmlChainItem cert = simpleReportJaxb.getCertificate();
 		assertEquals(certificateId, cert.getId());
 		assertNotNull(cert.getQualificationAtIssuance());
 		assertNotNull(cert.getQualificationAtValidation());
 		assertTrue(Utils.isCollectionEmpty(cert.getTrustAnchors()));
 
-		XmlChainItem ca = simpleReportJaxb.getChain().get(1);
+		XmlChainItem ca = simpleReportJaxb.getCertificate().getChain().get(0);
 		assertNull(ca.getQualificationAtIssuance());
 		assertNull(ca.getQualificationAtValidation());
 		assertNotNull(ca.getTrustAnchors());
@@ -216,10 +220,10 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 
 		XmlSimpleCertificateReport simpleReportJaxb = reports.getSimpleReportJaxb();
 		assertNotNull(simpleReportJaxb);
-		assertNotNull(simpleReportJaxb.getChain());
-		assertEquals(1, simpleReportJaxb.getChain().size());
+		assertNotNull(simpleReportJaxb.getCertificate());
+		assertEquals(0, simpleReportJaxb.getCertificate().getChain().size());
 
-		XmlChainItem cert = simpleReportJaxb.getChain().get(0);
+		XmlChainItem cert = simpleReportJaxb.getCertificate();
 		assertEquals(certificateId, cert.getId());
 		assertNotNull(cert.getQualificationAtIssuance());
 		assertNotNull(cert.getQualificationAtValidation());
@@ -294,12 +298,12 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 		executor.setCertificateId(certificateId);
 		executor.setDiagnosticData(diagnosticData);
 		
-		ValidationPolicy defaultPolicy = loadDefaultPolicy();
-		EIDAS eidasConstraints = defaultPolicy.getEIDASConstraints();
+		EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
+		EIDAS eidasConstraints = validationPolicy.getEIDASConstraints();
 		LevelConstraint levelConstraint = new LevelConstraint();
 		levelConstraint.setLevel(Level.FAIL);
 		eidasConstraints.setTLWellSigned(levelConstraint);
-		executor.setValidationPolicy(defaultPolicy);
+		executor.setValidationPolicy(validationPolicy);
 		
 		executor.setCurrentTime(diagnosticData.getValidationDate());
 
@@ -362,7 +366,8 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 
 		DetailedReport detailedReport = reports.getDetailedReport();
 		XmlCertificate certificate = detailedReport.getXmlCertificateById(certificateId);
-		List<XmlValidationCertificateQualification> validationCertQual = certificate.getValidationCertificateQualification();
+		XmlCertificateQualificationProcess certificateQualificationProcess = certificate.getCertificateQualificationProcess();
+		List<XmlValidationCertificateQualification> validationCertQual = certificateQualificationProcess.getValidationCertificateQualification();
 		assertEquals(2, validationCertQual.size());
 
 		for (XmlValidationCertificateQualification certQual : validationCertQual) {
@@ -555,8 +560,9 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 
 		DetailedReport detailedReport = reports.getDetailedReport();
 		XmlCertificate certificate = detailedReport.getCertificates().get(0);
-		List<XmlValidationCertificateQualification> validationCertificateQualification = certificate.getValidationCertificateQualification();
-		for (XmlValidationCertificateQualification xmlValidationCertificateQualification : validationCertificateQualification) {
+		XmlCertificateQualificationProcess certificateQualificationProcess = certificate.getCertificateQualificationProcess();
+		List<XmlValidationCertificateQualification> validationCertQual = certificateQualificationProcess.getValidationCertificateQualification();
+		for (XmlValidationCertificateQualification xmlValidationCertificateQualification : validationCertQual) {
 			assertEquals(Indication.FAILED, xmlValidationCertificateQualification.getConclusion().getIndication());
 		}
 	}
@@ -592,12 +598,12 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 		executor.setValidationPolicy(loadDefaultPolicy());
 		executor.setCurrentTime(diagnosticData.getValidationDate());
 		
-		Exception exception = assertThrows(NullPointerException.class, () -> executor.execute());
+		Exception exception = assertThrows(NullPointerException.class, executor::execute);
 		assertEquals("The certificate id is missing", exception.getMessage());
 		
 		executor.setCertificateId("certId");
 		
-		exception = assertThrows(IllegalArgumentException.class, () -> executor.execute());
+		exception = assertThrows(IllegalArgumentException.class, executor::execute);
 		assertEquals("The certificate with the given Id 'certId' has not been found in DiagnosticData", exception.getMessage());
 	}
 
@@ -609,7 +615,7 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 
 		String certId = "C-2D118BBC9E0B98D6AD07BB9D44CFC424467B8E2D83A2E04661E9A620DAA062FC";
 
-		ValidationPolicy validationPolicy = loadDefaultPolicy();
+		EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
 
 		MultiValuesConstraint multiValuesConstraint = new MultiValuesConstraint();
 		multiValuesConstraint.getId().add(KeyUsageBit.KEY_CERT_SIGN.getValue());
@@ -666,7 +672,7 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 
 		String certId = "C-2D118BBC9E0B98D6AD07BB9D44CFC424467B8E2D83A2E04661E9A620DAA062FC";
 
-		ValidationPolicy validationPolicy = loadDefaultPolicy();
+		EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
 
 		MultiValuesConstraint multiValuesConstraint = new MultiValuesConstraint();
 		multiValuesConstraint.getId().add(KeyUsageBit.DIGITAL_SIGNATURE.getValue());
@@ -765,7 +771,7 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 		DefaultCertificateProcessExecutor executor = new DefaultCertificateProcessExecutor();
 		executor.setDiagnosticData(diagnosticData);
 
-		ValidationPolicy validationPolicy = loadDefaultPolicy();
+		EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
 		CertificateConstraints certificateConstraints = validationPolicy.getSignatureConstraints()
 				.getBasicSignatureConstraints().getSigningCertificate();
 
@@ -815,7 +821,7 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 		DefaultCertificateProcessExecutor executor = new DefaultCertificateProcessExecutor();
 		executor.setDiagnosticData(diagnosticData);
 
-		ValidationPolicy validationPolicy = loadDefaultPolicy();
+		EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
 		CertificateConstraints certificateConstraints = validationPolicy.getSignatureConstraints()
 				.getBasicSignatureConstraints().getSigningCertificate();
 
@@ -847,7 +853,7 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 		DefaultCertificateProcessExecutor executor = new DefaultCertificateProcessExecutor();
 		executor.setDiagnosticData(diagnosticData);
 
-		ValidationPolicy validationPolicy = loadDefaultPolicy();
+		EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
 		CertificateConstraints certificateConstraints = validationPolicy.getSignatureConstraints()
 				.getBasicSignatureConstraints().getSigningCertificate();
 
@@ -923,11 +929,12 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 
 		DetailedReport detailedReport = reports.getDetailedReport();
 		XmlCertificate xmlCertificate = detailedReport.getXmlCertificateById(certId);
-		List<XmlValidationCertificateQualification> validationCertificateQualification = xmlCertificate.getValidationCertificateQualification();
-		assertEquals(2, validationCertificateQualification.size());
+		XmlCertificateQualificationProcess certificateQualificationProcess = xmlCertificate.getCertificateQualificationProcess();
+		List<XmlValidationCertificateQualification> validationCertQual = certificateQualificationProcess.getValidationCertificateQualification();
+		assertEquals(2, validationCertQual.size());
 
 		XmlValidationCertificateQualification validationCertificateQualificationAtIssuanceTime = null;
-		for (XmlValidationCertificateQualification validationCertificate : validationCertificateQualification) {
+		for (XmlValidationCertificateQualification validationCertificate : validationCertQual) {
 			if (ValidationTime.CERTIFICATE_ISSUANCE_TIME.equals(validationCertificate.getValidationTime())) {
 				validationCertificateQualificationAtIssuanceTime = validationCertificate;
 				break;
@@ -956,7 +963,7 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 		DefaultCertificateProcessExecutor executor = new DefaultCertificateProcessExecutor();
 		executor.setDiagnosticData(diagnosticData);
 
-		ValidationPolicy validationPolicy = loadDefaultPolicy();
+		EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
 		LevelConstraint levelConstraint = new LevelConstraint();
 		levelConstraint.setLevel(Level.INFORM);
 		validationPolicy.getSignatureConstraints().getBasicSignatureConstraints().setProspectiveCertificateChain(levelConstraint);
@@ -989,7 +996,7 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 		DefaultCertificateProcessExecutor executor = new DefaultCertificateProcessExecutor();
 		executor.setDiagnosticData(diagnosticData);
 
-		ValidationPolicy validationPolicy = loadDefaultPolicy();
+		EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
 		LevelConstraint levelConstraint = new LevelConstraint();
 		levelConstraint.setLevel(Level.INFORM);
 		validationPolicy.getSignatureConstraints().getBasicSignatureConstraints().setProspectiveCertificateChain(levelConstraint);
@@ -1147,8 +1154,8 @@ class CertificateProcessExecutorTest extends AbstractTestValidationExecutor {
 	}
 	
 	@Override
-	protected ValidationPolicy loadDefaultPolicy() throws Exception {
-		return ValidationPolicyFacade.newFacade().getCertificateValidationPolicy();
+	protected EtsiValidationPolicy loadDefaultPolicy() throws Exception {
+		return (EtsiValidationPolicy) ValidationPolicyLoader.fromValidationPolicy(CERTIFICATE_VALIDATION_POLICY_LOCATION).create();
 	}
 
 }

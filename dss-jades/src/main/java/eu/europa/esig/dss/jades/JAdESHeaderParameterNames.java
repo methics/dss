@@ -1,24 +1,26 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.jades;
+
+import eu.europa.esig.dss.jades.jwt.JWTClaimNames;
 
 /**
  * Defines a list of JAdES header names as in ETSI TS 119 182-1
@@ -470,12 +472,35 @@ public final class JAdESHeaderParameterNames {
 	public static final String SIG_POL_LOCAL_URI = "sigPolLocalURI";
 
 	/**
+	 * Any Validation Data
+	 */
+	public static final String ANY_VAL_DATA = "anyValData";
+
+	/**
+	 * RFC 7519 "JSON Web Token (JWT)", 4.1.4.  "exp" (Expiration Time) Claim
+	 * The "exp" (expiration time) claim identifies the expiration time on
+	 * or after which the JWT MUST NOT be accepted for processing.  The
+	 * processing of the "exp" claim requires that the current date/time
+	 * MUST be before the expiration date/time listed in the "exp" claim.
+	 * Implementers MAY provide for some small leeway, usually no more than
+	 * a few minutes, to account for clock skew. Its value MUST be a number
+	 * containing a NumericDate value. Use of this claim is OPTIONAL.
+	 *
+	 * @deprecated since DSS 6.5. Please use {@link JWTClaimNames#EXP} instead
+	 */
+	@Deprecated
+	public static final String EXP = "exp";
+
+	/**
 	 * RFC 7519 "JSON Web Token (JWT)", 4.1.6. "iat" (Issued At) Claim
 	 * The "iat" (issued at) claim identifies the time at which the JWT was
 	 * issued. This claim can be used to determine the age of the JWT. Its
 	 * value MUST be a number containing a NumericDate value. Use of this
 	 * claim is OPTIONAL.
+	 *
+	 * @deprecated since DSS 6.5. Please use {@link JWTClaimNames#IAT} instead
 	 */
+	@Deprecated
 	public static final String IAT = "iat";
 
 }

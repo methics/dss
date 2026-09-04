@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 		<artifactId>sd-dss</artifactId>
-		<version>6.1</version>
+		<version>6.5</version>
 	</parent>
 
 	<artifactId>specs-trusted-list</artifactId>
@@ -59,10 +59,10 @@
 				<configuration>
 					<schemaDirectory>src/main/resources/xsd</schemaDirectory>
 					<schemaIncludes>
-<!-- 					<schemaInclude>ts_119612v020201_201601xsd.xsd</schemaInclude> -->
-<!-- 					<schemaInclude>ts_119612v020101_sie_xsd.xsd</schemaInclude>-->
-						<schemaInclude>ts_119612v020101_additionaltypes_xsd.xsd</schemaInclude>
-						<schemaInclude>mra/mra_schema_v2.xsd</schemaInclude>
+<!-- 					<schemaInclude>ts_119612v020401_xsd.xsd</schemaInclude> -->
+<!-- 					<schemaInclude>ts_119612v020401_sie_xsd.xsd</schemaInclude>-->
+						<schemaInclude>ts_119612v020401_additionaltypes_xsd.xsd</schemaInclude>
+						<schemaInclude>mra/mra_schema_v2_19612v020401.xsd</schemaInclude>
 					</schemaIncludes>
 					<catalog>src/main/resources/xsd/catalog.cat</catalog>
 					<bindingIncludes>
@@ -103,6 +103,22 @@
 						<configuration>
 							<target>
 								<delete dir="${basedir}/target/generated-sources/xjc/eu/europa/esig/xmldsig" />
+							</target>
+						</configuration>
+					</execution>
+					<execution>
+						<id>fix-jaxb-javadoc</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<replaceregexp match="\{@link byte\[\]\}" replace="{@code byte[]}" flags="g">
+									<fileset dir="${project.build.directory}/generated-sources/xjc">
+										<include name="**/*.java" />
+									</fileset>
+								</replaceregexp>
 							</target>
 						</configuration>
 					</execution>

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -76,6 +76,13 @@ public abstract class BaselineRequirementsChecker<AS extends DefaultAdvancedSign
         this.signature = signature;
         this.offlineCertificateVerifier = offlineCertificateVerifier;
     }
+
+    /**
+     * Checks if the signature is conformant to a corresponding AdES profile
+     *
+     * @return TRUE if the signature is AdES, FALSE otherwise
+     */
+    public abstract boolean hasAdESProfile();
 
     /**
      * Checks if the signature has a corresponding BASELINE-B profile
@@ -171,6 +178,16 @@ public abstract class BaselineRequirementsChecker<AS extends DefaultAdvancedSign
      * @return TRUE if the signature has a *AdES-A profile, FALSE otherwise
      */
     public boolean hasExtendedAProfile() {
+        // not implemented by default
+        return false;
+    }
+
+    /**
+     * Checks if the signature has a corresponding *AdES-E-ERS profile
+     *
+     * @return TRUE if the signature has an *AdES-E-ERS profile, FALSE otherwise
+     */
+    public boolean hasExtendedERSProfile() {
         // not implemented by default
         return false;
     }

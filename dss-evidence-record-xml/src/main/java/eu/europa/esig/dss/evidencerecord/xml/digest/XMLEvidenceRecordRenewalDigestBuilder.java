@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -36,7 +36,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This class builds digest for an RFC 6283 XMLERS evidence record's renewal
+ * This class builds digest for an RFC 6283 XMLERS evidence record's renewal.
+ * <p>
+ * NODE: If the original XML Evidence Record is being used as a part of another XML document and
+ * an inclusive canonicalization is used, please make sure the {@code eu.europa.esig.dss.xml.utils.DOMDocument}
+ * implementation of the {@code eu.europa.esig.dss.model.DSSDocument} is used on instance creation of the current class,
+ * in order to provide information about the parent namespaces for the canonicalization process.
+ * Otherwise, the canonicalization will be performed as on XML Evidence Record's element alone and
+ * the final hash may be different.
  *
  */
 public class XMLEvidenceRecordRenewalDigestBuilder extends AbstractEvidenceRecordRenewalDigestBuilder {
@@ -137,6 +144,7 @@ public class XMLEvidenceRecordRenewalDigestBuilder extends AbstractEvidenceRecor
     public List<Digest> buildHashTreeRenewalDigestGroup() {
         final List<Digest> result = new ArrayList<>();
 
+        DigestAlgorithm digestAlgorithm = getDigestAlgorithmOrDefault();
         XmlArchiveTimeStampChainObject lastArchiveTimeStampChainObject = (XmlArchiveTimeStampChainObject) getLastArchiveTimeStampChainObject();
         Digest archiveTimeStampSequenceDigest = getArchiveTimeStampSequenceDigestHelper()
                 .buildArchiveTimeStampSequenceDigest(digestAlgorithm, canonicalizationMethod,
@@ -150,7 +158,7 @@ public class XMLEvidenceRecordRenewalDigestBuilder extends AbstractEvidenceRecor
                 result.add(dataObjectDigest);
             }
         } else {
-            LOG.warn("No detached content have been provided! Computation of digest for data object has been skipped.");
+            LOG.info("No detached content have been provided. Computation of digest for data object has been skipped.");
         }
 
         return result;

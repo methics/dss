@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -54,6 +54,23 @@ class XMLCanonicalizerTest {
             assertEquals("0VrRKOvUCLDg3QSMAzIrdahAmiCo/AFTFAjd5FZDx+0=",
                     Utils.toBase64(messageDigest.digest(canonicalized)));
         }
+
+        try (InputStream is = document.openStream()) {
+            byte[] canonicalized = XMLCanonicalizer
+                    .createInstance(CanonicalizationMethod.EXCLUSIVE)
+                    .canonicalize(is);
+            MessageDigest messageDigest = DigestAlgorithm.SHA256.getMessageDigest();
+            assertEquals("/TiBXkCOtm0bSdOukpXHtqSu6G5EPRfwyYH9DJ9YtCE=",
+                    Utils.toBase64(messageDigest.digest(canonicalized)));
+        }
+        try (InputStream is = document.openStream()) {
+            byte[] canonicalized = XMLCanonicalizer
+                    .createInstance(CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS)
+                    .canonicalize(is);
+            MessageDigest messageDigest = DigestAlgorithm.SHA256.getMessageDigest();
+            assertEquals("0VrRKOvUCLDg3QSMAzIrdahAmiCo/AFTFAjd5FZDx+0=",
+                    Utils.toBase64(messageDigest.digest(canonicalized)));
+        }
     }
 
     @Test
@@ -69,6 +86,19 @@ class XMLCanonicalizerTest {
                 Utils.toBase64(messageDigest.digest(canonicalized)));
         canonicalized = XMLCanonicalizer
                 .createInstance(CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS)
+                .canonicalize(dom);
+        messageDigest = DigestAlgorithm.SHA256.getMessageDigest();
+        assertEquals("0VrRKOvUCLDg3QSMAzIrdahAmiCo/AFTFAjd5FZDx+0=",
+                Utils.toBase64(messageDigest.digest(canonicalized)));
+
+        canonicalized = XMLCanonicalizer
+                .createInstance(CanonicalizationMethod.EXCLUSIVE)
+                .canonicalize(dom);
+        messageDigest = DigestAlgorithm.SHA256.getMessageDigest();
+        assertEquals("/TiBXkCOtm0bSdOukpXHtqSu6G5EPRfwyYH9DJ9YtCE=",
+                Utils.toBase64(messageDigest.digest(canonicalized)));
+        canonicalized = XMLCanonicalizer
+                .createInstance(CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS)
                 .canonicalize(dom);
         messageDigest = DigestAlgorithm.SHA256.getMessageDigest();
         assertEquals("0VrRKOvUCLDg3QSMAzIrdahAmiCo/AFTFAjd5FZDx+0=",
@@ -92,6 +122,19 @@ class XMLCanonicalizerTest {
                 Utils.toBase64(messageDigest.digest(canonicalized)));
         canonicalized = XMLCanonicalizer
                 .createInstance(CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS)
+                .canonicalize(byteArray);
+        messageDigest = DigestAlgorithm.SHA256.getMessageDigest();
+        assertEquals("0VrRKOvUCLDg3QSMAzIrdahAmiCo/AFTFAjd5FZDx+0=",
+                Utils.toBase64(messageDigest.digest(canonicalized)));
+
+        canonicalized = XMLCanonicalizer
+                .createInstance(CanonicalizationMethod.EXCLUSIVE)
+                .canonicalize(byteArray);
+        messageDigest = DigestAlgorithm.SHA256.getMessageDigest();
+        assertEquals("/TiBXkCOtm0bSdOukpXHtqSu6G5EPRfwyYH9DJ9YtCE=",
+                Utils.toBase64(messageDigest.digest(canonicalized)));
+        canonicalized = XMLCanonicalizer
+                .createInstance(CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS)
                 .canonicalize(byteArray);
         messageDigest = DigestAlgorithm.SHA256.getMessageDigest();
         assertEquals("0VrRKOvUCLDg3QSMAzIrdahAmiCo/AFTFAjd5FZDx+0=",

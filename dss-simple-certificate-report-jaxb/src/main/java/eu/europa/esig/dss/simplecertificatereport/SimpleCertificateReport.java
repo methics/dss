@@ -1,33 +1,39 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.simplecertificatereport;
 
+import eu.europa.esig.dss.enumerations.CertificateApprovalStatus;
 import eu.europa.esig.dss.enumerations.CertificateQualification;
+import eu.europa.esig.dss.enumerations.CertificateApprovalStatusEnum;
 import eu.europa.esig.dss.enumerations.Indication;
+import eu.europa.esig.dss.enumerations.QWACProfile;
 import eu.europa.esig.dss.enumerations.RevocationReason;
 import eu.europa.esig.dss.enumerations.SubIndication;
 import eu.europa.esig.dss.jaxb.object.Message;
+import eu.europa.esig.dss.simplecertificatereport.jaxb.XmlCertificateApprovalStatus;
+import eu.europa.esig.dss.simplecertificatereport.jaxb.XmlCertificateApprovalStatusAtTime;
 import eu.europa.esig.dss.simplecertificatereport.jaxb.XmlChainItem;
 import eu.europa.esig.dss.simplecertificatereport.jaxb.XmlMessage;
 import eu.europa.esig.dss.simplecertificatereport.jaxb.XmlRevocation;
+import eu.europa.esig.dss.simplecertificatereport.jaxb.XmlSignature;
 import eu.europa.esig.dss.simplecertificatereport.jaxb.XmlSimpleCertificateReport;
 import eu.europa.esig.dss.simplecertificatereport.jaxb.XmlTrustAnchor;
 
@@ -72,9 +78,13 @@ public class SimpleCertificateReport {
 	 */
 	public List<String> getCertificateIds() {
 		List<String> ids = new ArrayList<>();
-		List<XmlChainItem> chain = simpleReport.getChain();
-		for (XmlChainItem xmlChainItem : chain) {
-			ids.add(xmlChainItem.getId());
+		XmlChainItem certificate = simpleReport.getCertificate();
+		if (certificate != null) {
+			ids.add(certificate.getId());
+			List<XmlChainItem> chain = certificate.getChain();
+			for (XmlChainItem xmlChainItem : chain) {
+				ids.add(xmlChainItem.getId());
+			}
 		}
 		return ids;
 	}
@@ -535,6 +545,165 @@ public class SimpleCertificateReport {
 		return Collections.emptyList();
 	}
 
+	/**
+	 * This method retrieve the QWAC validation process's errors for a given certificate by id
+	 *
+	 * @param certificateId
+	 *            {@link String} certificate id
+	 * @return the linked errors
+	 */
+	public List<Message> getQWACValidationErrors(final String certificateId) {
+		XmlChainItem certificate = getCertificate(certificateId);
+		if (certificate != null && certificate.getQwacDetails() != null) {
+			return convert(certificate.getQwacDetails().getError());
+		}
+		return Collections.emptyList();
+	}
+
+	/**
+	 * This method retrieve the QWAC validation process's warnings for a given certificate by id
+	 *
+	 * @param certificateId
+	 *            {@link String} certificate id
+	 * @return the linked errors
+	 */
+	public List<Message> getQWACValidationWarnings(final String certificateId) {
+		XmlChainItem certificate = getCertificate(certificateId);
+		if (certificate != null && certificate.getQwacDetails() != null) {
+			return convert(certificate.getQwacDetails().getWarning());
+		}
+		return Collections.emptyList();
+	}
+
+	/**
+	 * This method retrieve the QWAC validation process's information messages for a given certificate by id
+	 *
+	 * @param certificateId
+	 *            {@link String} certificate id
+	 * @return the linked errors
+	 */
+	public List<Message> getQWACValidationInfo(final String certificateId) {
+		XmlChainItem certificate = getCertificate(certificateId);
+		if (certificate != null && certificate.getQwacDetails() != null) {
+			return convert(certificate.getQwacDetails().getInfo());
+		}
+		return Collections.emptyList();
+	}
+
+	/**
+	 * This method retrieve the TS 119 602/605 certificate approval status process's errors for
+	 * a given certificate by id at issuance time for the given {@code CertificateApprovalStatus}
+	 *
+	 * @param certificateId
+	 *            {@link String} certificate id
+	 * @return the linked errors
+	 */
+	public List<Message> getCertificateApprovalStatusErrorsAtIssuanceTime(final String certificateId, final CertificateApprovalStatus certificateApprovalStatus) {
+		XmlChainItem certificate = getCertificate(certificateId);
+		if (certificate != null && certificate.getCertificateApprovalStatusAtIssuanceTime() != null) {
+			XmlCertificateApprovalStatus xmlCertificateApprovalStatus = getXmlCertificateApprovalStatus(certificate.getCertificateApprovalStatusAtIssuanceTime(), certificateApprovalStatus);
+			if (xmlCertificateApprovalStatus != null && xmlCertificateApprovalStatus.getDetails() != null) {
+				return convert(xmlCertificateApprovalStatus.getDetails().getError());
+			}
+		}
+		return Collections.emptyList();
+	}
+
+	/**
+	 * This method retrieve the TS 119 602/605 certificate approval status process's warnings for
+	 * a given certificate by id at issuance time for the given {@code CertificateApprovalStatus}
+	 *
+	 * @param certificateId
+	 *            {@link String} certificate id
+	 * @return the linked errors
+	 */
+	public List<Message> getCertificateApprovalStatusWarningsAtIssuanceTime(final String certificateId, final CertificateApprovalStatus certificateApprovalStatus) {
+		XmlChainItem certificate = getCertificate(certificateId);
+		if (certificate != null && certificate.getCertificateApprovalStatusAtIssuanceTime() != null) {
+			XmlCertificateApprovalStatus xmlCertificateApprovalStatus = getXmlCertificateApprovalStatus(certificate.getCertificateApprovalStatusAtIssuanceTime(), certificateApprovalStatus);
+			if (xmlCertificateApprovalStatus != null && xmlCertificateApprovalStatus.getDetails() != null) {
+				return convert(xmlCertificateApprovalStatus.getDetails().getWarning());
+			}
+		}
+		return Collections.emptyList();
+	}
+
+	/**
+	 * This method retrieve the TS 119 602/605 certificate approval status process's information messages for
+	 * a given certificate by id at issuance time for the given {@code CertificateApprovalStatus}
+	 *
+	 * @param certificateId
+	 *            {@link String} certificate id
+	 * @return the linked errors
+	 */
+	public List<Message> getCertificateApprovalStatusInfoAtIssuanceTime(final String certificateId, final CertificateApprovalStatus certificateApprovalStatus) {
+		XmlChainItem certificate = getCertificate(certificateId);
+		if (certificate != null && certificate.getCertificateApprovalStatusAtIssuanceTime() != null) {
+			XmlCertificateApprovalStatus xmlCertificateApprovalStatus = getXmlCertificateApprovalStatus(certificate.getCertificateApprovalStatusAtIssuanceTime(), certificateApprovalStatus);
+			if (xmlCertificateApprovalStatus != null && xmlCertificateApprovalStatus.getDetails() != null) {
+				return convert(xmlCertificateApprovalStatus.getDetails().getInfo());
+			}
+		}
+		return Collections.emptyList();
+	}
+
+	/**
+	 * This method retrieve the TS 119 602/605 certificate approval status process's errors for
+	 * a given certificate by id at validation time for the given {@code CertificateApprovalStatus}
+	 *
+	 * @param certificateId
+	 *            {@link String} certificate id
+	 * @return the linked errors
+	 */
+	public List<Message> getCertificateApprovalStatusErrorsAtValidationTime(final String certificateId, final CertificateApprovalStatus certificateApprovalStatus) {
+		XmlChainItem certificate = getCertificate(certificateId);
+		if (certificate != null && certificate.getCertificateApprovalStatusAtValidationTime() != null) {
+			XmlCertificateApprovalStatus xmlCertificateApprovalStatus = getXmlCertificateApprovalStatus(certificate.getCertificateApprovalStatusAtValidationTime(), certificateApprovalStatus);
+			if (xmlCertificateApprovalStatus != null && xmlCertificateApprovalStatus.getDetails() != null) {
+				return convert(xmlCertificateApprovalStatus.getDetails().getError());
+			}
+		}
+		return Collections.emptyList();
+	}
+
+	/**
+	 * This method retrieve the TS 119 602/605 certificate approval status process's warnings for
+	 * a given certificate by id at validation time for the given {@code CertificateApprovalStatus}
+	 *
+	 * @param certificateId
+	 *            {@link String} certificate id
+	 * @return the linked errors
+	 */
+	public List<Message> getCertificateApprovalStatusWarningsAtValidationTime(final String certificateId, final CertificateApprovalStatus certificateApprovalStatus) {
+		XmlChainItem certificate = getCertificate(certificateId);
+		if (certificate != null && certificate.getCertificateApprovalStatusAtValidationTime() != null) {
+			XmlCertificateApprovalStatus xmlCertificateApprovalStatus = getXmlCertificateApprovalStatus(certificate.getCertificateApprovalStatusAtValidationTime(), certificateApprovalStatus);
+			if (xmlCertificateApprovalStatus != null && xmlCertificateApprovalStatus.getDetails() != null) {
+				return convert(xmlCertificateApprovalStatus.getDetails().getWarning());
+			}
+		}
+		return Collections.emptyList();
+	}
+
+	/**
+	 * This method retrieve the TS 119 602/605 certificate approval status process's information messages for
+	 * a given certificate by id at validation time for the given {@code CertificateApprovalStatus}
+	 *
+	 * @param certificateId
+	 *            {@link String} certificate id
+	 * @return the linked errors
+	 */
+	public List<Message> getCertificateApprovalStatusInfoAtValidationTime(final String certificateId, final CertificateApprovalStatus certificateApprovalStatus) {
+		XmlChainItem certificate = getCertificate(certificateId);
+		if (certificate != null && certificate.getCertificateApprovalStatusAtValidationTime() != null) {
+			XmlCertificateApprovalStatus xmlCertificateApprovalStatus = getXmlCertificateApprovalStatus(certificate.getCertificateApprovalStatusAtValidationTime(), certificateApprovalStatus);
+			if (xmlCertificateApprovalStatus != null && xmlCertificateApprovalStatus.getDetails() != null) {
+				return convert(xmlCertificateApprovalStatus.getDetails().getInfo());
+			}
+		}
+		return Collections.emptyList();
+	}
+
 	private Message convert(XmlMessage v) {
 		if (v != null) {
 			return new Message(v.getKey(), v.getValue());
@@ -570,6 +739,174 @@ public class SimpleCertificateReport {
 	}
 
 	/**
+	 * This method returns the qualification of the first certificate at its issuance
+	 *
+	 * @return the qualification at the certificate creation
+	 */
+	public List<CertificateApprovalStatus> getCertificateApprovalStatusAtCertificateIssuance() {
+		XmlChainItem cert = getFirstCertificate();
+		return toCertificateApprovalStatusList(cert.getCertificateApprovalStatusAtIssuanceTime());
+	}
+
+	/**
+	 * This method returns the qualification of the first certificate at the validation time
+	 *
+	 * @return the qualification at the validation time
+	 */
+	public List<CertificateApprovalStatus> getCertificateApprovalStatusAtValidationTime() {
+		XmlChainItem cert = getFirstCertificate();
+		return toCertificateApprovalStatusList(cert.getCertificateApprovalStatusAtValidationTime());
+	}
+
+	private List<CertificateApprovalStatus> toCertificateApprovalStatusList(XmlCertificateApprovalStatusAtTime xmlCertificateApprovalStatusAtTime) {
+		if (xmlCertificateApprovalStatusAtTime == null) {
+			return null;
+		}
+		List<XmlCertificateApprovalStatus> xmlCertificateApprovalStatuss = xmlCertificateApprovalStatusAtTime.getCertificateApprovalStatus();
+		if (xmlCertificateApprovalStatuss == null || xmlCertificateApprovalStatuss.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		final List<CertificateApprovalStatus> usages = new ArrayList<>();
+		for (XmlCertificateApprovalStatus xmlCertificateApprovalStatus : xmlCertificateApprovalStatuss) {
+			usages.add(toCertificateApprovalStatus(xmlCertificateApprovalStatus));
+		}
+		return usages;
+	}
+
+	private CertificateApprovalStatus toCertificateApprovalStatus(XmlCertificateApprovalStatus xmlCertificateApprovalStatus) {
+		if (xmlCertificateApprovalStatus == null) {
+			return null;
+		}
+		CertificateApprovalStatus result = CertificateApprovalStatus.fromDefinition(xmlCertificateApprovalStatus.getListType(),
+				xmlCertificateApprovalStatus.getServiceTypeIdentifier(), xmlCertificateApprovalStatus.getServiceStatus());
+		if (result != null && result.getLabel() != null && CertificateApprovalStatusEnum.CERT_FOR_UNKNOWN != result) {
+			return result;
+		}
+		return CertificateApprovalStatus.create(CertificateApprovalStatusEnum.CERT_FOR_UNKNOWN.getLabel(), xmlCertificateApprovalStatus.getListType(),
+				xmlCertificateApprovalStatus.getServiceTypeIdentifier(), xmlCertificateApprovalStatus.getServiceStatus());
+	}
+
+	private XmlCertificateApprovalStatus getXmlCertificateApprovalStatus(XmlCertificateApprovalStatusAtTime xmlCertificateApprovalStatusAtTime, CertificateApprovalStatus certificateApprovalStatus) {
+		if (xmlCertificateApprovalStatusAtTime != null && xmlCertificateApprovalStatusAtTime.getCertificateApprovalStatus() != null) {
+			for (XmlCertificateApprovalStatus xmlCertificateApprovalStatus : xmlCertificateApprovalStatusAtTime.getCertificateApprovalStatus()) {
+				if (xmlCertificateApprovalStatus != null &&
+						certificateApprovalStatus.getListType() != null && certificateApprovalStatus.getListType().getUri() != null
+						&& xmlCertificateApprovalStatus.getListType() != null && certificateApprovalStatus.getListType().getUri().equals(xmlCertificateApprovalStatus.getListType().getUri()) &&
+						certificateApprovalStatus.getServiceTypeIdentifier() != null && certificateApprovalStatus.getServiceTypeIdentifier().getUri() != null
+						&& xmlCertificateApprovalStatus.getServiceTypeIdentifier() != null && certificateApprovalStatus.getServiceTypeIdentifier().getUri().equals(xmlCertificateApprovalStatus.getServiceTypeIdentifier().getUri())) {
+					return xmlCertificateApprovalStatus;
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * This method returns the QWAC validation result as per ETSI TS 119 411-5.
+	 * NOTE: Applicable only when validation process is executed using the {@code eu.europa.esig.dss.validation.qwac.QWACValidator}
+	 *
+	 * @return {@link QWACProfile}
+	 */
+	public QWACProfile getQWACProfile() {
+		XmlChainItem cert = getFirstCertificate();
+		return cert.getQwacProfile();
+	}
+
+	/**
+	 * Gets the TLS Certificate Binging signature.
+	 * NOTE: Applicable only when validation process is executed using the {@code eu.europa.esig.dss.validation.qwac.QWACValidator}
+	 *
+	 * @return {@link XmlSignature}
+	 */
+	public XmlSignature getTLSBindingSignature() {
+		XmlChainItem cert = getFirstCertificate();
+		return cert.getTLSBindingSignature();
+	}
+
+	/**
+	 * Gets the Indication for the TLS Certificate Binging signature validation.
+	 * NOTE: Applicable only when validation process is executed using the {@code eu.europa.esig.dss.validation.qwac.QWACValidator}
+	 *
+	 * @return {@link Indication}
+	 */
+	public Indication getTLSBindingSignatureIndication() {
+		XmlSignature tlsBindingSignature = getTLSBindingSignature();
+		if (tlsBindingSignature != null) {
+			return tlsBindingSignature.getIndication();
+		}
+		return null;
+	}
+
+	/**
+	 * Gets the SubIndication for the TLS Certificate Binging signature validation.
+	 * NOTE: Applicable only when validation process is executed using the {@code eu.europa.esig.dss.validation.qwac.QWACValidator}
+	 *
+	 * @return {@link SubIndication}
+	 */
+	public SubIndication getTLSBindingSignatureSubIndication() {
+		XmlSignature tlsBindingSignature = getTLSBindingSignature();
+		if (tlsBindingSignature != null) {
+			return tlsBindingSignature.getSubIndication();
+		}
+		return null;
+	}
+
+	/**
+	 * Gets the Indication for the TLS Certificate Binging signature validation.
+	 * NOTE: Applicable only when validation process is executed using the {@code eu.europa.esig.dss.validation.qwac.QWACValidator}
+	 *
+	 * @return {@link Indication}
+	 */
+	public XmlChainItem getTLSBindingSignatureIssuerCertificate() {
+		XmlSignature tlsBindingSignature = getTLSBindingSignature();
+		if (tlsBindingSignature != null && tlsBindingSignature.getChain() != null && !tlsBindingSignature.getChain().isEmpty()) {
+			return tlsBindingSignature.getChain().get(0);
+		}
+		return null;
+	}
+
+	/**
+	 * This method returns the qualification of the first certificate at its issuance
+	 *
+	 * @return the qualification at the certificate creation
+	 */
+	public CertificateQualification getTLSBindingSignatureIssuerQualificationAtCertificateIssuance() {
+		XmlChainItem xmlChainItem = getTLSBindingSignatureIssuerCertificate();
+		if (xmlChainItem != null) {
+			return xmlChainItem.getQualificationAtIssuance();
+		}
+		return null;
+	}
+
+	/**
+	 * This method returns the qualification of the first certificate at the validation time
+	 *
+	 * @return the qualification at the validation time
+	 */
+	public CertificateQualification getTLSBindingSignatureIssuerQualificationAtValidationTime() {
+		XmlChainItem xmlChainItem = getTLSBindingSignatureIssuerCertificate();
+		if (xmlChainItem != null) {
+			return xmlChainItem.getQualificationAtValidation();
+		}
+		return null;
+	}
+
+	/**
+	 * Gets the Indication for the TLS Certificate Binging signature validation.
+	 * NOTE: Applicable only when validation process is executed using the {@code eu.europa.esig.dss.validation.qwac.QWACValidator}
+	 *
+	 * @return {@link Indication}
+	 */
+	public QWACProfile getTLSBindingSignatureIssuerCertificateQWACProfile() {
+		XmlChainItem xmlChainItem = getTLSBindingSignatureIssuerCertificate();
+		if (xmlChainItem != null) {
+			return xmlChainItem.getQwacProfile();
+		}
+		return null;
+	}
+
+	/**
 	 * This method returns a Set of trust anchor VAT numbers
 	 * 
 	 * @return a Set of VAT numbers
@@ -589,24 +926,54 @@ public class SimpleCertificateReport {
 	}
 
 	private XmlChainItem getTrustAnchorCertificate() {
-		List<XmlChainItem> chain = simpleReport.getChain();
-		for (XmlChainItem xmlChainItem : chain) {
-			if (xmlChainItem.getTrustAnchors() != null && !xmlChainItem.getTrustAnchors().isEmpty()) {
-				return xmlChainItem;
+		XmlChainItem certificate = simpleReport.getCertificate();
+		if (certificate != null) {
+			if (isTrustAnchor(certificate)) {
+				return certificate;
+			}
+			List<XmlChainItem> chain = certificate.getChain();
+			for (XmlChainItem xmlChainItem : chain) {
+				if (isTrustAnchor(xmlChainItem)) {
+					return xmlChainItem;
+				}
 			}
 		}
 		return null;
 	}
 
+	private boolean isTrustAnchor(XmlChainItem xmlChainItem) {
+		return xmlChainItem.getTrustAnchors() != null && !xmlChainItem.getTrustAnchors().isEmpty();
+	}
+
 	private XmlChainItem getFirstCertificate() {
-		return simpleReport.getChain().get(0);
+		return simpleReport.getCertificate();
 	}
 
 	private XmlChainItem getCertificate(String certificateId) {
-		List<XmlChainItem> chain = simpleReport.getChain();
-		for (XmlChainItem xmlChainItem : chain) {
-			if (certificateId.equals(xmlChainItem.getId())) {
-				return xmlChainItem;
+		if (certificateId == null) {
+			return null;
+		}
+
+		XmlChainItem certificate = simpleReport.getCertificate();
+		if (certificate != null) {
+			if (certificateId.equals(certificate.getId())) {
+				return certificate;
+			}
+			List<XmlChainItem> chain = certificate.getChain();
+			for (XmlChainItem xmlChainItem : chain) {
+				if (certificateId.equals(xmlChainItem.getId())) {
+					return xmlChainItem;
+				}
+			}
+		}
+
+		XmlSignature tlsBindingSignature = getTLSBindingSignature();
+		if (tlsBindingSignature != null) {
+			List<XmlChainItem> chain = tlsBindingSignature.getChain();
+			for (XmlChainItem xmlChainItem : chain) {
+				if (certificateId.equals(xmlChainItem.getId())) {
+					return xmlChainItem;
+				}
 			}
 		}
 		return null;

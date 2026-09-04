@@ -8,7 +8,7 @@
             <SignatureFormat>JAdES-BASELINE-B</SignatureFormat>
             <StructuralValidation valid="true"/>
             <DigestMatchers>
-                <DigestMatcher type="JWS_SIGNING_INPUT_DIGEST">
+                <DigestMatcher type="JWS_SIGNING_INPUT">
                     <DigestMethod>SHA256</DigestMethod>
                     <DigestValue>Rjh00YrhhAMoWAxz9geHPrfCi491xPCcbtHuOr4tiPM=</DigestValue>
                     <DataFound>true</DataFound>

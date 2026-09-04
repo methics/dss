@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,6 +21,8 @@
 package eu.europa.esig.dss.tsl.parsing;
 
 import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.tsl.function.NonEmptyServiceInformation;
+import eu.europa.esig.dss.tsl.function.NonEmptyTSPInformation;
 import eu.europa.esig.dss.tsl.function.NonEmptyTrustService;
 import eu.europa.esig.dss.tsl.function.converter.TrustServiceProviderConverter;
 import eu.europa.esig.dss.tsl.source.TLSource;
@@ -40,7 +42,7 @@ import java.util.stream.Collectors;
 /**
  * Parses a TL and returns {@code TLParsingResult}
  */
-public class TLParsingTask extends AbstractParsingTask<TLParsingResult> {
+public class TLParsingTask extends AbstractParsingTask {
 
 	/** The TLSource to parse */
 	private final TLSource tlSource;
@@ -64,14 +66,13 @@ public class TLParsingTask extends AbstractParsingTask<TLParsingResult> {
 
 		parseSchemeInformation(result, jaxbObject.getSchemeInformation());
 		parseTrustServiceProviderList(result, jaxbObject.getTrustServiceProviderList());
+		verifyTLVersionConformity(result, result.getVersion(), tlSource.getTLVersions());
 
 		return result;
 	}
 
 	private void parseSchemeInformation(TLParsingResult result, TSLSchemeInformationType schemeInformation) {
-
 		commonParseSchemeInformation(result, schemeInformation);
-
 	}
 
 	private void parseTrustServiceProviderList(TLParsingResult result, TrustServiceProviderListType trustServiceProviderList) {
@@ -88,28 +89,37 @@ public class TLParsingTask extends AbstractParsingTask<TLParsingResult> {
 
 		List<TSPType> filteredTSP = trustServiceProviders;
 
-		// 1. Filter the TSP with the predicate
+		// 1. Remove TSPs with invalid structure
+		filteredTSP = filteredTSP.stream().filter(new NonEmptyTSPInformation()).collect(Collectors.toList());
+
+		// 2. Filter the TSP with the predicate
 		if (tlSource.getTrustServiceProviderPredicate() != null) {
 			filteredTSP = filteredTSP.stream().filter(tlSource.getTrustServiceProviderPredicate()).collect(Collectors.toList());
 		}
 
-		// 2. Foreach TSP, filter the trust services with the predicate
-		if (tlSource.getTrustServicePredicate() != null) {
-			for (TSPType tspType : filteredTSP) {
-				TSPServicesListType tspServices = tspType.getTSPServices();
-				if (tspServices != null && Utils.isCollectionNotEmpty(tspServices.getTSPService())) {
-					List<TSPServiceType> filteredTrustServices = tspServices.getTSPService().stream().filter(tlSource.getTrustServicePredicate())
-							.collect(Collectors.toList());
-					TSPServicesListType newTspServices = new TSPServicesListType();
-					if (!filteredTrustServices.isEmpty()) {
-						newTspServices.getTSPService().addAll(filteredTrustServices);
-					}
-					tspType.setTSPServices(newTspServices);
+		// 3. Foreach TSP, remove invalid trust services
+		for (TSPType tspType : filteredTSP) {
+			TSPServicesListType tspServices = tspType.getTSPServices();
+			if (tspServices != null && Utils.isCollectionNotEmpty(tspServices.getTSPService())) {
+				List<TSPServiceType> filteredTrustServices = tspServices.getTSPService().stream()
+						.filter(new NonEmptyServiceInformation()).collect(Collectors.toList());
+
+				// 4. Filter the trust services with the predicate
+				if (tlSource.getTrustServicePredicate() != null) {
+					filteredTrustServices = filteredTrustServices.stream()
+							.filter(tlSource.getTrustServicePredicate()).collect(Collectors.toList());
 				}
+
+				TSPServicesListType newTspServices = new TSPServicesListType();
+				if (!filteredTrustServices.isEmpty()) {
+					newTspServices.getTSPService().addAll(filteredTrustServices);
+				}
+				tspType.setTSPServices(newTspServices);
 			}
 		}
 
-		// 3. Remove TSP with empty trust services
+		// 5. Remove TSPs with empty trust services
 		return filteredTSP.stream().filter(new NonEmptyTrustService()).collect(Collectors.toList());
 	}
+
 }

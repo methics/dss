@@ -31,11 +31,16 @@ See section <<certificateVerifier>> for more information.
 === Augmenting an AdES baseline B signature
 
 The `BASELINE-B` level contains immutable signed attributes. Once this level is created, these attributes cannot be changed.
-The levels `BASELINE-T/-LT/-LTA` add unsigned attributes to the signature. This means that the attributes of these levels could be added afterwards to any AdES signature. These unsigned attributes help protect the signature so that it can be validated over a longer period of time. Refer to section <<SignatureClasses>> for more information on the four signature levels.
+The levels `BASELINE-T/-LT/-LTA` add unsigned attributes to the signature. This means that the attributes of these levels could be added afterward to any AdES signature. These unsigned attributes help protect the signature so that it can be validated over a longer period of time. Refer to section <<SignatureClasses>> for more information on the four signature levels.
 
 The augmentation of the signature is incremental, i.e. when augmenting the signature to the `BASELINE-LT` level, the lower level `BASELINE-T` will also be added.
 
-The whole augmentation process is implemented by reusing components from signature creation. To augment a signature we proceed in the same way as in the case of a signature creation, except that you have to call the function "extendDocument" instead of the "sign" function.
+The signature augmentation in DSS can be achieved in one of the following ways:
+
+1. By using the <<SignedDocumentExtender>> (available since DSS `6.4`). This is the most straight-forward way for a signature augmentation, with the minimal requirement being only the target signature profile (e.g. `BASELINE-T`) in addition to a signature document to be extended. When using this method, the client does not need to be aware about the original signature format (e.g. XAdES, CAdES, etc.), and the recognition of the format and the loading of a suitable service for augmentation will be done by DSS automatically.
+2. By re-using service components from the <<SignatureCreationInDSS>> chapter. In this approach, to augment a signature one needs to proceed in the same way as for a signature creation, but using the function `extendDocument` instead of the `signDocument` function. This way requires the client or implementer to know the original format of the signature to be augmented in order to select a correct implementation of a document service.
+
+Below you may find a list of examples for a signature augmentation, using both aforementioned methods.
 
 NOTE: When a document is signed with several signatures, all the signatures are augmented. Augmenting a set of selected signatures is not supported in DSS.
 
@@ -47,18 +52,38 @@ The `AdES-BASELINE-T` form must be built on an `AdES-BASELINE-B` form. The DSS f
 
 The framework adds the timestamp only if there is no timestamp yet or there is one but the creation of a new augmentation of the level `BASELINE-T` is deliberate (using another TSA). It is not possible to augment a signature to the `BASELINE-T` level if it already incorporates a higher level, i.e. `BASELINE-LT` or `BASELINE-LTA`. In theory, it would be possible to add another `BASELINE-T` level when the signature has already reached level `BASELINE-LT` but the framework prevents this operation.
 
-Below is the source code that creates a `XAdES-BASELINE-T` signature. For our example, we need to initialize an instance of `OnlineTSPSource` (that has already been configured).
+As an example, we will augment a `XAdES` signature created earlier within the <<SignatureCreationInDSS>> chapter to the `XAdES-BASELINE-T` level.
+
+As a preparation step, we need to define a `TSPSource` used to provide a timestamp token for the `BASELINE-T` level creation. We use an `OnlineTSPSource` in this example, allowing to request and retrieve a timestamp token from a remote source. One may also customize an instance of a `CertificateVerifier` containing the augmentation rules and certificate validation requirements. We leave the `CertificateVerifier` configuration untouched for the moment, because no mandatory parameters are yet to be defined.
 
 [source,java,indent=0]
-.Augment a XAdES signature
+.Prepare a BASELINE-T level augmentation
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoTExtendPrep]
+----
+
+The easiest way to augment a signature is to use a `SignedDocumentExtender` (available since DSS `6.4`), as you will need to only specify the target extension profile, and the rest will be done by DSS:
+
+[source,java,indent=0]
+.Augment to Baseline-T level using SignedDocumentExtender
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoTExtendWithExtender]
+----
+
+Alternatively, the extension can also be done by using a particular document signature service, such as a `XAdESService` for a `XAdES` signature augmentation:
+
+[source,java,indent=0]
+.Augment a XAdES signature to Baseline-T level
 ----
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoTExtend]
 ----
 
-Here is the result of adding a new extension of type `BASELINE-T` to an already existing `BASELINE-T` level signature (for XAdES):
+NOTE: Unless there are specific constraints within the signature parameters configuration, both augmentation methods should lead to the equivalent result.
+
+Below is the result of adding a new extension of type `BASELINE-T` to an existing `BASELINE-B` level signature (for XAdES):
 
 .XAdES Unsigned Signature Properties
-include::{samplesdir}/xades-extend-t-to-t.adoc[]
+include::{samplesdir}/xades-extend-b-to-t.adoc[]
 
 ==== To baseline LT
 The `AdES-BASELINE-LT` profile implements the signature class _Signature with Long-Term Validation Material_ (cf. <<SignatureClasses>>). Augmenting to the `AdES-BASELINE-LT` will add the `CertificateValues` and `RevocationValues` unsigned qualifying properties to the signature.
@@ -66,19 +91,32 @@ The `AdES-BASELINE-LT` profile implements the signature class _Signature with Lo
 * The `CertificateValues` element contains the full set of certificates that have been used to validate the electronic signature, including the signer's certificate. However, it is not necessary to include one of those certificates if it is already present in the `ds:KeyInfo` element (in case of XAdES, or within an alternative element for another format) of the signature.
 * The `RevocationValues` element includes the sources of CRL and/or OCSP.
 
-In order to find a list of all the certificates and the list of all revocation data, an automatic process of signature validation is executed. To carry out this process an object called `CertificateVerifier` must be passed to the service. The implementer must set some of its properties (e.g. a source of trusted certificates). Please refer to the <<certificateVerifier>> section for further information.
-
-
-The code below shows how to use the default parameters with the `CertificateVerifier` object and how to implement the `BASELINE-LT` level of signature:
+In order to find a list of all the certificates and the list of all revocation data, an automatic process of signature validation is executed. To carry out this process an accordingly configured instance of `CertificateVerifier` must be passed to the service. The implementer must set some of its properties, such as revocation data sources and a source of trusted certificates. Please refer to the <<certificateVerifier>> section for further information.
 
 [[SignXmlXadesLTTest.java]]
 [source,java,indent=0]
-.SignXmlXadesLTTest.java
+.Prepare a BASELINE-LT level augmentation
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoLTExtendPrep]
+----
+
+As previously, for the T-level augmentation, for the LT-level it is also possible to augment the signature either by using a `SignedDocumentExtender` class:
+
+[source,java,indent=0]
+.Augment to Baseline-LT level using SignedDocumentExtender
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoLTExtendWithExtender]
+----
+
+or by using the `XAdESService` directly:
+
+[source,java,indent=0]
+.Augment a XAdES signature to Baseline-LT level
 ----
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoLTExtend]
 ----
 
-The following XML segment will be added to the signature qualified and unsigned properties (for XAdES):
+The following XML segment will be added to the signature qualified unsigned properties (for XAdES):
 
 .Validation data values
 include::{samplesdir}/xades-revocation-data.adoc[]
@@ -87,15 +125,32 @@ NOTE: The use of online sources can significantly increase the execution time of
 
 In the previous code example, the `CommonsDataLoader` is used to provide the communication layer for various protocols (e.g. HTTP, HTTPS, LDAP, LDAPS). Each source that requires to go through the network to retrieve data needs to have this component set.
 
-==== To baseline LTA.
+==== To baseline LTA
 The `AdES-BASELINE-LTA` profile implements the signature class _Signature providing Long Term Availability and Integrity of Validation Material_ (cf. <<SignatureClasses>>). In practice, the augmentation to `BASELINE-LTA` level is made by adding timestamps and optionally additional validation data to protect all the validation data incorporated at `BASELINE-LT` level. For example, this augmentation should happen before one of the certificates arrives to its expiration date or when there is a risk of cryptographic obsolescence of the algorithms and parameters used.
 
 E.g. `XAdES-BASELINE-LTA` level adds the `ArchiveTimeStamp` element within the `UnsignedSignatureProperties` and may contain several `EncapsulatedTimeStamp` elements.
 
-Below is an example of the implementation of this level of signature:
+Similarly to the T-level and LT-level augmentation, both instances of `CertificateVerifier` and `TSPSource` shall be configured:
+
+[[SignXmlXadesLTATest.java]]
+[source,java,indent=0]
+.Prepare a BASELINE-LTA level augmentation
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoLTAExtendPrep]
+----
+
+With a possibility to extend the signature using the `SignedDocumentExtender`:
 
 [source,java,indent=0]
-.Signature level setting
+.Augment to Baseline-LTA level using SignedDocumentExtender
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoLTAExtendWithExtender]
+----
+
+or by using the `XAdESService` directly, similarly as before:
+
+[source,java,indent=0]
+.Augment a XAdES signature to Baseline-LTA level
 ----
 include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoLTAExtend]
 ----
@@ -110,6 +165,144 @@ The time-stamping process may be repeated every time the protection used becomes
 This concept of `BASELINE-LTA` repetition is illustrated in the following schema.
 
 image::LTA-repetition.jpg[LTA repetition, width="100%", height="100%"]
+
+[[SignedDocumentExtender]]
+=== Signed Document Extender
+
+Since version `6.4` DSS introduces a `SignedDocumentExtender` class allowing a simplified signature augmentation process, without requiring implementers or the end-user to know the original format of a signature to be extended. This allows a bulk signature augmentation, supporting various signature formats at time, reducing the stress from dealing with the implementation details.
+
+On initialization, a `SignedDocumentExtender` will identify the format of the original document and will load one of the available implementations. The list of supported implementations is provided below:
+
+* `XAdESDocumentExtender` - extends signature documents of XAdES (XMLDsig) format;
+* `CAdESDocumentExtender` - extends signature documents of CAdES (CMS) format;
+* `PAdESDocumentExtender` - extends signature documents of PAdES (PDF) format;
+* `JAdESDocumentExtender` - extends signature documents of JAdES (JSON/JOSE) format;
+* `CBAdESDocumentExtender` - extends signature documents of CB-AdES (CBOR) format;
+* `ASiCWithXAdESDocumentExtender` - extends signature containers of XAdES format (ASiC-S and ASiC-E);
+* `ASiCWithCAdESDocumentExtender` - extends signature containers of CAdES format (ASiC-S and ASiC-E).
+
+An example of the `SignedDocumentExtender` instantiation is provided below:
+
+[source,java,indent=0]
+.SignedDocumentExtender instantiation
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoDocExtenderInit]
+----
+
+The loading of a suitable implementation is done with a help of the <<ServiceLoaderAdvanced>>, which loops over the available implementations at runtime and loads the first `DocumentExtender` implementation supporting the given signature document.
+
+The following factories are provided within the framework:
+
+* `XAdESDocumentExtenderFactory`: loads `XAdESDocumentExtender`, used for a XAdES signature augmentation (delivered in `dss-xades` module);
+* `CAdESDocumentExtenderFactory`: loads `CAdESDocumentExtender`, used for a CAdES signature augmentation (delivered in `dss-cades` module);
+* `PAdESDocumentExtenderFactory`: loads `PAdESDocumentExtender`, used for a PAdES signature augmentation (delivered in `dss-pades` module);
+* `JAdESDocumentExtenderFactory`: loads `JAdESDocumentExtender`, used for a JAdES signature augmentation (delivered in `dss-jades` module);
+* `CBAdESDocumentExtenderFactory`: loads `CBAdESDocumentExtender`, used for a CB-AdES signature augmentation (delivered in `dss-cb-ades` module);
+* `ASiCWithXAdESDocumentExtenderFactory` - loads `ASiCWithXAdESDocumentExtender`, used for an ASiC with XAdES signature container augmentation (delivered in `dss-asic-xades` module);
+* `ASiCWithCAdESDocumentExtenderFactory` - loads `ASiCWithCAdESDocumentExtender`, used for an ASiC with CAdES signature container augmentation (delivered in `dss-asic-cades` module).
+
+NOTE: The corresponding module shall be added within the dependencies list of the project, to make the related implementation discoverable at runtime. For more information on the advanced configuration, please see the <<ServiceLoaderAdvanced>>.
+
+The configuration is done by specifying an instance of the `CertificateVerifier` and a `TSPSource` to be used for validation data and timestamp retrieval, respectively:
+
+[source,java,indent=0]
+.SignedDocumentExtender configuration
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoDocExtenderInit]
+----
+
+Alternatively, a `SignedDocumentExtender` may also be configured using specific signature service or services, whether a specific configuration is required for augmenting a signature of a particular format. A service, when specified, will always be used on the signature augmentation of the matching format. If no matching service is found across the definition, a new "empty" instance of the relevant service will be created.
+
+WARNING: The order of services definition is important, as the first service matching the signature type will be loaded, when available.
+
+For instance, see below an example of a document augmentation using a `PAdESService` with a custom configuration, to be applicable on any `PAdES` signature augmentation:
+
+[source,java,indent=0]
+.Custom service definition within SignedDocumentExtender
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoDocExtenderServ]
+----
+
+When the configuration is ready, it is possible to extend the signature by simply specifying the target signature profile, as illustrated below:
+
+[source,java,indent=0]
+.Extend signature document using SignedDocumentExtender
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoDocExtenderExtend]
+----
+
+If the original document has been created in a detached packaging format, the original documents can be provided within the same method:
+
+[source,java,indent=0]
+.Extend detached signature document using SignedDocumentExtender
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoDocExtenderExtendDet]
+----
+
+Optionally, it is also possible to enforce custom signature constraints for particular signature formats, by providing signature parameters of the corresponding type. For instance, see below an example of a PAdES augmentation with a custom timestamp filter:
+
+[source,java,indent=0]
+.Extend signature document using SignedDocumentExtender with custom parameters
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoDocExtenderExtendParams]
+----
+
+As many as needed signature parameters may be provided:
+
+[source,java,indent=0]
+.Extend signature document using SignedDocumentExtender with custom parameters
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=demoDocExtenderExtendManyParams]
+----
+
+The `SignedDocumentExtender` will apply on augmentation only those parameters that match the type of the signature document. Other parameters will be ignored. If no signature parameters of suitable type are provided, the implementation will load the "empty" parameters internally.
+
+WARNING: The order of signature parameters definition is important, as the first service matching the signature type will be loaded, when available.
+
+[[ValDataEncapsulationStrategy]]
+=== Validation data encapsulation
+
+DSS allows configuration of the algorithm and used signature properties for validation data encapsulation at LT- and LTA- levels augmentation for certain signature standards.
+
+==== Validation data for CAdES
+
+Validation data for CAdES signatures is being encapsulated within `SignedData.certificates` and `SignedData.crls` fields, as defined by ETSI EN 319 122-1 (cf. <<R02>>).
+
+[[ValDataXAdES]]
+==== Validation data for XAdES
+
+Since version `6.2` DSS provides a parameter allowing configuration of the unsigned signature property elements, to be used for validation data (certificate and revocation values) encapsulation, when required.
+
+The behavior can be configured with a `ValidationDataEncapsulationStrategy` enumeration provided as a parameter within `XAdESSignatureParameters` to be used on `XAdES-BASELINE-LT` or `XAdES-BASELINE-LTA` signature creation or augmentation, as defined below:
+
+[source,java,indent=0]
+.Validation data encapsulation strategy setting
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/ExtendXAdESTest.java[tags=valDataStrategy]
+----
+
+NOTE: The configuration of the validation data encapsulation behavior is applicable only for `XAdES-BASELINE-*` profiles according to ETSI EN 319 132-1 (cf. <<R01>>). The parameter configuration is ignored for extended ETSI EN 319 132-2 and legacy XAdES profiles.
+
+==== Validation data for JAdES
+
+Since version `6.2` DSS provides a parameter allowing configuration of the `etsiU` unsigned header entries, similarly to the <<ValDataXAdES>>. The `ValidationDataEncapsulationStrategy` constraint within `JAdESSignatureParameters` provides a choice between the `xVals`, `rVals`, `tstVd` and `anyValData` dictionaries, respectively for JAdES.
+
+==== Validation data for PAdES
+
+Validation data for PAdES signatures is embedded within `/DSS` dictionary, as defined by ETSI EN 319 142-1 (cf. <<R03>>).
+Optionally, DSS allows inclusion of the `/VRI` dictionary (cf. <<R03>>), as defined below:
+
+[source,java,indent=0]
+.PAdES /VRI dictionary addition
+----
+include::{sourcetestdir}/eu/europa/esig/dss/cookbook/example/sign/SignPdfPadesBTest.java[tags=padesVri]
+----
+
+NOTE: The `/VRI` dictionary should not be used for `PAdES-BASELINE-*` signatures, as defined by ETSI EN 319 142-1 (cf. <<R03>>).
+
+==== Validation data for CB-AdES
+
+For CB-AdES signatures there is no configuration of the validation data incorporation placement, all validation data is added within a `valData` entry of the `uHeaders` unsigned header parameter.
 
 === Creating a baseline T signature
 
@@ -145,6 +338,16 @@ The `AdES-BASELINE-T` trusted time indications should be created before the sign
 
 After the revocation data update, satisfying the revocation freshness constraint, the `BASELINE-LT` level can be incorporated to the signature, providing the information about validity of the used certificate chains. In order to prove the existence of the revocation data, the `BASELINE-LTA` level should be added after. The `BASELINE-LTA` level will prove the existence of the incorporated revocation data, so it can be trusted by the validators even after its expiration, as well as the timestamp will provide a POE for cryptographic constraints and all the previous certificate chains, including the ones used for timestamp creation.
 
+NOTE: In order to simplify the signature augmentation process, the information about the "best extension period" can be extracted on a signature validation from a <<SimpleReport>>, with a help of the <<MinAndMaxAugmentationDates>>.
+
 As each timestamp has its own validity range, it is important to preserve timestamp validity with another following `BASELINE-LTA` level, before expiration of the timestamp's certificate.
 
 NOTE: It can be beneficial to use timestamps from different TSAs approach in order to avoid signature validity expiration in case one of the timestamps becomes unexpectedly invalid by one or another reason (e.g. revocation of a timestamp's certificate).
+
+=== Signature preservation with Evidence Records
+
+As an alternative to signature and archive timestamps, document and/or signature preservation can also be done with a use of evidence records, providing a cost-efficient option to ensure a long-term validity of electronic signatures.
+
+DSS offers a possibility for addition of existing evidence records (either of RFC 6283 <<R23>> or RFC 4998 <<R24>> format) within a signature or an ASiC container. For more detail about the implementation, please see the <<evidenceRecordsAddition>> chapter in the Annex.
+
+NOTE: Creation of evidence records is out of scope of DSS and a third-party application should be used, whether a creation of evidence records is required.

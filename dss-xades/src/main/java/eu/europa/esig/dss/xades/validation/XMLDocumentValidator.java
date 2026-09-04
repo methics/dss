@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -45,13 +45,24 @@ public class XMLDocumentValidator extends SignedDocumentValidator {
 
     /**
      * The default constructor for XMLDocumentValidator. The created instance is
-     * initialised with default {@code XAdESPaths} .
+     * initialised with default {@code XAdESPaths}, allowing support of XAdES v1.1.1, v1.2.2 and v1.3.2.
      *
      * @param dssDocument
      *                    The instance of {@code DSSDocument} to validate
      */
     public XMLDocumentValidator(final DSSDocument dssDocument) {
         super(new XMLDocumentAnalyzer(dssDocument));
+    }
+
+    /**
+     * Constructor for XMLDocumentValidator allowing to provide a custom list of XAdES Path holders.
+     * Can be used to enforce signature validation of a certain XAdES version(s) only.
+     *
+     * @param dssDocument
+     *                    The instance of {@code DSSDocument} to validate
+     */
+    public XMLDocumentValidator(final DSSDocument dssDocument, final List<XAdESPath> xadesPathHolders) {
+        super(new XMLDocumentAnalyzer(dssDocument, xadesPathHolders));
     }
 
     @Override
@@ -75,7 +86,9 @@ public class XMLDocumentValidator extends SignedDocumentValidator {
      * This getter returns the {@code XAdESPaths}
      *
      * @return a list of {@link XAdESPath}
+     * @deprecated since DSS 6.5. To be removed.
      */
+    @Deprecated
     public List<XAdESPath> getXAdESPathsHolder() {
         return getDocumentAnalyzer().getXAdESPathsHolder();
     }
@@ -85,14 +98,21 @@ public class XMLDocumentValidator extends SignedDocumentValidator {
      * particular schema.
      *
      * @param xadesPathsHolder {@link XAdESPath}
+     * @deprecated since DSS 6.5. Please provide a final version of XAdES Paths using constructor
+     *             {@code new XMLDocumentValidator(DSSDocument dssDocument, List<XAdESPath> xadesPathHolders)}
      */
+    @Deprecated
     public void addXAdESPathsHolder(final XAdESPath xadesPathsHolder) {
         getDocumentAnalyzer().addXAdESPathsHolder(xadesPathsHolder);
     }
 
     /**
      * Removes all elements from the list of query holders. The list will be empty after this call returns.
+     *
+     * @deprecated since DSS 6.5. Please provide a final version of XAdES Paths using constructor
+     *             {@code new XMLDocumentValidator(DSSDocument dssDocument, List<XAdESPath> xadesPathHolders)}
      */
+    @Deprecated
     public void clearQueryHolders() {
         getDocumentAnalyzer().clearQueryHolders();
     }

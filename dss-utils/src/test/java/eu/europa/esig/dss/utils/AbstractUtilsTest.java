@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -334,6 +334,13 @@ public abstract class AbstractUtilsTest {
 		byte[] array = new byte[] { 1, 2, 3, 4, 5 };
 		assertArrayEquals(array, Utils.subarray(array, 0, array.length));
 		assertArrayEquals(new byte[] { 1, 2, 3 }, Utils.subarray(array, 0, 3));
+		assertArrayEquals(new byte[] { 1, 2, 3, 4, 5 }, Utils.subarray(array, 0, 5));
+		assertArrayEquals(new byte[] { 1, 2, 3, 4, 5 }, Utils.subarray(array, 0, 10));
+		assertArrayEquals(new byte[] { 2, 3 }, Utils.subarray(array, 1, 3));
+		assertArrayEquals(new byte[] { 2, 3, 4 }, Utils.subarray(array, 1, 4));
+		assertArrayEquals(new byte[] { 2, 3, 4, 5 }, Utils.subarray(array, 1, 5));
+		assertArrayEquals(new byte[] {}, Utils.subarray(array, 5, 5));
+		assertArrayEquals(new byte[] {}, Utils.subarray(array, 5, 10));
 		assertArrayEquals(new byte[] {}, Utils.subarray(array, 0, 0));
 		assertArrayEquals(null, Utils.subarray(null, 0, 0));
 	}
@@ -768,7 +775,7 @@ public abstract class AbstractUtilsTest {
 	}
 
 	@Test
-	void clearDirectoryNotFound() throws FileNotFoundException {
+	void clearDirectoryNotFound() {
 		assertThrows(FileNotFoundException.class, () -> Utils.cleanDirectory(new File("wrong")));
 	}
 

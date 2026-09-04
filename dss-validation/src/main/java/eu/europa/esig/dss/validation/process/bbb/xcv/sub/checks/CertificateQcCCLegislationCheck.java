@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -26,12 +26,13 @@ import eu.europa.esig.dss.enumerations.Indication;
 import eu.europa.esig.dss.enumerations.SubIndication;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
-import eu.europa.esig.dss.policy.jaxb.MultiValuesConstraint;
+import eu.europa.esig.dss.model.policy.MultiValuesRule;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.validation.process.bbb.AbstractMultiValuesCheckItem;
 
 /**
- * Checks if the country code or set of country codes defined in QcCCLegislation is supported by the policy
+ * Checks if the country code or set of country codes defined in QcCClegislation is supported by the policy
+ *
  */
 public class CertificateQcCCLegislationCheck extends AbstractMultiValuesCheckItem<XmlSubXCV> {
 
@@ -39,7 +40,7 @@ public class CertificateQcCCLegislationCheck extends AbstractMultiValuesCheckIte
     private final CertificateWrapper certificate;
 
     /** The constraint */
-    private final MultiValuesConstraint constraint;
+    private final MultiValuesRule constraint;
 
     /**
      * Default constructor
@@ -47,10 +48,10 @@ public class CertificateQcCCLegislationCheck extends AbstractMultiValuesCheckIte
      * @param i18nProvider {@link I18nProvider}
      * @param result the result
      * @param certificate {@link CertificateWrapper}
-     * @param constraint {@link MultiValuesConstraint}
+     * @param constraint {@link MultiValuesRule}
      */
     public CertificateQcCCLegislationCheck(I18nProvider i18nProvider, XmlSubXCV result, CertificateWrapper certificate,
-                                     MultiValuesConstraint constraint) {
+                                     MultiValuesRule constraint) {
         super(i18nProvider, result, constraint);
         this.certificate = certificate;
         this.constraint = constraint;
@@ -68,8 +69,8 @@ public class CertificateQcCCLegislationCheck extends AbstractMultiValuesCheckIte
 
     @Override
     protected MessageTag getErrorMessageTag() {
-        if (Utils.isCollectionEmpty(constraint.getId())) {
-            /**
+        if (Utils.isCollectionEmpty(constraint.getValues())) {
+            /*
              * See EN 319 412-5 ch. 4.2.1
              *
              * A certificate that includes the esi4-qcStatement-1 statement with the aim to declare that it is

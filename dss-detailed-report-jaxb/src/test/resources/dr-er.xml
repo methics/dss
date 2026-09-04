@@ -34,13 +34,27 @@
                 <Time>2023-07-03T13:18:43Z</Time>
                 <TimestampId>TIMESTAMP_good-tsa_20230703-1318</TimestampId>
             </ProofOfExistence>
-            <CryptographicValidation secure="true">
-                <Algorithm>
-                    <Name>SHA256</Name>
-                    <Uri>http://www.w3.org/2001/04/xmlenc#sha256</Uri>
-                </Algorithm>
-                <ConcernedMaterial>EVIDENCE-RECORD_er-tst-renewal.xml</ConcernedMaterial>
-            </CryptographicValidation>
+            <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2024-09-10T07:29:48Z">
+                <Constraint>
+                    <Name Key="ARCCM">Are cryptographic constraints met for the revocation data's signature?</Name>
+                    <Status>OK</Status>
+                    <AdditionalInfo>Digest algorithm SHA512 at validation time : 2023-07-03 13:18 for evidence record archive data object</AdditionalInfo>
+                </Constraint>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+                <SignatureCryptographicValidation>
+                    <Algorithm>
+                        <Name>SHA256</Name>
+                        <Uri>http://www.w3.org/2001/04/xmlenc#sha256</Uri>
+                    </Algorithm>
+                    <NotAfter>2025-12-31T23:00:00</NotAfter>
+                    <ConcernedMaterialDescription>EVIDENCE-RECORD_er-tst-renewal.xml</ConcernedMaterialDescription>
+                    <Conclusion>
+                        <Indication>PASSED</Indication>
+                    </Conclusion>
+                </SignatureCryptographicValidation>
+            </AOV>
         </ValidationProcessEvidenceRecord>
         <Timestamp Id="TIMESTAMP_good-tsa_20230703-1320">
             <ValidationProcessBasicTimestamp Type="EVIDENCE_RECORD_TIMESTAMP" ProductionTime="2023-07-03T13:20:00Z" Title="Validation Process for Basic Time-stamps">
@@ -221,17 +235,29 @@
             <Conclusion>
                 <Indication>PASSED</Indication>
             </Conclusion>
-            <CryptographicValidation secure="true">
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2023-09-19T09:36:09Z">
+            <Constraint>
+                <Name Key="ARCCM">Are cryptographic constraints met for the revocation data's signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Signature algorithm RSA with SHA512 with key size 2048 at validation time : 2023-09-19 09:36</AdditionalInfo>
+            </Constraint>
+            <Conclusion>
+                <Indication>PASSED</Indication>
+            </Conclusion>
+            <SignatureCryptographicValidation>
                 <Algorithm>
                     <Name>RSA with SHA512</Name>
                     <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha512</Uri>
                     <KeyLength>2048</KeyLength>
                 </Algorithm>
-                <NotAfter>2025-12-31T23:00:00Z</NotAfter>
-                <ValidationTime>2023-09-19T09:36:09Z</ValidationTime>
-                <ConcernedMaterial>CRL_root-ca_20230919-0936</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <NotAfter>2025-12-31T23:00:00</NotAfter>
+                <ConcernedMaterialDescription>CRL_root-ca_20230919-0936</ConcernedMaterialDescription>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="CERTIFICATE_root-ca_20220113-1603">
                 <Source>TRUSTED_STORE</Source>
@@ -444,29 +470,40 @@
                 <Status>OK</Status>
             </Constraint>
             <Constraint>
-                <Name Key="ACCM">Are cryptographic constraints met for the time-stamp signature?</Name>
+                <Name Key="ACCM">Are cryptographic constraints met for the time-stamp?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Signature algorithm RSA with SHA256 with key size 2048 at validation time : 2023-09-19 09:36</AdditionalInfo>
+            </Constraint>
+            <Conclusion>
+                <Indication>PASSED</Indication>
+            </Conclusion>
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2023-09-19T09:36:09Z">
+            <Constraint>
+                <Name Key="ARCCM">Are cryptographic constraints met for the revocation data's signature?</Name>
                 <Status>OK</Status>
                 <AdditionalInfo>Signature algorithm RSA with SHA256 with key size 2048 at validation time : 2023-09-19 09:36</AdditionalInfo>
             </Constraint>
             <Constraint>
-                <Name Key="ACCM">Are cryptographic constraints met for the time-stamp message imprint?</Name>
+                <Name Key="ARCCM">Are cryptographic constraints met for the revocation data's signature?</Name>
                 <Status>OK</Status>
                 <AdditionalInfo>Digest algorithm SHA512 at validation time : 2023-09-19 09:36 for time-stamp message imprint</AdditionalInfo>
             </Constraint>
             <Conclusion>
                 <Indication>PASSED</Indication>
             </Conclusion>
-            <CryptographicValidation secure="true">
+            <SignatureCryptographicValidation TokenId="TIMESTAMP_good-tsa_20230703-1318">
                 <Algorithm>
-                    <Name>RSA with SHA256</Name>
-                    <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</Uri>
+                    <Name>RSA with SHA512</Name>
+                    <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha512</Uri>
                     <KeyLength>2048</KeyLength>
                 </Algorithm>
-                <NotAfter>2025-12-31T23:00:00Z</NotAfter>
-                <ValidationTime>2023-09-19T09:36:09Z</ValidationTime>
-                <ConcernedMaterial>TIMESTAMP_good-tsa_20230703-1318</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <NotAfter>2025-12-31T23:00:00</NotAfter>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="CERTIFICATE_good-tsa_20220213-1603">
                 <Source>TIMESTAMP</Source>
@@ -709,17 +746,38 @@
             <Conclusion>
                 <Indication>PASSED</Indication>
             </Conclusion>
-            <CryptographicValidation secure="true">
+        </SAV>
+        <AOV Title="Algorithm Obsolescence Validation" ValidationTime="2023-09-19T09:36:09Z">
+            <Constraint>
+                <Name Key="ARCCM">Are cryptographic constraints met for the revocation data's signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Signature algorithm RSA with SHA256 with key size 2048 at validation time : 2023-09-19 09:36</AdditionalInfo>
+            </Constraint>
+            <Constraint>
+                <Name Key="ARCCM">Are cryptographic constraints met for the revocation data's signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Digest algorithm SHA512 at validation time : 2023-09-19 09:36 for time-stamp message imprint</AdditionalInfo>
+            </Constraint>
+            <Constraint>
+                <Name Key="ARCCM">Are cryptographic constraints met for the revocation data's signature?</Name>
+                <Status>OK</Status>
+                <AdditionalInfo>Digest algorithm SHA512 at validation time : 2023-09-19 09:36 for evidence record archive time-stamp digest</AdditionalInfo>
+            </Constraint>
+            <Conclusion>
+                <Indication>PASSED</Indication>
+            </Conclusion>
+            <SignatureCryptographicValidation TokenId="TIMESTAMP_good-tsa_20230703-1320">
                 <Algorithm>
-                    <Name>RSA with SHA256</Name>
-                    <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</Uri>
+                    <Name>RSA with SHA512</Name>
+                    <Uri>http://www.w3.org/2001/04/xmldsig-more#rsa-sha512</Uri>
                     <KeyLength>2048</KeyLength>
                 </Algorithm>
-                <NotAfter>2025-12-31T23:00:00Z</NotAfter>
-                <ValidationTime>2023-09-19T09:36:09Z</ValidationTime>
-                <ConcernedMaterial>TIMESTAMP_good-tsa_20230703-1320</ConcernedMaterial>
-            </CryptographicValidation>
-        </SAV>
+                <NotAfter>2025-12-31T23:00:00</NotAfter>
+                <Conclusion>
+                    <Indication>PASSED</Indication>
+                </Conclusion>
+            </SignatureCryptographicValidation>
+        </AOV>
         <CertificateChain>
             <ChainItem Id="CERTIFICATE_good-tsa_20220213-1603">
                 <Source>TIMESTAMP</Source>

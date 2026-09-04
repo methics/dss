@@ -44,6 +44,12 @@
 				parseMethod="eu.europa.esig.dss.jaxb.parsers.TimestampQualificationParser.parse" 
 				printMethod="eu.europa.esig.dss.jaxb.parsers.TimestampQualificationParser.print" />
 		</jaxb:bindings>
+
+		<jaxb:bindings node="//xs:simpleType[@name='AttestationQualification']">
+			<jaxb:javaType name="eu.europa.esig.dss.enumerations.AttestationQualification"
+						   parseMethod="eu.europa.esig.dss.jaxb.parsers.AttestationQualificationParser.parse"
+						   printMethod="eu.europa.esig.dss.jaxb.parsers.AttestationQualificationParser.print" />
+		</jaxb:bindings>
 		
 		<jaxb:bindings node="//xs:simpleType[@name='Context']">
 			<jaxb:javaType name="eu.europa.esig.dss.enumerations.Context" 
@@ -68,8 +74,32 @@
 				parseMethod="eu.europa.esig.dss.jaxb.parsers.RevocationReasonParser.parseShortName" 
 				printMethod="eu.europa.esig.dss.jaxb.parsers.RevocationReasonParser.printShortName" />
 		</jaxb:bindings>
-		
-		
+
+		<jaxb:bindings node="//xs:simpleType[@name='QWACProfile']">
+			<jaxb:javaType name="eu.europa.esig.dss.enumerations.QWACProfile"
+						   parseMethod="eu.europa.esig.dss.jaxb.parsers.QWACProfileParser.parse"
+						   printMethod="eu.europa.esig.dss.jaxb.parsers.QWACProfileParser.print" />
+		</jaxb:bindings>
+
+		<jaxb:bindings node="//xs:complexType[@name='CertificateApprovalStatus']//xs:element[@name='ListType']">
+			<jaxb:javaType name="eu.europa.esig.dss.enumerations.ListType"
+						   parseMethod="eu.europa.esig.dss.jaxb.parsers.ListTypeParser.parse"
+						   printMethod="eu.europa.esig.dss.jaxb.parsers.ListTypeParser.print" />
+		</jaxb:bindings>
+
+		<jaxb:bindings node="//xs:complexType[@name='CertificateApprovalStatus']//xs:element[@name='ServiceTypeIdentifier']">
+			<jaxb:javaType name="eu.europa.esig.dss.enumerations.LoTEServiceTypeIdentifier"
+						   parseMethod="eu.europa.esig.dss.jaxb.parsers.LoTEServiceTypeIdentifierParser.parse"
+						   printMethod="eu.europa.esig.dss.jaxb.parsers.LoTEServiceTypeIdentifierParser.print" />
+		</jaxb:bindings>
+
+		<jaxb:bindings node="//xs:complexType[@name='CertificateApprovalStatus']//xs:element[@name='ServiceStatus']">
+			<jaxb:javaType name="eu.europa.esig.dss.enumerations.LoTEServiceStatus"
+						   parseMethod="eu.europa.esig.dss.jaxb.parsers.LoTEServiceStatusParser.parse"
+						   printMethod="eu.europa.esig.dss.jaxb.parsers.LoTEServiceStatusParser.print" />
+		</jaxb:bindings>
+
+
 		<jaxb:bindings node="//xs:complexType[@name='Signature']//xs:element[@name='Timestamp']">
 			<jaxb:property name="Timestamps" />
 		</jaxb:bindings>

@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,6 +21,7 @@
 package eu.europa.esig.dss.validation.executor;
 
 import eu.europa.esig.dss.detailedreport.DetailedReport;
+import eu.europa.esig.dss.detailedreport.jaxb.XmlAOV;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlBasicBuildingBlocks;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlCV;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlConclusion;
@@ -39,19 +40,21 @@ import eu.europa.esig.dss.diagnostic.jaxb.XmlDigestMatcher;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.DigestMatcherType;
 import eu.europa.esig.dss.enumerations.Indication;
+import eu.europa.esig.dss.enumerations.Level;
 import eu.europa.esig.dss.enumerations.SubIndication;
 import eu.europa.esig.dss.i18n.I18nProvider;
 import eu.europa.esig.dss.i18n.MessageTag;
-import eu.europa.esig.dss.policy.ValidationPolicy;
+import eu.europa.esig.dss.policy.CryptographicConstraintWrapper;
+import eu.europa.esig.dss.policy.EtsiValidationPolicy;
 import eu.europa.esig.dss.policy.jaxb.Algo;
 import eu.europa.esig.dss.policy.jaxb.AlgoExpirationDate;
 import eu.europa.esig.dss.policy.jaxb.CryptographicConstraint;
-import eu.europa.esig.dss.policy.jaxb.Level;
 import eu.europa.esig.dss.policy.jaxb.LevelConstraint;
 import eu.europa.esig.dss.simplereport.SimpleReport;
 import eu.europa.esig.dss.simplereport.jaxb.XmlTimestamp;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.validation.executor.signature.DefaultSignatureProcessExecutor;
+import eu.europa.esig.dss.validation.process.ValidationProcessUtils;
 import eu.europa.esig.dss.validation.reports.Reports;
 import eu.europa.esig.validationreport.enums.ObjectType;
 import eu.europa.esig.validationreport.enums.TypeOfProof;
@@ -70,6 +73,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -721,12 +725,13 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
 
         eu.europa.esig.dss.diagnostic.jaxb.XmlEvidenceRecord evidenceRecord = diagnosticData.getEvidenceRecords().get(0);
 
-        ValidationPolicy validationPolicy = loadDefaultPolicy();
-        CryptographicConstraint cryptographicConstraint = validationPolicy.getEvidenceRecordCryptographicConstraint();
-        AlgoExpirationDate algoExpirationDate = cryptographicConstraint.getAlgoExpirationDate();
+        EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
+        CryptographicConstraintWrapper cryptographicConstraint = (CryptographicConstraintWrapper) validationPolicy.getEvidenceRecordCryptographicConstraint();
+        CryptographicConstraint constraint = (CryptographicConstraint) cryptographicConstraint.getConstraint();
+        AlgoExpirationDate algoExpirationDate = constraint.getAlgoExpirationDate();
         for (Algo algo : algoExpirationDate.getAlgos()) {
             if (DigestAlgorithm.SHA224.getName().equals(algo.getValue())) {
-                algo.setDate("2022");
+                algo.setDate("2022-01-01");
             }
         }
 
@@ -767,18 +772,20 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
         assertNotNull(validationProcessEvidenceRecord);
         assertEquals(i18nProvider.getMessage(MessageTag.VPER), validationProcessEvidenceRecord.getTitle());
 
-        XmlCryptographicValidation cryptographicValidation = validationProcessEvidenceRecord.getCryptographicValidation();
-        assertNotNull(cryptographicValidation);
-        assertTrue(cryptographicValidation.isSecure());
+        XmlAOV xmlAOV = validationProcessEvidenceRecord.getAOV();
+        assertNotNull(xmlAOV);
+        assertEquals(Indication.PASSED, xmlAOV.getConclusion().getIndication());
 
-        XmlCryptographicAlgorithm algorithm = cryptographicValidation.getAlgorithm();
+        XmlCryptographicValidation digestMatchersValidation = xmlAOV.getDigestMatchersValidation();
+        assertNotNull(digestMatchersValidation);
+        assertEquals(Indication.PASSED, digestMatchersValidation.getConclusion().getIndication());
+
+        XmlCryptographicAlgorithm algorithm = digestMatchersValidation.getAlgorithm();
         assertNotNull(algorithm);
         assertEquals(DigestAlgorithm.SHA224.getName(), algorithm.getName());
         assertEquals(DigestAlgorithm.SHA224.getUri(), algorithm.getUri());
 
-        assertTrue(cryptographicValidation.getValidationTime().before(cryptographicValidation.getNotAfter()));
-
-        assertEquals(xmlEvidenceRecord.getId(), cryptographicValidation.getConcernedMaterial());
+        assertEquals(xmlEvidenceRecord.getId(), digestMatchersValidation.getTokenId());
 
         conclusion = validationProcessEvidenceRecord.getConclusion();
         assertNotNull(conclusion);
@@ -927,7 +934,7 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
                 assertEquals(1, cryptoInformation.getValidationObjectId().getVOReference().size());
                 assertEquals(DigestAlgorithm.SHA224, DigestAlgorithm.forXML(cryptoInformation.getAlgorithm()));
                 assertTrue(cryptoInformation.isSecureAlgorithm());
-                assertEquals(cryptographicValidation.getNotAfter(), cryptoInformation.getNotAfter());
+                assertEquals(digestMatchersValidation.getNotAfter(), cryptoInformation.getNotAfter());
 
                 ++evidenceRecordReportCounter;
             } else if (ObjectType.TIMESTAMP == objectType) {
@@ -970,12 +977,15 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
 
         eu.europa.esig.dss.diagnostic.jaxb.XmlEvidenceRecord evidenceRecord = diagnosticData.getEvidenceRecords().get(0);
 
-        ValidationPolicy validationPolicy = loadDefaultPolicy();
-        CryptographicConstraint cryptographicConstraint = validationPolicy.getEvidenceRecordCryptographicConstraint();
-        AlgoExpirationDate algoExpirationDate = cryptographicConstraint.getAlgoExpirationDate();
+        Date tstProductionDate = diagnosticData.getUsedTimestamps().get(0).getProductionTime();
+
+        EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
+        CryptographicConstraintWrapper cryptographicConstraint = (CryptographicConstraintWrapper) validationPolicy.getEvidenceRecordCryptographicConstraint();
+        CryptographicConstraint constraint = (CryptographicConstraint) cryptographicConstraint.getConstraint();
+        AlgoExpirationDate algoExpirationDate = constraint.getAlgoExpirationDate();
         for (Algo algo : algoExpirationDate.getAlgos()) {
             if (DigestAlgorithm.SHA224.getName().equals(algo.getValue())) {
-                algo.setDate("2020");
+                algo.setDate("2020-01-01");
             }
         }
 
@@ -1021,18 +1031,22 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
         assertNotNull(validationProcessEvidenceRecord);
         assertEquals(i18nProvider.getMessage(MessageTag.VPER), validationProcessEvidenceRecord.getTitle());
 
-        XmlCryptographicValidation cryptographicValidation = validationProcessEvidenceRecord.getCryptographicValidation();
-        assertNotNull(cryptographicValidation);
-        assertFalse(cryptographicValidation.isSecure());
+        XmlAOV xmlAOV = validationProcessEvidenceRecord.getAOV();
+        assertNotNull(xmlAOV);
+        assertEquals(Indication.INDETERMINATE, xmlAOV.getConclusion().getIndication());
+        assertEquals(SubIndication.CRYPTO_CONSTRAINTS_FAILURE_NO_POE, xmlAOV.getConclusion().getSubIndication());
 
-        XmlCryptographicAlgorithm algorithm = cryptographicValidation.getAlgorithm();
+        XmlCryptographicValidation digestMatchersValidation = xmlAOV.getDigestMatchersValidation();
+        assertNotNull(digestMatchersValidation);
+        assertEquals(Indication.INDETERMINATE, digestMatchersValidation.getConclusion().getIndication());
+        assertEquals(SubIndication.CRYPTO_CONSTRAINTS_FAILURE_NO_POE, digestMatchersValidation.getConclusion().getSubIndication());
+
+        XmlCryptographicAlgorithm algorithm = digestMatchersValidation.getAlgorithm();
         assertNotNull(algorithm);
         assertEquals(DigestAlgorithm.SHA224.getName(), algorithm.getName());
         assertEquals(DigestAlgorithm.SHA224.getUri(), algorithm.getUri());
 
-        assertTrue(cryptographicValidation.getValidationTime().after(cryptographicValidation.getNotAfter()));
-
-        assertEquals(xmlEvidenceRecord.getId(), cryptographicValidation.getConcernedMaterial());
+        assertEquals(xmlEvidenceRecord.getId(), digestMatchersValidation.getTokenId());
 
         conclusion = validationProcessEvidenceRecord.getConclusion();
         assertNotNull(conclusion);
@@ -1047,7 +1061,7 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
         int dataObjectFoundCheckCounter = 0;
         int dataObjectIntactCheckCounter = 0;
         int tstCheckCounter = 0;
-        int dataObjectCryptoCheckCounter = 0;
+        int cryptoCheckCounter = 0;
         for (XmlConstraint xmlConstraint : validationProcessEvidenceRecord.getConstraint()) {
             if (MessageTag.BBB_CV_IRDOF.getId().equals(xmlConstraint.getName().getKey())) {
                 assertEquals(XmlStatus.OK, xmlConstraint.getStatus());
@@ -1060,14 +1074,28 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
                 ++tstCheckCounter;
             } else if (MessageTag.ACCM.getId().equals(xmlConstraint.getName().getKey())) {
                 assertEquals(XmlStatus.NOT_OK, xmlConstraint.getStatus());
-                assertEquals(MessageTag.ASCCM_AR_ANS_ANR.getId(), xmlConstraint.getError().getKey());
-                ++dataObjectCryptoCheckCounter;
+                assertEquals(MessageTag.ACCM_ANS.getId(), xmlConstraint.getError().getKey());
+                assertEquals(i18nProvider.getMessage(MessageTag.ACCM_ANS, MessageTag.ACCM_POS_EV_RECORD),
+                        xmlConstraint.getError().getValue());
+                assertEquals(i18nProvider.getMessage(MessageTag.CRYPTOGRAPHIC_CHECK_FAILURE, i18nProvider.getMessage(MessageTag.ASCCM_AR_ANS_ANR, DigestAlgorithm.SHA224, MessageTag.ACCM_POS_ER_ADO),
+                        ValidationProcessUtils.getFormattedDate(tstProductionDate)), xmlConstraint.getAdditionalInfo());
+                ++cryptoCheckCounter;
             }
         }
         assertEquals(3, dataObjectFoundCheckCounter);
         assertEquals(3, dataObjectIntactCheckCounter);
         assertEquals(2, tstCheckCounter);
-        assertEquals(1, dataObjectCryptoCheckCounter); // first check fails
+        assertEquals(1, cryptoCheckCounter);
+
+        int dataObjectCryptoCheckCounter = 0;
+        for (XmlConstraint xmlConstraint : xmlAOV.getConstraint()) {
+            if (MessageTag.ACCM.getId().equals(xmlConstraint.getName().getKey())) {
+                assertEquals(XmlStatus.NOT_OK, xmlConstraint.getStatus());
+                assertEquals(MessageTag.ASCCM_AR_ANS_ANR.getId(), xmlConstraint.getError().getKey());
+                ++dataObjectCryptoCheckCounter;
+            }
+        }
+        assertEquals(1, dataObjectCryptoCheckCounter);
 
         List<eu.europa.esig.dss.detailedreport.jaxb.XmlTimestamp> timestamps = xmlEvidenceRecord.getTimestamps();
         assertEquals(2, timestamps.size());
@@ -1187,7 +1215,7 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
                 assertEquals(1, cryptoInformation.getValidationObjectId().getVOReference().size());
                 assertEquals(DigestAlgorithm.SHA224, DigestAlgorithm.forXML(cryptoInformation.getAlgorithm()));
                 assertFalse(cryptoInformation.isSecureAlgorithm());
-                assertEquals(cryptographicValidation.getNotAfter(), cryptoInformation.getNotAfter());
+                assertEquals(digestMatchersValidation.getNotAfter(), cryptoInformation.getNotAfter());
 
                 ++evidenceRecordReportCounter;
             } else if (ObjectType.TIMESTAMP == objectType) {
@@ -1236,7 +1264,9 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
         evidenceRecord.getDigestMatchers().get(2).setDataFound(false);
         evidenceRecord.getDigestMatchers().get(2).setDataIntact(false);
 
-        ValidationPolicy validationPolicy = loadDefaultPolicy();
+        Date tstProductionDate = diagnosticData.getUsedTimestamps().get(0).getProductionTime();
+
+        EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
         LevelConstraint constraint = new LevelConstraint();
         constraint.setLevel(Level.WARN);
         validationPolicy.getEvidenceRecordConstraints().setDataObjectGroup(constraint);
@@ -1294,7 +1324,7 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
         int atLeastOneDataObjectFoundCounter = 0;
         int dataObjectGroupCheckCounter = 0;
         int tstCheckCounter = 0;
-        int dataObjectCryptoCheckCounter = 0;
+        int cryptoCheckCounter = 0;
         for (XmlConstraint xmlConstraint : validationProcessEvidenceRecord.getConstraint()) {
             if (MessageTag.BBB_CV_IRDOF.getId().equals(xmlConstraint.getName().getKey())) {
                 assertEquals(XmlStatus.OK, xmlConstraint.getStatus());
@@ -1314,7 +1344,9 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
                 ++tstCheckCounter;
             } else if (MessageTag.ACCM.getId().equals(xmlConstraint.getName().getKey())) {
                 assertEquals(XmlStatus.OK, xmlConstraint.getStatus());
-                ++dataObjectCryptoCheckCounter;
+                assertEquals(i18nProvider.getMessage(MessageTag.CRYPTOGRAPHIC_CHECK_SUCCESS, DigestAlgorithm.SHA224,
+                        ValidationProcessUtils.getFormattedDate(tstProductionDate)), xmlConstraint.getAdditionalInfo());
+                ++cryptoCheckCounter;
             }
         }
         assertEquals(1, dataObjectFoundCheckCounter);
@@ -1322,6 +1354,18 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
         assertEquals(1, atLeastOneDataObjectFoundCounter);
         assertEquals(1, dataObjectGroupCheckCounter);
         assertEquals(2, tstCheckCounter);
+        assertEquals(1, cryptoCheckCounter);
+
+        XmlAOV xmlAOV = validationProcessEvidenceRecord.getAOV();
+        assertEquals(Indication.PASSED, xmlAOV.getConclusion().getIndication());
+
+        int dataObjectCryptoCheckCounter = 0;
+        for (XmlConstraint xmlConstraint : xmlAOV.getConstraint()) {
+            if (MessageTag.ACCM.getId().equals(xmlConstraint.getName().getKey())) {
+                assertEquals(XmlStatus.OK, xmlConstraint.getStatus());
+                ++dataObjectCryptoCheckCounter;
+            }
+        }
         assertEquals(2, dataObjectCryptoCheckCounter);
 
         List<eu.europa.esig.dss.detailedreport.jaxb.XmlTimestamp> timestamps = xmlEvidenceRecord.getTimestamps();
@@ -1405,7 +1449,7 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
         evidenceRecord.getDigestMatchers().get(2).setDataFound(false);
         evidenceRecord.getDigestMatchers().get(2).setDataIntact(false);
 
-        ValidationPolicy validationPolicy = loadDefaultPolicy();
+        EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
         LevelConstraint constraint = new LevelConstraint();
         constraint.setLevel(Level.FAIL);
         validationPolicy.getEvidenceRecordConstraints().setDataObjectGroup(constraint);
@@ -1581,7 +1625,7 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
         evidenceRecord.getDigestMatchers().get(2).setDataFound(false);
         evidenceRecord.getDigestMatchers().get(2).setDataIntact(false);
 
-        ValidationPolicy validationPolicy = loadDefaultPolicy();
+        EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
         LevelConstraint constraint = new LevelConstraint();
         constraint.setLevel(Level.FAIL);
         validationPolicy.getEvidenceRecordConstraints().setDataObjectFound(constraint);
@@ -1749,7 +1793,7 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
         List<XmlDigestMatcher> digestMatchers = diagnosticData.getUsedTimestamps().get(1).getDigestMatchers();
         digestMatchers.remove(digestMatchers.get(1));
 
-        ValidationPolicy validationPolicy = loadDefaultPolicy();
+        EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
         LevelConstraint constraint = new LevelConstraint();
         constraint.setLevel(Level.FAIL);
         validationPolicy.getEvidenceRecordConstraints().setHashTreeRenewal(constraint);
@@ -1955,7 +1999,7 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
         List<XmlDigestMatcher> digestMatchers = diagnosticData.getUsedTimestamps().get(1).getDigestMatchers();
         digestMatchers.remove(digestMatchers.get(1));
 
-        ValidationPolicy validationPolicy = loadDefaultPolicy();
+        EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
         LevelConstraint constraint = new LevelConstraint();
         constraint.setLevel(Level.WARN);
         validationPolicy.getEvidenceRecordConstraints().setHashTreeRenewal(constraint);
@@ -2156,7 +2200,7 @@ class EvidenceRecordAloneValidationTest extends AbstractTestValidationExecutor {
         digestMatcher.setDataFound(false);
         digestMatcher.setDataIntact(false);
 
-        ValidationPolicy validationPolicy = loadDefaultPolicy();
+        EtsiValidationPolicy validationPolicy = loadDefaultPolicy();
         LevelConstraint constraint = new LevelConstraint();
         constraint.setLevel(Level.FAIL);
         validationPolicy.getEvidenceRecordConstraints().setHashTreeRenewal(constraint);

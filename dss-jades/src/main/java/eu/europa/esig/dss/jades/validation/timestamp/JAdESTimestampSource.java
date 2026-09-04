@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -52,6 +52,7 @@ import eu.europa.esig.dss.spi.x509.tsp.TimestampToken;
 import eu.europa.esig.dss.spi.x509.tsp.TimestampedReference;
 import eu.europa.esig.dss.spi.validation.timestamp.SignatureTimestampIdentifierBuilder;
 import org.bouncycastle.cert.ocsp.BasicOCSPResp;
+import org.jose4j.jwx.HeaderParameterNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -147,7 +148,12 @@ public class JAdESTimestampSource extends SignatureTimestampSource<JAdESSignatur
 
 	@Override
 	protected boolean isCertificateValues(JAdESAttribute unsignedAttribute) {
-		return JAdESHeaderParameterNames.X_VALS.equals(unsignedAttribute.getHeaderName());
+		return JAdESHeaderParameterNames.X_VALS.equals(unsignedAttribute.getHeaderName()) || isX5CertificateChain(unsignedAttribute);
+
+	}
+
+	private boolean isX5CertificateChain(JAdESAttribute unsignedAttribute) {
+		return HeaderParameterNames.X509_CERTIFICATE_CHAIN.equals(unsignedAttribute.getHeaderName());
 	}
 
 	@Override
@@ -167,6 +173,17 @@ public class JAdESTimestampSource extends SignatureTimestampSource<JAdESSignatur
 	@Override
 	protected boolean isTimeStampValidationData(JAdESAttribute unsignedAttribute) {
 		return JAdESHeaderParameterNames.TST_VD.equals(unsignedAttribute.getHeaderName());
+	}
+
+	@Override
+	protected boolean isAnyValidationData(JAdESAttribute unsignedAttribute) {
+		return JAdESHeaderParameterNames.ANY_VAL_DATA.equals(unsignedAttribute.getHeaderName());
+	}
+
+	@Override
+	protected boolean isValidationDataReferences(JAdESAttribute unsignedAttribute) {
+		// not supported
+		return false;
 	}
 
 	@Override
@@ -264,11 +281,29 @@ public class JAdESTimestampSource extends SignatureTimestampSource<JAdESSignatur
 
 	@Override
 	protected List<Identifier> getEncapsulatedCertificateIdentifiers(JAdESAttribute unsignedAttribute) {
+		if (isX5CertificateChain(unsignedAttribute)) {
+			List<Identifier> certificateIdentifiers = new ArrayList<>();
+			List<?> x5c = DSSJsonUtils.toList(unsignedAttribute.getValue(), HeaderParameterNames.X509_CERTIFICATE_CHAIN);
+			for (Object certificate : x5c) {
+				String certB64 = DSSJsonUtils.toString(certificate);
+				CertificateToken certificateToken = parseCertificateToken(certB64);
+				if (certificateToken != null) {
+					certificateIdentifiers.add(certificateToken.getDSSId());
+				}
+			}
+			return certificateIdentifiers;
+		}
+
 		List<?> xVals = null;
 		if (isTimeStampValidationData(unsignedAttribute)) {
 			Map<?, ?> tstVd = DSSJsonUtils.toMap(unsignedAttribute.getValue(), JAdESHeaderParameterNames.TST_VD);
 			if (Utils.isMapNotEmpty(tstVd)) {
 				xVals = DSSJsonUtils.getAsList(tstVd, JAdESHeaderParameterNames.X_VALS);
+			}
+		} else if (isAnyValidationData(unsignedAttribute)) {
+			Map<?, ?> anyVD = DSSJsonUtils.toMap(unsignedAttribute.getValue(), JAdESHeaderParameterNames.ANY_VAL_DATA);
+			if (Utils.isMapNotEmpty(anyVD)) {
+				xVals = DSSJsonUtils.getAsList(anyVD, JAdESHeaderParameterNames.X_VALS);
 			}
 		} else {
 			xVals = DSSJsonUtils.toList(unsignedAttribute.getValue(), JAdESHeaderParameterNames.X_VALS);
@@ -284,6 +319,7 @@ public class JAdESTimestampSource extends SignatureTimestampSource<JAdESSignatur
 			}
 			return certificateIdentifiers;
 		}
+
 		return Collections.emptyList();
 	}
 
@@ -295,10 +331,7 @@ public class JAdESTimestampSource extends SignatureTimestampSource<JAdESSignatur
 				Map<?, ?> otherCert = DSSJsonUtils.getAsMap(map, JAdESHeaderParameterNames.OTHER_CERT);
 				if (Utils.isMapNotEmpty(x509Cert)) {
 					String base64Cert = DSSJsonUtils.getAsString(x509Cert, JAdESHeaderParameterNames.VAL);
-					if (Utils.isStringNotBlank(base64Cert)) {
-						byte[] binaries = Utils.fromBase64(base64Cert);
-						return DSSUtils.loadCertificate(binaries);
-					}
+					return parseCertificateToken(base64Cert);
 
 				} else if (Utils.isMapNotEmpty(otherCert)) {
 					LOG.warn("The header '{}' is not supported! The entry is skipped.",
@@ -311,13 +344,26 @@ public class JAdESTimestampSource extends SignatureTimestampSource<JAdESSignatur
 		return null;
 	}
 
+	private CertificateToken parseCertificateToken(String base64Cert) {
+		if (Utils.isStringNotBlank(base64Cert)) {
+			byte[] binaries = Utils.fromBase64(base64Cert);
+			return DSSUtils.loadCertificate(binaries);
+		}
+		return null;
+	}
+
 	@Override
 	protected List<CRLBinary> getEncapsulatedCRLIdentifiers(JAdESAttribute unsignedAttribute) {
 		Map<?, ?> rVals = null;
 		if (isTimeStampValidationData(unsignedAttribute)) {
-			Map<?, ?> tstVd = DSSJsonUtils.toMap(unsignedAttribute.getValue(), JAdESHeaderParameterNames.R_VALS);
+			Map<?, ?> tstVd = DSSJsonUtils.toMap(unsignedAttribute.getValue(), JAdESHeaderParameterNames.TST_VD);
 			if (Utils.isMapNotEmpty(tstVd)) {
 				rVals = DSSJsonUtils.getAsMap(tstVd, JAdESHeaderParameterNames.R_VALS);
+			}
+		} else if (isAnyValidationData(unsignedAttribute)) {
+			Map<?, ?> anyVD = DSSJsonUtils.toMap(unsignedAttribute.getValue(), JAdESHeaderParameterNames.ANY_VAL_DATA);
+			if (Utils.isMapNotEmpty(anyVD)) {
+				rVals = DSSJsonUtils.getAsMap(anyVD, JAdESHeaderParameterNames.R_VALS);
 			}
 		} else {
 			rVals = DSSJsonUtils.toMap(unsignedAttribute.getValue(), JAdESHeaderParameterNames.R_VALS);
@@ -361,9 +407,14 @@ public class JAdESTimestampSource extends SignatureTimestampSource<JAdESSignatur
 	protected List<OCSPResponseBinary> getEncapsulatedOCSPIdentifiers(JAdESAttribute unsignedAttribute) {
 		Map<?, ?> rVals = null;
 		if (isTimeStampValidationData(unsignedAttribute)) {
-			Map<?, ?> tstVd = DSSJsonUtils.toMap(unsignedAttribute.getValue(), JAdESHeaderParameterNames.R_VALS);
+			Map<?, ?> tstVd = DSSJsonUtils.toMap(unsignedAttribute.getValue(), JAdESHeaderParameterNames.TST_VD);
 			if (Utils.isMapNotEmpty(tstVd)) {
 				rVals = DSSJsonUtils.getAsMap(tstVd, JAdESHeaderParameterNames.R_VALS);
+			}
+		} else if (isAnyValidationData(unsignedAttribute)) {
+			Map<?, ?> anyVD = DSSJsonUtils.toMap(unsignedAttribute.getValue(), JAdESHeaderParameterNames.ANY_VAL_DATA);
+			if (Utils.isMapNotEmpty(anyVD)) {
+				rVals = DSSJsonUtils.getAsMap(anyVD, JAdESHeaderParameterNames.R_VALS);
 			}
 		} else {
 			rVals = DSSJsonUtils.toMap(unsignedAttribute.getValue(), JAdESHeaderParameterNames.R_VALS);
@@ -419,9 +470,12 @@ public class JAdESTimestampSource extends SignatureTimestampSource<JAdESSignatur
 	protected List<AdvancedSignature> getCounterSignatures(JAdESAttribute unsignedAttribute) {
 		if (unsignedAttribute instanceof EtsiUComponent) {
 			EtsiUComponent etsiUComponent = (EtsiUComponent) unsignedAttribute;
-			JAdESSignature counterSignature = DSSJsonUtils.extractJAdESCounterSignature(etsiUComponent, signature);
-			if (counterSignature != null) {
-				return Collections.singletonList(counterSignature);
+			List<AdvancedSignature> counterSignatures = signature.getCounterSignatures();
+			for (AdvancedSignature counterSignature : counterSignatures) {
+				if (etsiUComponent == ((JAdESSignature) counterSignature).getMasterCSigComponent()) {
+					// NOTE: only one counter signature is allowed within the CounterSignature unprotected header
+					return Collections.singletonList(counterSignature);
+				}
 			}
 		}
 		return Collections.emptyList();

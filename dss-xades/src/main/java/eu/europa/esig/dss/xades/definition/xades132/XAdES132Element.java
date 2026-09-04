@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -133,9 +133,9 @@ public enum XAdES132Element implements XAdESElement {
 	ISSUER_SERIAL("IssuerSerial"),
 
 	ISSUER_SERIAL_V2("IssuerSerialV2"),
-	
+
 	MIME_TYPE("MimeType"),
-	
+
 	NOTICE_NUMBERS("NoticeNumbers"),
 
 	NOTICE_REF("NoticeRef"),
@@ -181,7 +181,7 @@ public enum XAdES132Element implements XAdESElement {
 	REFERENCE_INFO("ReferenceInfo"),
 
 	REFS_ONLY_TIMESTAMP("RefsOnlyTimeStamp"),
-	
+
 	RESPONDER_ID("ResponderID"),
 
 	REVOCATION_VALUES("RevocationValues"),
@@ -193,49 +193,49 @@ public enum XAdES132Element implements XAdESElement {
 	SIG_POLICY_ID("SigPolicyId"),
 
 	SIG_POLICY_QUALIFIER("SigPolicyQualifier"),
-	
+
 	SIG_POLICY_QUALIFIERS("SigPolicyQualifiers"),
-	
+
 	SIGNATURE_POLICY_ID("SignaturePolicyId"),
-	
+
 	SIGNATURE_POLICY_IDENTIFIER("SignaturePolicyIdentifier"),
-	
+
 	SIGNATURE_POLICY_IMPLIED("SignaturePolicyImplied"),
-	
+
 	SIGNATURE_PRODUCTION_PLACE("SignatureProductionPlace"),
-	
+
 	SIGNATURE_PRODUCTION_PLACE_V2("SignatureProductionPlaceV2"),
-	
+
 	SIGNATURE_TIMESTAMP("SignatureTimeStamp"),
-	
+
 	SIGNED_ASSERTION("SignedAssertion"),
-	
+
 	SIGNED_ASSERTIONS("SignedAssertions"),
-	
+
 	SIGNED_DATA_OBJECT_PROPERTIES("SignedDataObjectProperties"),
-	
+
 	SIGNED_PROPERTIES("SignedProperties"),
-	
+
 	SIGNED_SIGNATURE_PROPERTIES("SignedSignatureProperties"),
-	
+
 	SIGNER_ROLE("SignerRole"),
-		
+
 	SIGNER_ROLE_V2("SignerRoleV2"),
-	
+
 	SIGNING_CERTIFICATE("SigningCertificate"),
-	
+
 	SIGNING_CERTIFICATE_V2("SigningCertificateV2"),
-	
+
 	SIGNING_TIME("SigningTime"),
-	
+
 	SP_URI("SPURI"),
-	
+
 	SP_USER_NOTICE("SPUserNotice"),
-	
+
 	STATE_OR_PROVINCE("StateOrProvince"),
-	
+
 	STREET_ADDRESS("StreetAddress"),
-	
+
 	UNSIGNED_DATA_OBJECT_PROPERTIES("UnsignedDataObjectProperties"),
 
 	UNSIGNED_DATA_OBJECT_PROPERTY("UnsignedDataObjectProperty"),
@@ -247,7 +247,7 @@ public enum XAdES132Element implements XAdESElement {
 	X509_ATTRIBUTE_CERTIFICATE("X509AttributeCertificate"),
 
 	XADES_TIMESTAMP("XAdESTimeStamp"),
-	
+
 	XML_TIMESTAMP("XMLTimeStamp");
 
 	/** The namespace */

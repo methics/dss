@@ -1,25 +1,26 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.validation.process.vpfbs;
 
+import eu.europa.esig.dss.detailedreport.jaxb.XmlAOV;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlBasicBuildingBlocks;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlBlockType;
 import eu.europa.esig.dss.detailedreport.jaxb.XmlCV;
@@ -203,7 +204,7 @@ public abstract class AbstractBasicValidationProcess<T extends XmlConstraintsCon
 
                             item = item.setNextItem(timestampBasicValidation(timestampWrapper, timestampValidation));
 
-                            if (isValid(timestampValidation)) {
+                            if (revocationTime != null && isValid(timestampValidation)) {
 
                                 item = item.setNextItem(timestampNotAfterRevocationTime(timestampWrapper, revocationTime));
 
@@ -333,10 +334,10 @@ public abstract class AbstractBasicValidationProcess<T extends XmlConstraintsCon
          */
         XmlSAV xmlSAV = tokenBBBs.getSAV();
         if (xmlSAV != null) {
-            XmlCryptographicValidation cryptographicValidation = xmlSAV.getCryptographicValidation();
 
             item = item.setNextItem(signatureAcceptanceValidation(xmlSAV));
 
+            XmlAOV xmlAOV = tokenBBBs.getAOV();
             /*
              * If the signature acceptance validation process returns PASSED, the Basic Signature validation
              * process shall go to the next step.
@@ -359,7 +360,7 @@ public abstract class AbstractBasicValidationProcess<T extends XmlConstraintsCon
              */
             else if (Indication.INDETERMINATE.equals(xmlSAV.getConclusion().getIndication()) &&
                     SubIndication.CRYPTO_CONSTRAINTS_FAILURE_NO_POE.equals(xmlSAV.getConclusion().getSubIndication()) &&
-                    isSignatureValueConcernedByFailure(cryptographicValidation) && Utils.isCollectionNotEmpty(contentTimestamps)) {
+                    isSignatureValueConcernedByFailure(xmlAOV) && Utils.isCollectionNotEmpty(contentTimestamps)) {
 
                 item = item.setNextItem(contentTimestampsPresent(contentTimestamps));
 
@@ -372,8 +373,8 @@ public abstract class AbstractBasicValidationProcess<T extends XmlConstraintsCon
 
                         if (isValid(timestampValidation)) {
 
-                            item = item.setNextItem(timestampNotAfterCryptographicConstraintsExpiration(
-                                    timestampWrapper, cryptographicValidation));
+                            item = item.setNextItem(timestampNotAfterCryptographicAlgorithmsExpiration(
+                                    timestampWrapper, xmlAOV.getSignatureCryptographicValidation()));
 
                         }
                     }
@@ -381,7 +382,7 @@ public abstract class AbstractBasicValidationProcess<T extends XmlConstraintsCon
                 }
             }
 
-            if (!isValidConclusion(xmlSAV.getConclusion())) {
+            if (!isValid(xmlSAV)) {
                 item = item.setNextItem(basicValidationProcess(xmlSAV.getConclusion()));
             }
 
@@ -405,7 +406,7 @@ public abstract class AbstractBasicValidationProcess<T extends XmlConstraintsCon
      * @return {@link ChainItem}
      */
     protected ChainItem<T> formatChecking(final XmlFC xmlFC) {
-        return new FormatCheckingResultCheck<>(i18nProvider, result, xmlFC, token, getFailLevelConstraint());
+        return new FormatCheckingResultCheck<>(i18nProvider, result, xmlFC, token, getFailLevelRule());
     }
 
     /**
@@ -415,7 +416,7 @@ public abstract class AbstractBasicValidationProcess<T extends XmlConstraintsCon
      * @return {@link ChainItem}
      */
     protected ChainItem<T> identificationOfSigningCertificate(final XmlISC xmlISC) {
-        return new IdentificationOfSigningCertificateResultCheck<>(i18nProvider, result, xmlISC, token, getFailLevelConstraint());
+        return new IdentificationOfSigningCertificateResultCheck<>(i18nProvider, result, xmlISC, token, getFailLevelRule());
     }
 
     /**
@@ -425,7 +426,7 @@ public abstract class AbstractBasicValidationProcess<T extends XmlConstraintsCon
      * @return {@link ChainItem}
      */
     protected ChainItem<T> validationContextInitialization(final XmlVCI xmlVCI) {
-        return new ValidationContextInitializationResultCheck<>(i18nProvider, result, xmlVCI, token, getFailLevelConstraint());
+        return new ValidationContextInitializationResultCheck<>(i18nProvider, result, xmlVCI, token, getFailLevelRule());
     }
 
     /**
@@ -435,36 +436,36 @@ public abstract class AbstractBasicValidationProcess<T extends XmlConstraintsCon
      * @return {@link ChainItem}
      */
     protected ChainItem<T> x509CertificateValidation(final XmlXCV xmlXCV) {
-        return new X509CertificateValidationResultCheck<>(i18nProvider, result, xmlXCV, token, getWarnLevelConstraint());
+        return new X509CertificateValidationResultCheck<>(i18nProvider, result, xmlXCV, token, getWarnLevelRule());
     }
 
     private ChainItem<T> signingCertificateNotRevoked(final XmlXCV xmlXCV) {
-        return new SigningCertificateNotRevokedCheck<>(i18nProvider, result, xmlXCV, token, getWarnLevelConstraint());
+        return new SigningCertificateNotRevokedCheck<>(i18nProvider, result, xmlXCV, token, getWarnLevelRule());
     }
 
     private ChainItem<T> validationTimeAtValidityRange(final XmlXCV xmlXCV) {
-        return new ValidationTimeAtCertificateValidityRangeCheck<>(i18nProvider, result, xmlXCV, token, getWarnLevelConstraint());
+        return new ValidationTimeAtCertificateValidityRangeCheck<>(i18nProvider, result, xmlXCV, token, getWarnLevelRule());
     }
 
     private ChainItem<T> contentTimestampsPresent(final List<TimestampWrapper> contentTimestamps) {
-        return new ContentTimestampsCheck<>(i18nProvider, result, contentTimestamps, getWarnLevelConstraint());
+        return new ContentTimestampsCheck<>(i18nProvider, result, contentTimestamps, getWarnLevelRule());
     }
 
     private ChainItem<T> timestampBasicValidation(final TimestampWrapper timestamp,
                                                   final XmlValidationProcessBasicTimestamp timestampValidation) {
         return new BasicTimestampValidationWithIdCheck<>(i18nProvider, result, timestamp, timestampValidation,
-                getWarnLevelConstraint());
+                getWarnLevelRule());
     }
 
     private ChainItem<T> timestampNotAfterRevocationTime(final TimestampWrapper timestamp, final Date revocationTime) {
         return new TimestampGenerationTimeNotAfterRevocationTimeCheck<>(i18nProvider, result, timestamp,
-                revocationTime, getWarnLevelConstraint());
+                revocationTime, getWarnLevelRule());
     }
 
     private ChainItem<T> timestampNotAfterSigningCertificateNotAfterTime(final TimestampWrapper timestamp,
                                                                          final Date revocationTime) {
         return new TimestampGenerationTimeNotAfterCertificateExpirationCheck<>(i18nProvider, result, timestamp,
-                revocationTime, getWarnLevelConstraint());
+                revocationTime, getWarnLevelRule());
     }
 
     /**
@@ -474,7 +475,7 @@ public abstract class AbstractBasicValidationProcess<T extends XmlConstraintsCon
      * @return {@link ChainItem}
      */
     protected ChainItem<T> cryptographicVerification(final XmlCV xmlCV) {
-        return new CryptographicVerificationResultCheck<>(i18nProvider, result, xmlCV, token, getFailLevelConstraint());
+        return new CryptographicVerificationResultCheck<>(i18nProvider, result, xmlCV, token, getFailLevelRule());
     }
 
     /**
@@ -484,13 +485,13 @@ public abstract class AbstractBasicValidationProcess<T extends XmlConstraintsCon
      * @return {@link ChainItem}
      */
     protected ChainItem<T> signatureAcceptanceValidation(final XmlSAV xmlSAV) {
-        return new SignatureAcceptanceValidationResultCheck<>(i18nProvider, result, xmlSAV, token, getWarnLevelConstraint());
+        return new SignatureAcceptanceValidationResultCheck<>(i18nProvider, result, xmlSAV, token, getWarnLevelRule());
     }
 
-    private ChainItem<T> timestampNotAfterCryptographicConstraintsExpiration(
+    private ChainItem<T> timestampNotAfterCryptographicAlgorithmsExpiration(
             final TimestampWrapper timestamp, final XmlCryptographicValidation cryptographicValidation) {
         return new TimestampGenerationTimeNotAfterCryptographicConstraintsExpirationCheck<>(i18nProvider, result,
-                timestamp, cryptographicValidation, getFailLevelConstraint());
+                timestamp, cryptographicValidation, getFailLevelRule());
     }
 
     /**
@@ -500,7 +501,7 @@ public abstract class AbstractBasicValidationProcess<T extends XmlConstraintsCon
      * @return {@link ChainItem}
      */
     protected ChainItem<T> basicValidationProcess(final XmlConclusion xmlConclusion) {
-        return new BasicValidationProcessCheck<>(i18nProvider, result, xmlConclusion, token, getFailLevelConstraint());
+        return new BasicValidationProcessCheck<>(i18nProvider, result, xmlConclusion, token, getFailLevelRule());
     }
 
     /**
@@ -530,8 +531,9 @@ public abstract class AbstractBasicValidationProcess<T extends XmlConstraintsCon
         return null;
     }
 
-    private boolean isSignatureValueConcernedByFailure(XmlCryptographicValidation cryptographicValidation) {
-        return token.getId().equals(cryptographicValidation.getConcernedMaterial());
+    private boolean isSignatureValueConcernedByFailure(XmlAOV xmlAOV) {
+        XmlCryptographicValidation cryptographicValidation = xmlAOV.getSignatureCryptographicValidation();
+        return cryptographicValidation != null && !isValidConclusion(cryptographicValidation.getConclusion());
     }
 
     @Override

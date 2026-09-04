@@ -1,25 +1,28 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.spi.x509.evidencerecord;
 
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.EvidenceRecordIncorporationType;
+import eu.europa.esig.dss.enumerations.EvidenceRecordOrigin;
 import eu.europa.esig.dss.enumerations.EvidenceRecordTypeEnum;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.ManifestFile;
@@ -28,6 +31,8 @@ import eu.europa.esig.dss.model.identifier.IdentifierBasedObject;
 import eu.europa.esig.dss.model.scope.SignatureScope;
 import eu.europa.esig.dss.model.x509.revocation.crl.CRL;
 import eu.europa.esig.dss.model.x509.revocation.ocsp.OCSP;
+import eu.europa.esig.dss.spi.signature.AdvancedSignature;
+import eu.europa.esig.dss.spi.validation.evidencerecord.EmbeddedEvidenceRecordHelper;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.TokenCertificateSource;
 import eu.europa.esig.dss.spi.x509.revocation.OfflineRevocationSource;
@@ -120,6 +125,13 @@ public interface EvidenceRecord extends IdentifierBasedObject {
     void setEvidenceRecordScopes(List<SignatureScope> evidenceRecordScopes);
 
     /**
+     * Gets a DigestAlgorithm used on the first data object group's digest computation
+     *
+     * @return {@link DigestAlgorithm}
+     */
+    DigestAlgorithm getOriginalDigestAlgorithm();
+
+    /**
      * Returns a message if the structure validation fails
      *
      * @return a list of {@link String} error messages if validation fails,
@@ -132,7 +144,14 @@ public interface EvidenceRecord extends IdentifierBasedObject {
      *
      * @return {@link EvidenceRecordTypeEnum}
      */
-    EvidenceRecordTypeEnum getReferenceRecordType();
+    EvidenceRecordTypeEnum getEvidenceRecordType();
+
+    /**
+     * Returns origin of the evidence record
+     *
+     * @return {@link EvidenceRecordOrigin}
+     */
+    EvidenceRecordOrigin getOrigin();
 
     /**
      * Returns a manifest file associated with the evidence record (used in ASiC)
@@ -154,6 +173,42 @@ public interface EvidenceRecord extends IdentifierBasedObject {
      * @param timestampedReferences a list of {@link TimestampedReference}s
      */
     void setTimestampedReferences(List<TimestampedReference> timestampedReferences);
+
+    /**
+     * Sets a helper for processing and validation of the embedded evidence record type
+     *
+     * @param embeddedEvidenceRecordHelper {@link EmbeddedEvidenceRecordHelper}
+     */
+    void setEmbeddedEvidenceRecordHelper(EmbeddedEvidenceRecordHelper embeddedEvidenceRecordHelper);
+
+    /**
+     * Returns whether the evidence record is embedded in a signature
+     *
+     * @return TRUE if the evidence record is embedded, FALSE otherwise
+     */
+    boolean isEmbedded();
+
+    /**
+     * Gets a master signature, enveloping the current evidence record
+     *
+     * @return {@link AdvancedSignature}
+     */
+    AdvancedSignature getMasterSignature();
+
+    /**
+     * Gets the type of the unsigned attribute used for incorporation of an evidence record within a signature
+     * NOTE: applicable only for embedded evidence records within CAdES
+     *
+     * @return {@link EvidenceRecordIncorporationType}
+     */
+    EvidenceRecordIncorporationType getIncorporationType();
+
+    /**
+     * Returns an {@code EmbeddedEvidenceRecordHelper} in case of an embedded evidence record
+     *
+     * @return {@link EmbeddedEvidenceRecordHelper}
+     */
+    EmbeddedEvidenceRecordHelper getEmbeddedEvidenceRecordHelper();
 
     /**
      * This method returns the DSS unique signature id. It allows to unambiguously identify each signature.

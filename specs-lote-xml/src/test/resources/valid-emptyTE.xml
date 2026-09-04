@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ListOfTrustedEntities xmlns="http://uri.etsi.org/019602/v1#" LOTETag="http://uri.etsi.org/019602/tag#"
+                       xmlns:tie="http://uri.etsi.org/019602/v1/TrustedEntityExtensions">
+    <ListAndSchemeInformation>
+        <LoTEVersionIdentifier>1</LoTEVersionIdentifier>
+        <LoTESequenceNumber>42</LoTESequenceNumber>
+        <LoTEType>http://example.org/LoTE/type</LoTEType>
+        <SchemeOperatorName>
+            <Name xml:lang="fr">Agence Nationale de la Confiance Numérique</Name>
+            <Name xml:lang="en">National Agency for Digital Trust</Name>
+        </SchemeOperatorName>
+        <SchemeOperatorAddress>
+            <PostalAddresses>
+                <PostalAddress xml:lang="fr">
+                    <StreetAddress>12 Boulevard Sécurité</StreetAddress>
+                    <Locality>Paris</Locality>
+                    <StateOrProvince>Île-de-France</StateOrProvince>
+                    <PostalCode>75015</PostalCode>
+                    <CountryName>FR</CountryName>
+                </PostalAddress>
+                <PostalAddress xml:lang="en">
+                    <StreetAddress>12 Security Boulevard</StreetAddress>
+                    <Locality>Paris</Locality>
+                    <StateOrProvince>Ile-de-France</StateOrProvince>
+                    <PostalCode>75015</PostalCode>
+                    <CountryName>FR</CountryName>
+                </PostalAddress>
+            </PostalAddresses>
+            <ElectronicAddress>
+                <URI xml:lang="en">mailto:mailto@schemeoperator.com</URI>
+            </ElectronicAddress>
+        </SchemeOperatorAddress>
+        <SchemeName>
+            <Name xml:lang="fr">Liste de confiance française</Name>
+            <Name xml:lang="en">French Trusted List</Name>
+        </SchemeName>
+        <SchemeInformationURI>
+            <URI xml:lang="en">https://example.org/scheme-info</URI>
+        </SchemeInformationURI>
+        <StatusDeterminationApproach>https://example.org/status</StatusDeterminationApproach>
+        <ListIssueDateTime>2025-07-16T12:00:00Z</ListIssueDateTime>
+        <NextUpdate>
+            <dateTime>2025-08-16T12:00:00Z</dateTime>
+        </NextUpdate>
+    </ListAndSchemeInformation>
+</ListOfTrustedEntities>

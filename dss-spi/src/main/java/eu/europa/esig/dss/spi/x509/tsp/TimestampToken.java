@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -29,7 +29,6 @@ import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureValidity;
 import eu.europa.esig.dss.enumerations.TimestampType;
 import eu.europa.esig.dss.model.DSSDocument;
-import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.DSSMessageDigest;
 import eu.europa.esig.dss.model.Digest;
 import eu.europa.esig.dss.model.ManifestFile;
@@ -39,8 +38,8 @@ import eu.europa.esig.dss.model.scope.SignatureScope;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.model.x509.Token;
 import eu.europa.esig.dss.spi.DSSASN1Utils;
-import eu.europa.esig.dss.spi.DSSSecurityProvider;
 import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.spi.security.DSSSignerInformationVerifierSecurityFactory;
 import eu.europa.esig.dss.spi.x509.CandidatesForSigningCertificate;
 import eu.europa.esig.dss.spi.x509.CertificateRef;
 import eu.europa.esig.dss.spi.x509.SignerIdentifier;
@@ -57,15 +56,15 @@ import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.cms.SignerInformationVerifier;
-import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
-import org.bouncycastle.operator.OperatorException;
 import org.bouncycastle.tsp.TSPException;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.x500.X500Principal;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -141,7 +140,7 @@ public class TimestampToken extends Token {
 	/**
 	 * In case of a detached timestamp
 	 */
-	private String fileName;
+	private String filename;
 	
 	/**
 	 * Only present for detached timestamps;
@@ -181,14 +180,14 @@ public class TimestampToken extends Token {
 	/**
 	 * This attribute is used for XAdES timestamps. It indicates the canonicalization method
 	 * used for message-imprint computation.
-	 *
+	 * <p>
 	 * NOTE: Used for XAdES/JAdES only
 	 */
 	private String canonicalizationMethod;
 
 	/**
 	 * Identifies a TSA issued the timestamp token
-	 *
+	 * <p>
 	 * NOTE: Takes a value only for a successfully validated token
 	 */
 	private X500Principal tsaX500Principal;
@@ -197,6 +196,12 @@ public class TimestampToken extends Token {
 	 * Cached list of signing certificate candidates
 	 */
 	private CandidatesForSigningCertificate candidatesForSigningCertificate;
+
+	/**
+	 * Contains validation status of the ats-hash-index(-v3) attribute.
+	 * NOTE: applicable only for CMS archive-time-stamp-v3 timestamps.
+	 */
+	private ArchiveTimestampHashIndexStatus hashIndexStatus;
 
 	/**
 	 * Default constructor
@@ -222,7 +227,7 @@ public class TimestampToken extends Token {
 	 * @throws CMSException if CMS data building exception occurs
 	 */
 	public TimestampToken(final byte[] binaries, final TimestampType type, final List<TimestampedReference> timestampedReferences) throws TSPException, IOException, CMSException {
-		this(new CMSSignedData(binaries), type, timestampedReferences);
+		this(toCMSSignedData(binaries), type, timestampedReferences);
 	}
 
 	/**
@@ -238,7 +243,13 @@ public class TimestampToken extends Token {
 	 */
 	public TimestampToken(final byte[] binaries, final TimestampType type, final List<TimestampedReference> timestampedReferences,
 						  final TimestampIdentifierBuilder identifierBuilder) throws TSPException, IOException, CMSException {
-		this(new CMSSignedData(binaries), type, timestampedReferences, identifierBuilder);
+		this(toCMSSignedData(binaries), type, timestampedReferences, identifierBuilder);
+	}
+
+	private static CMSSignedData toCMSSignedData(final byte[] encoded) throws IOException, CMSException {
+		try (InputStream is = new ByteArrayInputStream(encoded)) {
+			return new CMSSignedData(is);
+		}
 	}
 
 	/**
@@ -348,7 +359,7 @@ public class TimestampToken extends Token {
 
 	/**
 	 * Indicated if the signature is intact and the message-imprint matches the computed message-imprint.
-	 *
+	 * <p>
 	 * NOTE: The method isSignedBy(CertificateToken) must be called before calling the method.
 	 *       See {@code TimestampToken.isSignatureIntact()} for more details
 	 *
@@ -394,7 +405,7 @@ public class TimestampToken extends Token {
 
 		final X509CertificateHolder x509CertificateHolder = DSSASN1Utils.getX509CertificateHolder(candidate);
 		if (timeStamp.getSID().match(x509CertificateHolder)) {
-			SignerInformationVerifier signerInformationVerifier = getSignerInformationVerifier(candidate);
+			SignerInformationVerifier signerInformationVerifier = DSSSignerInformationVerifierSecurityFactory.CERTIFICATE_TOKEN_INSTANCE.build(candidate);
 
 			// Try firstly to validate as a Timestamp and if that fails try to validate the
 			// timestamp as a CMSSignedData
@@ -451,16 +462,6 @@ public class TimestampToken extends Token {
 			}
 			signatureInvalidityReason = e.getClass().getSimpleName() + " : " + e.getMessage();
 			return false;
-		}
-	}
-
-	private SignerInformationVerifier getSignerInformationVerifier(final CertificateToken candidate) {
-		try {
-			final JcaSimpleSignerInfoVerifierBuilder verifier = new JcaSimpleSignerInfoVerifierBuilder();
-			verifier.setProvider(DSSSecurityProvider.getSecurityProviderName());
-			return verifier.build(candidate.getCertificate());
-		} catch (OperatorException e) {
-			throw new DSSException("Unable to build an instance of SignerInformationVerifier", e);
 		}
 	}
 	
@@ -665,24 +666,24 @@ public class TimestampToken extends Token {
 		}
 		return Utils.isTrue(messageImprintIntact);
 	}
-	
+
 	/**
 	 * This method returns the file name of a detached timestamp
-	 * 
+	 *
 	 * @return {@link String}
 	 */
-	public String getFileName() {
-		return fileName;
+	public String getFilename() {
+		return filename;
 	}
 
 	/**
 	 * Sets the filename of a detached timestamp
-	 * 
-	 * @param fileName 
+	 *
+	 * @param filename
 	 * 					{@link String}
 	 */
-	public void setFileName(String fileName) {
-		this.fileName = fileName;
+	public void setFilename(String filename) {
+		this.filename = filename;
 	}
 
 	/**
@@ -817,7 +818,7 @@ public class TimestampToken extends Token {
 	 *
 	 * @return TRUE if all reference validations are valid, FALSE otherwise
 	 */
-	protected boolean areReferenceValidationsValid() {
+	public boolean areReferenceValidationsValid() {
 		if (Utils.isCollectionNotEmpty(referenceValidations)) {
 			for (ReferenceValidation referenceValidation : referenceValidations) {
 				if (DigestMatcherType.EVIDENCE_RECORD_ORPHAN_REFERENCE != referenceValidation.getType() &&
@@ -905,8 +906,8 @@ public class TimestampToken extends Token {
 		if (tsaGeneralName != null) {
 			try {
 				X500Name x500Name = X500Name.getInstance(tsaGeneralName.getName());
-				return new X500Principal(x500Name.getEncoded());
-			} catch (IOException e) {
+				return DSSASN1Utils.toX500Principal(x500Name);
+			} catch (Exception e) {
 				LOG.warn("Unable to decode TSTInfo.tsa attribute value to X500Principal. Reason : {}", e.getMessage(), e);
 			}
 		}
@@ -945,7 +946,7 @@ public class TimestampToken extends Token {
 			}
 			indentStr += "\t";
 			if (messageImprintIntact != null) {
-				if (messageImprintIntact) {
+				if (Boolean.TRUE.equals(messageImprintIntact)) {
 					out.append(indentStr).append("Timestamp MATCHES the signed data.").append('\n');
 				} else {
 					out.append(indentStr).append("Timestamp DOES NOT MATCH the signed data.").append('\n');
@@ -959,9 +960,9 @@ public class TimestampToken extends Token {
 	}
 	
 	/**
-	 * Returns a list of found CertificateIdentifier in the SignerInformationStore
+	 * Returns a set of found CertificateIdentifier in the SignerInformationStore
 	 * 
-	 * @return a list of {@link SignerIdentifier}s
+	 * @return a set of {@link SignerIdentifier}s
 	 */
 	public Set<SignerIdentifier> getSignerInformationStoreInfos() {
 		return getCertificateSource().getAllCertificateIdentifiers();
@@ -990,6 +991,26 @@ public class TimestampToken extends Token {
 		return signers.iterator().next();
 	}
 
+	/**
+	 * Gets the validation status of the ats-hash-index(-v3) attribute, when applicable.
+	 * NOTE: supports only archive-time-stamp-v3 timestamp type
+	 *
+	 * @return {@link ArchiveTimestampHashIndexStatus} if validation ts-hash-index(-v3) attribute has been performed,
+	 *         NULL otherwise
+	 */
+	public ArchiveTimestampHashIndexStatus getAtsHashIndexStatus() {
+		return hashIndexStatus;
+	}
+
+	/**
+	 * Sets the validation status of the ats-hash-index(-v3) attribute, when applicable.
+	 *
+	 * @param hashIndexStatus {@link ArchiveTimestampHashIndexStatus}
+	 */
+	public void setAtsHashIndexStatus(ArchiveTimestampHashIndexStatus hashIndexStatus) {
+		this.hashIndexStatus = hashIndexStatus;
+	}
+
 	@Override
 	protected TokenIdentifier buildTokenIdentifier() {
 		return getTimestampIdentifierBuilder().build();
@@ -1002,7 +1023,7 @@ public class TimestampToken extends Token {
 	 */
 	protected TimestampIdentifierBuilder getTimestampIdentifierBuilder() {
 		if (identifierBuilder == null) {
-			identifierBuilder = new TimestampIdentifierBuilder(getEncoded()).setFilename(fileName);
+			identifierBuilder = new TimestampIdentifierBuilder(getEncoded()).setFilename(filename);
 		}
 		return identifierBuilder;
 	}

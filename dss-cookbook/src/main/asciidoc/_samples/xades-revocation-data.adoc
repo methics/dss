@@ -1,21 +1,21 @@
 [source,xml]
 ----
-<CertificateValues>
-	<EncapsulatedX509Certificate>
+<xades:CertificateValues>
+	<xades:EncapsulatedX509Certificate>
 		MIIFNTCCBB2gAwIBAgIBATANB...
-	</EncapsulatedX509Certificate>
-	<EncapsulatedX509Certificate>
+	</xades:EncapsulatedX509Certificate>
+	<xades:EncapsulatedX509Certificate>
 		MIIFsjCCBJqgAwIBAgIDAMoBM...
-	</EncapsulatedX509Certificate>
-	<EncapsulatedX509Certificate>
+	</xades:EncapsulatedX509Certificate>
+	<xades:EncapsulatedX509Certificate>
 		MIIFRjCCBC6gAwIBAgIBATANB...
-	</EncapsulatedX509Certificate>
-</CertificateValues>
-<RevocationValues>
-	<OCSPValues>
-		<EncapsulatedOCSPValue>
+	</xades:EncapsulatedX509Certificate>
+</xades:CertificateValues>
+<xades:RevocationValues>
+	<xades:OCSPValues>
+		<xades:EncapsulatedOCSPValue>
 			MIIGzAoBAKCCBsUwggbBBgkr...
-		</EncapsulatedOCSPValue>
-	</OCSPValues>
-</RevocationValues>
+		</xades:EncapsulatedOCSPValue>
+	</xades:OCSPValues>
+</xades:RevocationValues>
 ----

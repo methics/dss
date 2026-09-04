@@ -7,11 +7,1042 @@
 [[MigrationGuide]]
 === Migration guide
 
-This chapter covers the most significant changes in DSS code occurred between different versions, requiring review and possible changes from code implementors.
+This chapter covers the most significant changes in DSS code occurred between different versions, requiring review and possible changes from code implementers.
 
 For changes within Diagnostic Data XSD please refer <<DiagnosticDataChanges>>.
 
 For changes within XML Signature Policy please refer <<ValidationPolicyChanges>>.
+
+[cols="2,5,5"]
+.Code changes from version 6.5.RC1 to 6.5
+|===
+|Title                               |v6.5.RC1                            |v6.5
+a|SD-JWT and Mdoc modules          a|
+[source,xml]
+----
+<dependency>
+	<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+	<artifactId>dss-eaa-jwt</artifactId>
+</dependency>
+<dependency>
+	<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+	<artifactId>dss-eaa-mdoc</artifactId>
+</dependency>
+----
+a|
+[source,xml]
+----
+<dependency>
+	<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+	<artifactId>dss-sd-jwt</artifactId>
+</dependency>
+<dependency>
+	<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+	<artifactId>dss-mdoc</artifactId>
+</dependency>
+----
+
+a|Attestation creation          a|
+[source,java]
+----
+import eu.europa.esig.dss.eaa.jwt.creation.SDJWTEAADisclosure;
+import eu.europa.esig.dss.eaa.jwt.creation.SDJWTEAAPayloadParameters;
+import eu.europa.esig.dss.eaa.jwt.creation.SDJWTEAAService;
+import eu.europa.esig.dss.eaa.jwt.creation.SDJWTKeyBindingParameters;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.model.ToBeSigned;
+
+SDJWTEAAPayloadParameters payloadParameters = new SDJWTEAAPayloadParameters();
+...
+
+SDJWTEAAService service = new SDJWTEAAService(commonCertificateVerifier);
+
+ToBeSigned dataToSign = service.getDataToBeSigned(payloadParameters, signatureParameters);
+SignatureValue signatureValue = signingToken.sign(dataToSign, signatureParameters.getDigestAlgorithm(), privateKey);
+DSSDocument signedEAA = service.signEAA(payloadParameters, signatureParameters, signatureValue);
+
+List<SDJWTEAADisclosure> disclosures = service.getDisclosures(payloadParameters);
+
+SDJWTKeyBindingParameters keyBindingParameters = new SDJWTKeyBindingParameters();
+
+ToBeSigned kbDataToSign = service.getDataToSignForKeyBindingSignature(signedEAA, disclosures, keyBindingParameters, kbSignatureParameters);
+SignatureValue kbSignatureValue = signingToken.sign(kbDataToSign, kbSignatureParameters.getDigestAlgorithm(), devicePrivateKey);
+DSSDocument keyBindingJWT = service.createKeyBindingSignature(signedEAA, disclosures, keyBindingParameters, kbSignatureParameters, kbSignatureValue);
+
+DSSDocument presentationDocument = service.issuePresentation(signedEAA, disclosures, keyBindingJWT);
+
+----
+a|
+[source,java]
+----
+import eu.europa.esig.dss.attestation.sd.jwt.creation.SDJWTKeyBindingParameters;
+import eu.europa.esig.dss.attestation.sd.jwt.creation.SDJWTPayloadParameters;
+import eu.europa.esig.dss.attestation.sd.jwt.creation.SDJWTSelectiveDisclosure;
+import eu.europa.esig.dss.attestation.sd.jwt.creation.SDJWTService;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.model.ToBeSigned;
+
+SDJWTPayloadParameters payloadParameters = new SDJWTPayloadParameters();
+...
+
+SDJWTService service = new SDJWTService(commonCertificateVerifier);
+
+ToBeSigned dataToSign = service.getDataToBeSigned(payloadParameters, signatureParameters);
+SignatureValue signatureValue = signingToken.sign(dataToSign, signatureParameters.getDigestAlgorithm(), privateKey);
+DSSDocument signedAttestation = service.signAttestation(payloadParameters, signatureParameters, signatureValue);
+
+List<SDJWTSelectiveDisclosure> disclosures = service.getDisclosures(payloadParameters);
+
+SDJWTKeyBindingParameters keyBindingParameters = new SDJWTKeyBindingParameters();
+
+ToBeSigned kbDataToSign = service.getDataToSignForKeyBindingSignature(signedAttestation, disclosures, keyBindingParameters, kbSignatureParameters);
+SignatureValue kbSignatureValue = signingToken.sign(kbDataToSign, kbSignatureParameters.getDigestAlgorithm(), devicePrivateKey);
+DSSDocument keyBindingJWT = service.createKeyBindingSignature(signedAttestation, disclosures, keyBindingParameters, kbSignatureParameters, kbSignatureValue);
+
+DSSDocument presentationDocument = service.issuePresentation(signedAttestation, disclosures, keyBindingJWT);
+----
+
+a|Attestation validation          a|
+[source,java]
+----
+import eu.europa.esig.dss.diagnostic.DiagnosticData;
+import eu.europa.esig.dss.diagnostic.EAAWrapper;
+import eu.europa.esig.dss.eaa.common.validation.DefaultEAAPresentationValidator;
+import eu.europa.esig.dss.simplereport.SimpleReport;
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
+
+DefaultEAAPresentationValidator validator = DefaultEAAPresentationValidator.fromDocument(presentationDocument);
+validator.setCertificateVerifier(commonCertificateVerifier);
+Reports reports = validator.validateDocument();
+
+DiagnosticData diagnosticData = reports.getDiagnosticData();
+List<EAAWrapper> eaas = diagnosticData.getEAAs();
+...
+----
+a|
+[source,java]
+----
+import eu.europa.esig.dss.attestation.common.validation.DefaultAttestationPresentationValidator;
+import eu.europa.esig.dss.diagnostic.AttestationWrapper;
+import eu.europa.esig.dss.diagnostic.DiagnosticData;
+import eu.europa.esig.dss.simplereport.SimpleReport;
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
+
+DefaultAttestationDocumentValidator validator = DefaultAttestationDocumentValidator.fromDocument(presentationDocument);
+validator.setCertificateVerifier(commonCertificateVerifier);
+Reports reports = validator.validateDocument();
+
+DiagnosticData diagnosticData = reports.getDiagnosticData();
+List<AttestationWrapper> attestations = diagnosticData.getAttestations();
+----
+
+|===
+
+[cols="2,5,5"]
+.Code changes from version 6.5.RC1 to 6.5
+|===
+|Title                               |v6.5.RC1                            |v6.5
+a|SD-JWT and Mdoc modules          a|
+[source,xml]
+----
+<dependency>
+	<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+	<artifactId>dss-eaa-jwt</artifactId>
+</dependency>
+<dependency>
+	<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+	<artifactId>dss-eaa-mdoc</artifactId>
+</dependency>
+----
+a|
+[source,xml]
+----
+<dependency>
+	<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+	<artifactId>dss-sd-jwt</artifactId>
+</dependency>
+<dependency>
+	<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+	<artifactId>dss-mdoc</artifactId>
+</dependency>
+----
+
+a|Attestation creation          a|
+[source,java]
+----
+import eu.europa.esig.dss.eaa.jwt.creation.SDJWTEAADisclosure;
+import eu.europa.esig.dss.eaa.jwt.creation.SDJWTEAAPayloadParameters;
+import eu.europa.esig.dss.eaa.jwt.creation.SDJWTEAAService;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.model.ToBeSigned;
+
+SDJWTEAAPayloadParameters payloadParameters = new SDJWTEAAPayloadParameters();
+...
+
+SDJWTEAAService service = new SDJWTEAAService(commonCertificateVerifier);
+
+ToBeSigned dataToSign = service.getDataToBeSigned(payloadParameters, signatureParameters);
+SignatureValue signatureValue = signingToken.sign(dataToSign, signatureParameters.getDigestAlgorithm(), privateKey);
+DSSDocument signedEAA = service.signEAA(payloadParameters, signatureParameters, signatureValue);
+
+List<SDJWTEAADisclosure> disclosures = service.getDisclosures(payloadParameters);
+
+----
+a|
+[source,java]
+----
+import eu.europa.esig.dss.attestation.sd.jwt.creation.SDJWTPayloadParameters;
+import eu.europa.esig.dss.attestation.sd.jwt.creation.SDJWTSelectiveDisclosure;
+import eu.europa.esig.dss.attestation.sd.jwt.creation.SDJWTService;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.model.ToBeSigned;
+
+SDJWTPayloadParameters payloadParameters = new SDJWTPayloadParameters();
+...
+
+SDJWTService service = new SDJWTService(commonCertificateVerifier);
+
+ToBeSigned dataToSign = service.getDataToBeSigned(payloadParameters, signatureParameters);
+SignatureValue signatureValue = signingToken.sign(dataToSign, signatureParameters.getDigestAlgorithm(), privateKey);
+DSSDocument signedAttestation = service.signAttestation(payloadParameters, signatureParameters, signatureValue);
+
+List<SDJWTSelectiveDisclosure> disclosures = service.generateDisclosures(payloadParameters);
+DSSDocument attestation = service.issueAttestation(signedAttestation, disclosures);
+----
+
+a|Attestation presentation          a|
+[source,java]
+----
+import eu.europa.esig.dss.eaa.jwt.creation.SDJWTKeyBindingParameters;
+
+SDJWTEAAService service = new SDJWTEAAService(commonCertificateVerifier);
+
+SDJWTKeyBindingParameters keyBindingParameters = new SDJWTKeyBindingParameters();
+
+ToBeSigned kbDataToSign = service.getDataToSignForKeyBindingSignature(signedEAA, disclosures, keyBindingParameters, kbSignatureParameters);
+SignatureValue kbSignatureValue = signingToken.sign(kbDataToSign, kbSignatureParameters.getDigestAlgorithm(), devicePrivateKey);
+DSSDocument keyBindingJWT = service.createKeyBindingSignature(signedEAA, disclosures, keyBindingParameters, kbSignatureParameters, kbSignatureValue);
+
+DSSDocument presentationDocument = service.issuePresentation(signedEAA, disclosures, keyBindingJWT);
+
+----
+a|
+[source,java]
+----
+import eu.europa.esig.dss.attestation.sd.jwt.creation.SDJWTService;
+
+SDJWTService service = new SDJWTService(commonCertificateVerifier);
+
+AttestationDocument attestationDocument = service.parseAttestation(attestation);
+DSSDocument signedAttestation = attestationDocument.getSignedAttestation();
+List<SDJWTSelectiveDisclosure> disclosures = attestationDocument.getSelectiveDisclosures();
+
+SDJWTKeyBindingParameters keyBindingParameters = new SDJWTKeyBindingParameters();
+
+ToBeSigned kbDataToSign = service.getDataToSignForKeyBindingSignature(signedAttestation, disclosures, keyBindingParameters, kbSignatureParameters);
+SignatureValue kbSignatureValue = signingToken.sign(kbDataToSign, kbSignatureParameters.getDigestAlgorithm(), devicePrivateKey);
+DSSDocument keyBindingJWT = service.createKeyBindingSignature(signedAttestation, disclosures, keyBindingParameters, kbSignatureParameters, kbSignatureValue);
+
+DSSDocument presentationDocument = service.issuePresentation(signedAttestation, disclosures, keyBindingJWT);
+----
+
+a|Attestation validation          a|
+[source,java]
+----
+import eu.europa.esig.dss.diagnostic.DiagnosticData;
+import eu.europa.esig.dss.diagnostic.EAAWrapper;
+import eu.europa.esig.dss.eaa.common.validation.DefaultEAAPresentationValidator;
+import eu.europa.esig.dss.simplereport.SimpleReport;
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
+
+DefaultEAAPresentationValidator validator = DefaultEAAPresentationValidator.fromDocument(presentationDocument);
+validator.setCertificateVerifier(commonCertificateVerifier);
+Reports reports = validator.validateDocument();
+
+DiagnosticData diagnosticData = reports.getDiagnosticData();
+List<EAAWrapper> eaas = diagnosticData.getEAAs();
+...
+----
+a|
+[source,java]
+----
+import eu.europa.esig.dss.attestation.common.validation.DefaultAttestationDocumentValidator;
+import eu.europa.esig.dss.diagnostic.AttestationWrapper;
+import eu.europa.esig.dss.diagnostic.DiagnosticData;
+import eu.europa.esig.dss.simplereport.SimpleReport;
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
+
+DefaultAttestationDocumentValidator validator = DefaultAttestationDocumentValidator.fromDocument(presentationDocument);
+validator.setCertificateVerifier(commonCertificateVerifier);
+Reports reports = validator.validateDocument();
+
+DiagnosticData diagnosticData = reports.getDiagnosticData();
+List<AttestationWrapper> attestations = diagnosticData.getAttestations();
+----
+
+|===
+
+.Code changes from version 6.4 to 6.5
+|===
+|Title                               |v6.4                            |v6.5
+a|DPI handling on PDF visual signature creation          a|
+Image is zoomed inversely to the PDF DPI, when no field dimensions defined.
+                                                                     a|
+Image is created keeping the original dimensions, when new DPI behavior is enabled.
+
+Please see the section <<PdfDPI>> for more information.
+
+a|XML Namespace registration          a|
+[source,java]
+----
+import eu.europa.esig.dss.xml.common.definition.DSSNamespace;
+import eu.europa.esig.dss.xml.utils.DomUtils;
+
+DSSNamespace namespace = new DSSNamespace("http://uri.etsi.org/01903/v1.3.2#", "xades");
+Element element = DomUtils.registerNamespace(namespace);
+----
+a|
+[source,java]
+----
+import eu.europa.esig.dss.xml.common.definition.DSSNamespace;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
+
+DSSNamespace namespace = new DSSNamespace("http://uri.etsi.org/01903/v1.3.2#", "xades");
+Element element = XPathUtils.registerNamespace(namespace);
+----
+
+a|Selected Namespace validation           a|
+[source,java]
+----
+import eu.europa.esig.dss.xades.definition.xades132.XAdES132Path;
+import eu.europa.esig.dss.xades.validation.XMLDocumentValidator;
+
+XMLDocumentValidator xmlDocumentValidator = new XMLDocumentValidator(xmlDocument);
+...
+List<XAdESPath> xadesPathsHolders = xmlDocumentValidator.getXAdESPathsHolder();
+xadesPathsHolders.clear();
+xadesPathsHolders.add(new XAdES132Path());
+----
+a|
+[source,java]
+----
+import eu.europa.esig.dss.xades.definition.xades132.XAdES132Path;
+import eu.europa.esig.dss.xades.validation.XMLDocumentValidator;
+import java.util.Collections;
+
+XMLDocumentValidator xmlDocumentValidator = new XMLDocumentValidator(
+        xmlDocument, Collections.singletonList(new XAdES132Path()));
+----
+
+a|XPath DOM lookup          a|
+[source,java]
+----
+import eu.europa.esig.dss.xml.utils.DomUtils;
+import org.w3c.dom.Element;
+
+Element element = DomUtils.getElement(document, "./ds:Signature");
+----
+a|
+[source,java]
+----
+import eu.europa.esig.dss.xml.common.definition.xmldsig.XMLDSigElement;
+import eu.europa.esig.dss.xml.common.xpath.XPathQuery;
+import eu.europa.esig.dss.xml.common.xpath.XPathQueryBuilder;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
+import org.w3c.dom.Element;
+
+XPathQuery query = XPathQueryBuilder.fromCurrentPosition().element(XMLDSigElement.SIGNATURE).build();
+Element element = XPathUtils.getElement(document, query);
+----
+
+a|PAdES SecureRandom          a|
+[source,java]
+----
+import eu.europa.esig.dss.pdf.encryption.DSSSecureRandomProvider;
+import eu.europa.esig.dss.pdf.encryption.SecureRandomProvider;
+import eu.europa.esig.dss.pdf.pdfbox.PdfBoxSignatureService;
+
+PdfBoxSignatureService padesSignatureService = ...
+SecureRandomProvider secureRandomProvider = new DSSSecureRandomProvider(parameters);
+padesSignatureService.setSecureRandomProvider(secureRandomProvider);
+----
+a|
+[source,java]
+----
+import eu.europa.esig.dss.pdf.pdfbox.PdfBoxSignatureService;
+import eu.europa.esig.dss.spi.random.DSSSecureRandomProvider;
+import eu.europa.esig.dss.spi.random.SecureRandomProvider;
+
+PdfBoxSignatureService padesSignatureService = ...
+SecureRandomProvider secureRandomProvider = new DSSSecureRandomProvider();
+padesSignatureService.setSecureRandomProvider(secureRandomProvider);
+----
+
+a|TLValidationJob management classes          a|
+[source,java]
+----
+import eu.europa.esig.dss.tsl.cache.CacheCleaner;
+import eu.europa.esig.dss.tsl.sync.AcceptAllStrategy;
+...
+----
+a|
+[source,java]
+----
+import eu.europa.esig.dss.validation.job.cache.CacheCleaner;
+import eu.europa.esig.dss.validation.job.sync.AcceptAllStrategy;
+----
+
+|===
+
+.Code changes from version 6.3 to 6.4
+|===
+|Title                               |v6.3                            |v6.4
+a|Cryptographic suite's validation level definition          a|
+[source,java]
+----
+import eu.europa.esig.dss.enumerations.Level;
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
+import eu.europa.esig.dss.validation.policy.ValidationPolicyLoader;
+import java.io.File;
+
+ValidationPolicy validationPolicy = ValidationPolicyLoader
+    .fromValidationPolicy(new File("/path/to/validation/policy"))
+    // provide a cryptographic suite to be configured
+    .withCryptographicSuite(new File("/path/to/cryptographic/suite"))
+    // and/or level for validation of encryption algorithms acceptance
+    .andAcceptableEncryptionAlgorithmsLevel(Level.WARN)
+    // and/or level for validation of key sizes of encryption algorithms acceptance
+    .andAcceptableEncryptionAlgorithmsMiniKeySizeLevel(Level.WARN)
+    // create final validation policy
+    .create();
+----
+                                                                     a|
+
+[source,java]
+----
+import eu.europa.esig.dss.enumerations.Level;
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
+import eu.europa.esig.dss.validation.policy.ValidationPolicyLoader;
+import java.io.File;
+
+ValidationPolicy validationPolicy = ValidationPolicyLoader
+    .fromValidationPolicy(new File("/path/to/validation/policy"))
+    // provide a cryptographic suite to be configured
+    .withCryptographicSuite(new File("/path/to/cryptographic/suite"))
+    // and/or level for validation of signature algorithms acceptance
+    .andAcceptableSignatureAlgorithmsLevel(Level.WARN)
+    // and/or level for validation of key sizes of signature algorithms acceptance
+    .andAcceptableSignatureAlgorithmsMiniKeySizeLevel(Level.WARN)
+    // create final validation policy
+    .create();
+----
+
+a|CMS classes moved from `dss-cades` to `dss-cms`          a|
+[source,java]
+----
+import eu.europa.esig.dss.cades.CertifiedAttributesV2;
+import eu.europa.esig.dss.cades.SignedAssertion;
+import eu.europa.esig.dss.cades.SignedAssertions;
+import eu.europa.esig.dss.cades.SignerAttributeV2;
+import eu.europa.esig.dss.cades.signature.CMSBuilder;
+import eu.europa.esig.dss.cades.signature.CustomContentSigner;
+import eu.europa.esig.dss.cades.signature.CustomMessageDigestCalculatorProvider;
+import eu.europa.esig.dss.cades.validation.PrecomputedDigestCalculatorProvider;
+----
+                                                                     a|
+
+[source,java]
+----
+import eu.europa.esig.dss.cms.asn1.CertifiedAttributesV2;
+import eu.europa.esig.dss.cms.asn1.SignedAssertion;
+import eu.europa.esig.dss.cms.asn1.SignedAssertions;
+import eu.europa.esig.dss.cms.asn1.SignerAttributeV2;
+import eu.europa.esig.dss.cms.CMSBuilder;
+import eu.europa.esig.dss.cms.operator.CustomContentSigner;
+import eu.europa.esig.dss.cms.operator.CustomMessageDigestCalculatorProvider;
+import eu.europa.esig.dss.cms.operator.PrecomputedDigestCalculatorProvider;
+----
+
+a|`CAdESUtils` methods deprecation          a|
+[source,java]
+----
+import eu.europa.esig.dss.cades.CAdESUtils;
+import org.bouncycastle.asn1.cms.AttributeTable;
+
+AttributeTable attributeTable = ...
+
+boolean isEmpty = CAdESUtils.isEmpty(attributeTable);
+AttributeTable notNullAttributeTable = CAdESUtils.emptyIfNull(attributeTable);
+boolean isAttributeOfType = CAdESUtils.isAttributeOfType(attributeTable, asn1ObjectIdentifier);
+----
+                                                                     a|
+
+[source,java]
+----
+import eu.europa.esig.dss.spi.DSSASN1Utils;
+import org.bouncycastle.asn1.cms.AttributeTable;
+
+AttributeTable attributeTable = ...
+
+boolean isEmpty = DSSASN1Utils.isEmpty(attributeTable);
+AttributeTable notNullAttributeTable = DSSASN1Utils.emptyIfNull(attributeTable);
+boolean isAttributeOfType = DSSASN1Utils.isAttributeOfType(attributeTable, asn1ObjectIdentifier);
+----
+
+a|Simplified CMS generation          a|
+[source,java]
+----
+import eu.europa.esig.dss.cms.CMS;
+import eu.europa.esig.dss.cms.operator.CustomContentSigner;
+import eu.europa.esig.dss.cades.signature.CMSBuilder;
+import eu.europa.esig.dss.cades.signature.CMSSignerInfoGeneratorBuilder;
+import org.bouncycastle.cms.SignerInfoGenerator;
+
+CustomContentSigner customContentSigner = new CustomContentSigner(signatureAlgorithm.getJCEId(), signatureValue.getValue());
+SignerInfoGenerator signerInfoGenerator = new CMSSignerInfoGeneratorBuilder().build(contentToSign, parameters, customContentSigner);
+CMSBuilder cmsBuilder = new CMSBuilder();
+// configure CMSBuilder
+cmsBuilder.setOriginalCMS(originalCms);
+CMS cms = cmsBuilder.createCMS(signerInfoGenerator, contentToSign);
+----
+                                                                     a|
+
+[source,java]
+----
+import eu.europa.esig.dss.cms.CMS;
+import eu.europa.esig.dss.cms.operator.CustomContentSigner;
+import eu.europa.esig.dss.cms.operator.CustomContentSignerBuilder;
+import eu.europa.esig.dss.cades.signature.CMSForCAdESBuilderHelper;
+
+CustomContentSigner contentSigner = new CustomContentSignerBuilder().build(parameters.getSignatureAlgorithm(), signatureValue);
+CMSForCAdESBuilderHelper cmsBuilderHelper = new CMSForCAdESBuilderHelper(contentToSign, signatureParameters, contentSigner);
+// configure CMSForCAdESBuilderHelper
+cmsBuilderHelper.setOriginalCMS(originalCms);
+CMS cms = cmsBuilderHelper.createCMS();
+----
+
+a|`AIACertificateSource` instantiation          a|
+[source,java]
+----
+import eu.europa.esig.dss.spi.x509.aia.AIACertificateSource;
+
+AIACertificateSource aiaCertificateSource = new AIACertificateSource(certificateToken, aiaSource);
+----
+                                                                     a|
+
+[source,java]
+----
+import eu.europa.esig.dss.spi.x509.aia.AIACertificateSource;
+
+AIACertificateSource aiaCertificateSource = AIACertificateSource.forCertificateToken(certificateToken, aiaSource);
+----
+
+a|TLS/SSL certificates downloading          a|
+[source,java]
+----
+import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.service.http.commons.CommonsDataLoader;
+import eu.europa.esig.dss.service.http.commons.SSLCertificateLoader;
+
+SSLCertificateLoader sslCertificateLoader = new SSLCertificateLoader();
+sslCertificateLoader.setCommonsDataLoader(new CommonsDataLoader());
+List<CertificateToken> certificates = sslCertificateLoader.getCertificates("https://website.com");
+----
+                                                                     a|
+
+[source,java]
+----
+import eu.europa.esig.dss.model.http.ResponseEnvelope;
+import eu.europa.esig.dss.service.http.commons.CommonsDataLoader;
+import java.security.cert.Certificate;
+
+CommonsDataLoader dataLoader = new CommonsDataLoader();
+ResponseEnvelope response = dataLoader.requestGet("https://website.com");
+Certificate[] certificates = response.getTLSCertificates();
+----
+Hint: for validation of TLS/SSL certificates please see <<QWACValidation>>.
+
+a|`NativeDataLoaderCall` deprecated          a|
+[source,java]
+----
+import eu.europa.esig.dss.spi.client.http.NativeDataLoaderCall;
+
+NativeDataLoaderCall nativeDataLoaderCall = new NativeDataLoaderCall(
+        url, content, refresh, maxInputSize, connectTimeout, readTimeout);
+byte[] responseBytes = nativeDataLoaderCall.call();
+----
+                                                                     a|
+
+[source,java]
+----
+import eu.europa.esig.dss.model.http.ResponseEnvelope;
+import eu.europa.esig.dss.spi.client.http.NativeHTTPDataLoaderCall;
+
+NativeHTTPDataLoaderCall httpDataLoaderCall = new NativeHTTPDataLoaderCall(url, content);
+httpDataLoaderCall.setUseCaches(refresh);
+httpDataLoaderCall.setMaxInputSize(maxInputSize);
+httpDataLoaderCall.setConnectTimeout(connectTimeout);
+httpDataLoaderCall.setReadTimeout(readTimeout);
+ResponseEnvelope response = httpDataLoaderCall.call();
+byte[] responseBytes = responsegetResponseBody();
+----
+
+a|`DSSUtils#getX500PrincipalOrNull` moved to `DSSASN1Utils`          a|
+[source,java]
+----
+import eu.europa.esig.dss.spi.DSSUtils;
+import javax.security.auth.x500.X500Principal;
+
+X500Principal x500Principal = DSSUtils.getX500PrincipalOrNull(x500NameString);
+----
+                                                                     a|
+
+[source,java]
+----
+import eu.europa.esig.dss.spi.DSSASN1Utils;
+import javax.security.auth.x500.X500Principal;
+
+X500Principal x500Principal = DSSASN1Utils.getX500PrincipalOrNull(x500NameString);
+----
+
+a|`CRLRef` instantiation          a|
+[source,java]
+----
+import eu.europa.esig.dss.spi.x509.revocation.crl.CRLRef;
+
+CRLRef crlRef = new CRLRef(digest);
+crlRef.setCrlIssuer(crlIssuer);
+crlRef.setCrlIssuedTime(crlIssuedTime);
+crlRef.setCrlNumber(crlNumber);
+----
+                                                                     a|
+
+[source,java]
+----
+import eu.europa.esig.dss.spi.x509.revocation.crl.CRLRef;
+
+CRLRef crlRef = new CRLRef(digest, crlIssuer, crlIssuedTime, crlNumber);
+----
+
+a|Trusted List criteria extensions           a|
+[source,java]
+----
+import eu.europa.esig.trustedlist.enums.Assert;
+import eu.europa.esig.trustedlist.parsers.AssertParser;
+----
+                                                                     a|
+
+[source,java]
+----
+import eu.europa.esig.dss.enumerations.Assert;
+import eu.europa.esig.dss.jaxb.parsers.AssertParser;
+----
+
+a|Trusted List v2.1.1 utils           a|
+[source,java]
+----
+import eu.europa.esig.trustedlist.TrustedList211Utils;
+import eu.europa.esig.trustedlist.TrustedList211Facade;
+----
+                                                                     a|
+
+[source,java]
+----
+import eu.europa.esig.trustedlist211.TrustedList211Utils;
+import eu.europa.esig.trustedlist211.TrustedList211Facade;
+----
+
+a|JAXB PKI Factory `X509CertificateBuilder`                          a|
+[source,java]
+----
+import eu.europa.esig.dss.pki.jaxb.builder.X509CertificateBuilder;
+import java.security.PrivateKey;
+
+final X509CertificateBuilder certBuilder = new X509CertificateBuilder();
+...
+PrivateKey issuerPrivateKey = ...
+certBuilder.issuer(issuerX500Name, issuerPrivateKey, signatureAlgo);
+...
+----
+                                                                     a|
+
+[source,java]
+----
+import eu.europa.esig.dss.pki.jaxb.builder.X509CertificateBuilder;
+import java.security.KeyPair;
+
+final X509CertificateBuilder certBuilder = new X509CertificateBuilder();
+...
+KeyPair issuerKeyPair = ...
+certBuilder.issuer(issuerX500Name, issuerKeyPair, signatureAlgo);
+...
+----
+
+|===
+
+[cols="2,5,5"]
+.Code changes from version 6.2 to 6.3
+|===
+|Title                               |v6.2                            |v6.3
+a|Default validation process requires the `dss-policy-jaxb` module           a|
+[source,xml]
+.pom.xml
+----
+<dependencies>
+    ...
+    <dependency>
+        <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+        <artifactId>dss-validation</artifactId>
+    </dependency>
+    ...
+</dependencies>
+----
+                                                                     a|
+In order to benefit from default XML Validation Policy, please add the `dss-policy-jaxb` module:
+
+[source,xml]
+.pom.xml
+----
+<dependencies>
+    ...
+    <dependency>
+        <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+        <artifactId>dss-validation</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+        <artifactId>dss-policy-jaxb</artifactId>
+    </dependency>
+    ...
+</dependencies>
+----
+
+a|CAdES/PAdES signature and validation (see <<dssCms>>)             a|
+[source,xml]
+.pom.xml
+----
+<dependencies>
+    ...
+    <dependency>
+        <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+        <artifactId>dss-cades</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+        <artifactId>dss-pades-pdfbox</artifactId>
+    </dependency>
+    ...
+</dependencies>
+----
+                                                                     a|
+[source,xml]
+.pom.xml
+----
+<dependencies>
+    ...
+    <dependency>
+        <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+        <artifactId>dss-cades</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+        <artifactId>dss-pades-pdfbox</artifactId>
+    </dependency>
+    <!-- dss-cms implementation shall be added -->
+    <dependency>
+        <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+        <artifactId>dss-cms-object</artifactId>
+    </dependency>
+    ...
+</dependencies>
+----
+
+a|Old `CMSUtils` moved to `CAdESUtils`             a|
+[source,java]
+----
+import eu.europa.esig.dss.cades.CMSUtils;
+----
+                                                                     a|
+[source,java]
+----
+import eu.europa.esig.dss.cades.CAdESUtils;
+----
+
+a|`CAdESSignatureExtension` and related classes             a|
+[source,java]
+----
+import eu.europa.esig.dss.cades.signature.CAdESSignatureExtension;
+import org.bouncycastle.cms.CMSSignedData;
+
+CAdESSignatureExtension cadesExtension = ...
+CMSSignedData cmsSignedData = ...
+cmsSignedData = cadesExtension.extendCMSSignatures(cmsSignedData, signatureParameters);
+----
+                                                                     a|
+Replaced by a new `CMS` object
+[source,java]
+----
+
+import eu.europa.esig.dss.cades.signature.CAdESSignatureExtension;
+import eu.europa.esig.dss.cms.CMS;
+
+CAdESSignatureExtension cadesExtension = ...
+CMS cms = ...
+cms = cadesExtension.extendCMSSignatures(cms, signatureParameters);
+----
+
+a|Min and Max signature extension times             a|
+[source,java]
+----
+import eu.europa.esig.dss.simplereport.SimpleReport;
+import java.util.Date;
+
+SimpleReport simpleReport = reports.getSimpleReport();
+Date extensionPeriodMin = simpleReport.getSignatureExtensionPeriodMin(signatureId);
+Date extensionPeriodMax = simpleReport.getSignatureExtensionPeriodMax(signatureId);
+----
+                                                                     a|[source,java]
+----
+import eu.europa.esig.dss.simplereport.SimpleReport;
+import java.util.Date;
+
+SimpleReport simpleReport = reports.getSimpleReport();
+Date extensionPeriodMin = simpleReport.getExtensionPeriodMin(signatureId);
+Date extensionPeriodMax = simpleReport.getExtensionPeriodMax(signatureId);
+----
+
+a|`ValidationPolicy` package             a|
+[source,java]
+----
+import eu.europa.esig.dss.policy.ValidationPolicy;
+----
+                                                                     a|[source,java]
+----
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
+----
+
+a|`SigningOperation` package             a|
+[source,java]
+----
+import eu.europa.esig.dss.signature.SigningOperation;
+----
+                                                                     a|[source,java]
+----
+import eu.europa.esig.dss.enumerations.SigningOperation;
+----
+
+|===
+
+[cols="2,5,5"]
+.Code changes from version 6.1 to 6.2
+|===
+|Title                               |v6.1                            |v6.2
+|Signature #getFilename             a|
+[source,java]
+----
+import eu.europa.esig.dss.spi.signature.AdvancedSignature;
+
+AdvancedSignature signature = ...
+String filename = signature.getSignatureFilename();
+...
+
+import eu.europa.esig.dss.diagnostic.SignatureWrapper;
+
+SignatureWrapper signatureWrapper = ...
+String filename = signatureWrapper.getSignatureFilename();
+----
+                                                                     a|
+[source,java]
+----
+import eu.europa.esig.dss.spi.signature.AdvancedSignature;
+
+AdvancedSignature signature = ...
+String filename = signature.getFilename();
+...
+
+import eu.europa.esig.dss.diagnostic.SignatureWrapper;
+
+SignatureWrapper signatureWrapper = ...
+String filename = signatureWrapper.getFilename();
+----
+
+|PdfBoxUtils#generateScreenshot             a|
+[source,java]
+----
+import eu.europa.esig.dss.pdf.pdfbox.PdfBoxUtils;
+import eu.europa.esig.dss.model.DSSDocument;
+
+DSSDocument screenshot = PdfBoxUtils.generateScreenshot(pdfDocument, page);
+...
+
+import eu.europa.esig.dss.pdf.pdfbox.PdfBoxUtils;
+import eu.europa.esig.dss.model.DSSDocument;
+
+BufferedImage screenshot = PdfBoxUtils.generateBufferedImageScreenshot(pdfDocument, password, page);
+----
+                                                                     a|
+[source,java]
+----
+import eu.europa.esig.dss.pdf.pdfbox.PdfBoxScreenshotBuilder;
+import eu.europa.esig.dss.model.DSSDocument;
+
+DSSDocument screenshot = PdfBoxScreenshotBuilder.fromDocument(pdfDocument).generateScreenshot(page);
+...
+
+import eu.europa.esig.dss.pdf.pdfbox.PdfBoxScreenshotBuilder;
+import eu.europa.esig.dss.model.DSSDocument;
+
+BufferedImage screenshot = PdfBoxScreenshotBuilder.fromDocument(pdfDocument, password).generateBufferedImageScreenshot(page);
+----
+
+|PdfBoxUtils#generateSubtractionImage             a|
+[source,java]
+----
+import eu.europa.esig.dss.pdf.pdfbox.PdfBoxUtils;
+import eu.europa.esig.dss.model.DSSDocument;
+
+DSSDocument subtractionImage = PdfBoxUtils.generateSubtractionImage(docOne, passwordOne, page, docTwo, passwordTwo, page,
+        tempFileResourcesHandlerBuilder.createResourcesHandler());
+----
+                                                                     a|
+[source,java]
+----
+import eu.europa.esig.dss.pdf.pdfbox.PdfBoxUtils;
+import eu.europa.esig.dss.pdf.pdfbox.PdfBoxScreenshotBuilder;
+import eu.europa.esig.dss.model.DSSDocument;
+
+BufferedImage screenshotOne = PdfBoxScreenshotBuilder.fromDocument(docOne, passwordOne)
+        .setDSSResourcesHandlerBuilder(tempFileResourcesHandlerBuilder).generateBufferedImageScreenshot(page);
+BufferedImage screenshotTwo = PdfBoxScreenshotBuilder.fromDocument(docTwo, passwordTwo)
+        .setDSSResourcesHandlerBuilder(tempFileResourcesHandlerBuilder).generateBufferedImageScreenshot(page);
+DSSDocument subtractionImage = PdfBoxUtils.generateSubtractionImage(screenshotOne, screenshotTwo);
+----
+
+|Digest encoding for RSA signature             a|
+[source,java]
+----
+import eu.europa.esig.dss.model.Digest;
+import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.token.SignatureTokenConnection;
+
+SignatureTokenConnection token = ...
+byte[] digestValue = ...
+byte[] encodedDigest = DSSUtils.encodeRSADigest(DigestAlgorithm.SHA256, digestValue));
+Digest digest = new Digest(DigestAlgorithm.SHA256, encodedDigest);
+SignatureValue signatureValue = token.signDigest(digest, SignatureAlgorithm.RSA_SHA256, getPrivateKeyEntry());
+----
+                                                                     a|
+[source,java]
+----
+import eu.europa.esig.dss.model.Digest;
+import eu.europa.esig.dss.token.SignatureTokenConnection;
+
+SignatureTokenConnection token = ...
+byte[] digestValue = ...
+Digest digest = new Digest(DigestAlgorithm.SHA256, digestValue);
+SignatureValue signatureValue = token.signDigest(digest, SignatureAlgorithm.RSA_SHA256, getPrivateKeyEntry());
+----
+
+|XML Trusted List signing             a|
+[source,java]
+----
+import eu.europa.esig.dss.xades.TrustedListSignatureParametersBuilder;
+import eu.europa.esig.dss.xades.XAdESSignatureParameters;
+
+TrustedListSignatureParametersBuilder builder = new TrustedListSignatureParametersBuilder(signingCertificate, xmlTrustedList);
+XAdESSignatureParameters parameters = builder.build();
+...
+----
+                                                                     a|
+[source,java]
+----
+import eu.europa.esig.dss.xades.tsl.TrustedListV5SignatureParametersBuilder;
+import eu.europa.esig.dss.xades.XAdESSignatureParameters;
+
+TrustedListV5SignatureParametersBuilder builder = new TrustedListV5SignatureParametersBuilder(signingCertificate, xmlTrustedList);
+XAdESSignatureParameters parameters = builder.build();
+...
+----
+
+a|Additional signature validation data is included within `AnyValidationData` element (XAdES, JAdES) after LTA-level             a|
+[source,java]
+----
+import eu.europa.esig.dss.enumerations.SignatureLevel;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.xades.XAdESSignatureParameters;
+import eu.europa.esig.dss.xades.signature.XAdESService;
+
+XAdESService service = new XAdESService(certificateVerifier);
+XAdESSignatureParameters signatureParameters = new XAdESSignatureParameters();
+signatureParameters.setSignatureLevel(SignatureLevel.XAdES_BASELINE_LTA);
+...
+DSSDocument extendedDocument = service.extendDocument(signedDocument, signatureParameters);
+----
+                                                                     a|
+To get back to previous behavior (no `AnyValidationData` is used):
+[source,java]
+----
+import eu.europa.esig.dss.enumerations.SignatureLevel;
+import eu.europa.esig.dss.enumerations.ValidationDataEncapsulationStrategy;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.xades.XAdESSignatureParameters;
+import eu.europa.esig.dss.xades.signature.XAdESService;
+
+XAdESService service = new XAdESService(certificateVerifier);
+XAdESSignatureParameters signatureParameters = new XAdESSignatureParameters();
+signatureParameters.setSignatureLevel(SignatureLevel.XAdES_BASELINE_LTA);
+signatureParameters.setValidationDataEncapsulationStrategy(ValidationDataEncapsulationStrategy.CERTIFICATE_REVOCATION_VALUES_AND_TIMESTAMP_VALIDATION_DATA);
+...
+DSSDocument extendedDocument = service.extendDocument(signedDocument, signatureParameters);
+----
+
+a|Alert behavior in `SignatureValidationContext` checks              a|
+Only when `ValidationContext` is used directly.
+[source,java]
+----
+import eu.europa.esig.dss.alert.ExceptionOnStatusAlert;
+import eu.europa.esig.dss.spi.validation.CertificateVerifier;
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
+import eu.europa.esig.dss.spi.validation.SignatureValidationContext;
+import eu.europa.esig.dss.spi.validation.ValidationContext;
+
+CertificateVerifier certificateVerifier = new CommonCertificateVerifier();
+certificateVerifier.setAlertOnExpiredCertificate(new ExceptionOnStatusAlert());
+...
+ValidationContext validationContext = new SignatureValidationContext();
+validationContext.initialize(certificateVerifier);
+...
+validationContext.validate();
+
+boolean result = validationContext.checkAllSignaturesNotExpired(); // AlertException is thrown in case of FALSE
+----
+                                                                     a|[source,java]
+----
+import eu.europa.esig.dss.alert.ExceptionOnStatusAlert;
+import eu.europa.esig.dss.spi.validation.CertificateVerifier;
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
+import eu.europa.esig.dss.spi.validation.SignatureValidationContext;
+import eu.europa.esig.dss.spi.validation.ValidationContext;
+
+CertificateVerifier certificateVerifier = new CommonCertificateVerifier();
+certificateVerifier.setAlertOnExpiredCertificate(new ExceptionOnStatusAlert());
+...
+ValidationContext validationContext = new SignatureValidationContext();
+validationContext.initialize(certificateVerifier);
+...
+validationContext.validate();
+
+boolean result = validationContext.checkAllSignaturesNotExpired(); // no alert execution, only boolean is returned
+
+ValidationAlerter validationAlerter = new SignatureValidationAlerter(validationContext);
+validationAlerter.assertAllSignaturesNotExpired(); // AlertException is thrown in case of check failure
+----
+
+|===
 
 [cols="2,5,5"]
 .Code changes from version 6.0 to 6.1
@@ -211,7 +1242,7 @@ boolean result = DSSASN1Utils.isArchiveTimeStampToken(attribute);
 a|
 [source,java]
 ----
-import eu.europa.esig.dss.cades.CMSUtils;
+import eu.europa.esig.dss.cades.CAdESUtils;
 
 List<ASN1ObjectIdentifier> oids = CMSUtils.getTimestampOids();
 boolean result = CMSUtils.isArchiveTimeStampToken(attribute);
@@ -656,19 +1687,19 @@ List<SignatureScope> signatureScopes = advancedSignature.getSignatureScopes();
 
 |CMSSignedDataBuilder refactoring                               a|[source,java]
 ----
-import eu.europa.esig.dss.cades.CMSUtils;
-import eu.europa.esig.dss.cades.signature.CMSSignedDataBuilder;
+import eu.europa.esig.dss.cades.CAdESUtils;
+import eu.europa.esig.dss.cades.signature.CMSBuilder;
 import org.bouncycastle.cms.SignerInfoGeneratorBuilder;
 
-CMSSignedDataBuilder cmsSignedDataBuilder = new CMSSignedDataBuilder(certificateVerifier);
-SignerInfoGeneratorBuilder signerInfoGeneratorBuilder = cmsSignedDataBuilder.getSignerInfoGeneratorBuilder(dcp, parameters, true, contentToSign);
-CMSSignedDataGenerator cmsSignedDataGenerator = cmsSignedDataBuilder.createCMSSignedDataGenerator(parameters, customContentSigner, signerInfoGeneratorBuilder, originalCmsSignedData);
+CMSSignedDataBuilder cmsBuilder = new CMSSignedDataBuilder(certificateVerifier);
+SignerInfoGeneratorBuilder signerInfoGeneratorBuilder = cmsBuilder.getSignerInfoGeneratorBuilder(dcp, parameters, true, contentToSign);
+CMSSignedDataGenerator cmsSignedDataGenerator = cmsBuilder.createCMSSignedDataGenerator(parameters, customContentSigner, signerInfoGeneratorBuilder, originalCmsSignedData);
 CMSTypedData content = CMSUtils.getContentToBeSigned(contentToSign);
 CMSSignedData cmsSignedData = CMSUtils.generateCMSSignedData(cmsSignedDataGenerator, content, encapsulate);
 ----
                                                                 a|[source,java]
 ----
-import eu.europa.esig.dss.spi.x509.CMSSignedDataBuilder;
+import eu.europa.esig.dss.cades.signature.CMSBuilder;
 import org.bouncycastle.cms.SignerInfoGenerator;
 
 SignerInfoGenerator signerInfoGenerator = new CMSSignerInfoGeneratorBuilder().build(contentToSign, parameters, customContentSigner);

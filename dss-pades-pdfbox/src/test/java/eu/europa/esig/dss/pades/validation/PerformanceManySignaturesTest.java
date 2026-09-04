@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -27,19 +27,20 @@ import eu.europa.esig.dss.model.x509.revocation.Revocation;
 import eu.europa.esig.dss.pdf.PdfDocDssRevision;
 import eu.europa.esig.dss.pdf.PdfDssDict;
 import eu.europa.esig.dss.pdf.pdfbox.PdfBoxDocumentReader;
-import eu.europa.esig.dss.spi.x509.revocation.OfflineRevocationSource;
 import eu.europa.esig.dss.spi.signature.AdvancedSignature;
+import eu.europa.esig.dss.spi.x509.revocation.OfflineRevocationSource;
 import eu.europa.esig.dss.spi.x509.tsp.TimestampToken;
+import eu.europa.esig.dss.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,8 +52,8 @@ class PerformanceManySignaturesTest {
         InMemoryDocument inMemoryDocument = new InMemoryDocument(getClass().getResourceAsStream("/validation/51sigs.pdf"));
 
         try (PdfBoxDocumentReader reader = new PdfBoxDocumentReader(inMemoryDocument)) {
-            Map<PdfSignatureDictionary, List<PdfSignatureField>> pdfSignatureDictionaryListMap = reader.extractSigDictionaries();
-            assertNotNull(pdfSignatureDictionaryListMap);
+            List<PdfSignatureDictionary> signatureDictionaries = reader.extractSigDictionaries();
+            assertTrue(Utils.isCollectionNotEmpty(signatureDictionaries));
         }
     }
 
@@ -75,8 +76,7 @@ class PerformanceManySignaturesTest {
 
         List<EncapsulatedRevocationTokenIdentifier<?>> revocationBinaries = new ArrayList<>();
         for (AdvancedSignature signature : signatures) {
-            assertTrue(signature instanceof PAdESSignature);
-            PAdESSignature padesSignature = (PAdESSignature) signature;
+            PAdESSignature padesSignature = assertInstanceOf(PAdESSignature.class, signature);
             verifyRevocationSource(revocationBinaries, padesSignature.getCRLSource());
             verifyRevocationSource(revocationBinaries, padesSignature.getOCSPSource());
         }

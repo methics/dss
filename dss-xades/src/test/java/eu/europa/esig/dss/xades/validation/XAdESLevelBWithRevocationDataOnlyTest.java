@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -41,9 +41,10 @@ import eu.europa.esig.dss.validation.SignedDocumentValidator;
 import eu.europa.esig.dss.xades.DSSXMLUtils;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.XAdESTimestampParameters;
+import eu.europa.esig.dss.xades.definition.xades132.XAdES132Path;
 import eu.europa.esig.dss.xades.signature.XAdESService;
 import eu.europa.esig.dss.xml.utils.DomUtils;
-import eu.europa.esig.dss.xades.definition.xades132.XAdES132Path;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -94,11 +95,11 @@ class XAdESLevelBWithRevocationDataOnlyTest extends AbstractXAdESTestValidation 
 		assertEquals(1, signaturesList.getLength());
 
 		Node signature = signaturesList.item(0);
-		Element unsignedSignatureProperties = DomUtils.getElement(signature,
+		Element unsignedSignatureProperties = XPathUtils.getElement(signature,
 				new XAdES132Path().getUnsignedSignaturePropertiesPath());
 		assertNotNull(unsignedSignatureProperties);
 
-		Element signatureTimeStamp = DomUtils.getElement(signature, new XAdES132Path().getSignatureTimestampPath());
+		Element signatureTimeStamp = XPathUtils.getElement(signature, new XAdES132Path().getSignatureTimestampPath());
 		assertNotNull(signatureTimeStamp);
 
 		unsignedSignatureProperties.removeChild(signatureTimeStamp);
@@ -142,7 +143,7 @@ class XAdESLevelBWithRevocationDataOnlyTest extends AbstractXAdESTestValidation 
 		assertEquals(2, foundCertificates.getRelatedCertificatesByOrigin(CertificateOrigin.KEY_INFO).size());
 		assertEquals(1, foundCertificates.getRelatedCertificatesByOrigin(CertificateOrigin.CERTIFICATE_VALUES).size());
 		// certificate for the removed timestamp
-		assertEquals(1, foundCertificates.getOrphanCertificatesByOrigin(CertificateOrigin.CERTIFICATE_VALUES).size());
+		assertEquals(1, foundCertificates.getOrphanCertificatesByOrigin(CertificateOrigin.TIMESTAMP_VALIDATION_DATA).size());
 	}
 
 	@Override

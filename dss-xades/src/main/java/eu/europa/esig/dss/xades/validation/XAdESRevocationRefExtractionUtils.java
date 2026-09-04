@@ -1,39 +1,42 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package eu.europa.esig.dss.xades.validation;
 
-import eu.europa.esig.dss.xml.utils.DomUtils;
 import eu.europa.esig.dss.model.Digest;
-import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.spi.DSSASN1Utils;
 import eu.europa.esig.dss.spi.x509.ResponderId;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLRef;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPRef;
 import eu.europa.esig.dss.utils.Utils;
 import eu.europa.esig.dss.xades.DSSXMLUtils;
 import eu.europa.esig.dss.xades.definition.XAdESPath;
+import eu.europa.esig.dss.xml.common.xpath.XPathQuery;
+import eu.europa.esig.dss.xml.utils.DomUtils;
+import eu.europa.esig.dss.xml.utils.xpath.XPathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 
 import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.util.Date;
 
 /**
@@ -55,7 +58,7 @@ public final class XAdESRevocationRefExtractionUtils {
 	 */
 	public static OCSPRef createOCSPRef(final XAdESPath xadesPaths, final Element ocspRefElement) {
 
-		Digest digest = DSSXMLUtils.getDigestAndValue(DomUtils.getElement(ocspRefElement, xadesPaths.getCurrentDigestAlgAndValue()));
+		Digest digest = DSSXMLUtils.getDigestAndValue(XPathUtils.getElement(ocspRefElement, xadesPaths.getCurrentDigestAlgAndValue()));
 
 		ResponderId responderId = getOCSPResponderId(xadesPaths, ocspRefElement);
 		if (responderId == null) {
@@ -74,7 +77,7 @@ public final class XAdESRevocationRefExtractionUtils {
 
 	private static Date getOCSPProducedAtDate(final XAdESPath xadesPaths, final Element ocspRefElement) {
 		Date producedAtDate = null;
-		final Element producedAtEl = DomUtils.getElement(ocspRefElement, xadesPaths.getCurrentOCSPRefProducedAt());
+		final Element producedAtEl = XPathUtils.getElement(ocspRefElement, xadesPaths.getCurrentOCSPRefProducedAt());
 		if (producedAtEl != null) {
 			producedAtDate = DomUtils.getDate(producedAtEl.getTextContent());
 		}
@@ -84,15 +87,15 @@ public final class XAdESRevocationRefExtractionUtils {
 	private static ResponderId getOCSPResponderId(final XAdESPath xadesPaths, final Element ocspRefElement) {
 		X500Principal responderName = null;
 		byte[] ski = null;
-		String currentOCSPRefResponderIDByName = xadesPaths.getCurrentOCSPRefResponderIDByName();
-		String currentOCSPRefResponderIDByKey = xadesPaths.getCurrentOCSPRefResponderIDByKey();
+		XPathQuery currentOCSPRefResponderIDByName = xadesPaths.getCurrentOCSPRefResponderIDByName();
+		XPathQuery currentOCSPRefResponderIDByKey = xadesPaths.getCurrentOCSPRefResponderIDByKey();
 		if (currentOCSPRefResponderIDByName != null && currentOCSPRefResponderIDByKey != null) {
-			final Element responderIdByName = DomUtils.getElement(ocspRefElement, currentOCSPRefResponderIDByName);
+			final Element responderIdByName = XPathUtils.getElement(ocspRefElement, currentOCSPRefResponderIDByName);
 			if (responderIdByName != null) {
-				responderName = DSSUtils.getX500PrincipalOrNull(responderIdByName.getTextContent());
+				responderName = DSSASN1Utils.getX500PrincipalOrNull(responderIdByName.getTextContent());
 			}
 
-			final Element responderIdByKey = DomUtils.getElement(ocspRefElement, currentOCSPRefResponderIDByKey);
+			final Element responderIdByKey = XPathUtils.getElement(ocspRefElement, currentOCSPRefResponderIDByKey);
 			if (responderIdByKey != null) {
 				String base64EncodedResponderId = responderIdByKey.getTextContent();
 				if (Utils.isBase64Encoded(base64EncodedResponderId)) {
@@ -102,9 +105,9 @@ public final class XAdESRevocationRefExtractionUtils {
 				}
 			}
 		} else {
-			final Element responderIdElement = DomUtils.getElement(ocspRefElement, xadesPaths.getCurrentOCSPRefResponderID());
+			final Element responderIdElement = XPathUtils.getElement(ocspRefElement, xadesPaths.getCurrentOCSPRefResponderID());
 			if (responderIdElement != null) {
-				responderName = DSSUtils.getX500PrincipalOrNull(responderIdElement.getTextContent());
+				responderName = DSSASN1Utils.getX500PrincipalOrNull(responderIdElement.getTextContent());
 			}
 		}
 
@@ -122,13 +125,57 @@ public final class XAdESRevocationRefExtractionUtils {
 	 * @return {@link OCSPRef}
 	 */
 	public static CRLRef createCRLRef(XAdESPath xadesPaths, Element crlRefElement) {
-		final Digest digest = DSSXMLUtils.getDigestAndValue(DomUtils.getElement(crlRefElement, xadesPaths.getCurrentDigestAlgAndValue()));
+		final Digest digest = DSSXMLUtils.getDigestAndValue(XPathUtils.getElement(crlRefElement, xadesPaths.getCurrentDigestAlgAndValue()));
 		if (digest == null) {
 			LOG.warn("Skipped CRLRef (missing DigestAlgAndValue)");
 			return null;
 		}
-		// TODO CRLIdentifier
-		return new CRLRef(digest);
+
+		X500Principal issuer = getCRLIssuer(xadesPaths, crlRefElement);
+		if (issuer == null) {
+			LOG.warn("Skipped CRLRef (missing CRLIdentifier / Issuer)");
+			return null;
+		}
+
+		Date issueTime = getCRLIssueTime(xadesPaths, crlRefElement);
+		if (issueTime == null) {
+			LOG.warn("Skipped CRLRef (missing CRLIdentifier / IssueTime)");
+			return null;
+		}
+
+		BigInteger crlNumber = getCRLNumber(xadesPaths, crlRefElement); // can be null
+		return new CRLRef(digest, issuer, issueTime, crlNumber);
+	}
+
+	private static X500Principal getCRLIssuer(final XAdESPath xadesPaths, final Element crlRefElement) {
+		X500Principal issuer = null;
+		final Element issuerEl = XPathUtils.getElement(crlRefElement, xadesPaths.getCurrentCRLRefCRLIdentifierIssuer());
+		if (issuerEl != null) {
+			issuer = DSSASN1Utils.getX500PrincipalOrNull(issuerEl.getTextContent());
+		}
+		return issuer;
+	}
+
+	private static Date getCRLIssueTime(final XAdESPath xadesPaths, final Element crlRefElement) {
+		Date issueTime = null;
+		final Element issueTimeEl = XPathUtils.getElement(crlRefElement, xadesPaths.getCurrentCRLRefCRLIdentifierIssueTime());
+		if (issueTimeEl != null) {
+			issueTime = DomUtils.getDate(issueTimeEl.getTextContent());
+		}
+		return issueTime;
+	}
+
+	private static BigInteger getCRLNumber(final XAdESPath xadesPaths, final Element crlRefElement) {
+		BigInteger number = null;
+		final Element numberEl = XPathUtils.getElement(crlRefElement, xadesPaths.getCurrentCRLRefCRLIdentifierNumber());
+		if (numberEl != null) {
+			try {
+				number = new BigInteger(numberEl.getTextContent());
+			} catch (Exception e) {
+				LOG.warn("Unable to read CRL number : {}", e.getMessage(), e);
+			}
+		}
+		return number;
 	}
 
 }

@@ -6,9 +6,9 @@
 	xmlns:dss="http://dss.esig.europa.eu/validation/simple-report">
 	<xsl:output method="xml" indent="yes" />
 
-	<xsl:param name="rootUrlInTlBrowser">https://eidas.ec.europa.eu/efda/tl-browser/#/screen</xsl:param>
-	<xsl:param name="euTLSubDirectoryInTlBrowser">/tl</xsl:param>
-	<xsl:param name="tcTLSubDirectoryInTlBrowser">/tc-tl</xsl:param>
+	<xsl:param name="rootUrlInTlBrowser">https://eidas.ec.europa.eu/efda/trust-services/browse</xsl:param>
+	<xsl:param name="euTLSubDirectoryInTlBrowser">/eidas/tls/tl</xsl:param>
+	<xsl:param name="tcTLSubDirectoryInTlBrowser">/tc-tls/tl</xsl:param>
 	<xsl:param name="trustmarkSubDirectoryInTlBrowser">/trustmark</xsl:param>
 	<xsl:param name="euGenericTSLType">http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</xsl:param>
 
@@ -158,6 +158,7 @@
 					<xsl:apply-templates select="dss:Signature"/>
 					<xsl:apply-templates select="dss:Timestamp"/>
 					<xsl:apply-templates select="dss:EvidenceRecord"/>
+					<xsl:apply-templates select="dss:Attestation"/>
 					
 	    			<xsl:call-template name="documentInformation"/>
 	    			
@@ -246,8 +247,9 @@
     	</fo:block-container>
 		
     </xsl:template>
-    
-    <xsl:template match="dss:Signature|dss:Timestamp|dss:EvidenceRecord">
+
+	<xsl:template match="dss:Signature|dss:Timestamp|dss:EvidenceRecord|dss:Attestation
+			|dss:AttestationSignature|dss:KeyBindingSignature">
 		<xsl:param name="sigCounter" />
 		<xsl:param name="erCounter" />
 
@@ -323,6 +325,15 @@
 							<xsl:if test="$nodeName = 'EvidenceRecord'">
 								<xsl:text>Evidence Record: </xsl:text>
 							</xsl:if>
+							<xsl:if test="$nodeName = 'Attestation'">
+								Attestation
+							</xsl:if>
+							<xsl:if test="$nodeName = 'AttestationSignature'">
+								Attestation Signature
+							</xsl:if>
+							<xsl:if test="$nodeName = 'KeyBindingSignature'">
+								Key Binding Signature
+							</xsl:if>
 				       		<xsl:value-of select="$idToken" />
 			       		</fo:block>
 					</fo:table-cell>
@@ -375,6 +386,9 @@
 											<xsl:if test="$nodeName = 'EvidenceRecord'">
 												Evidence Record filename:
 											</xsl:if>
+											<xsl:if test="$nodeName = 'Attestation'">
+												Attestation filename:
+											</xsl:if>
 										</fo:block>
 									</fo:table-cell>
 									<fo:table-cell>
@@ -388,7 +402,7 @@
 								</fo:table-row>
 							</xsl:if>
 						
-							<xsl:if test="dss:SignatureLevel | dss:TimestampLevel">
+							<xsl:if test="dss:SignatureLevel | dss:TimestampLevel | dss:AttestationLevel">
 								<fo:table-row>
 									<xsl:attribute name="margin-top">1px</xsl:attribute>
 									<xsl:attribute name="margin-bottom">1px</xsl:attribute>
@@ -411,6 +425,9 @@
 											</xsl:if>
 											<xsl:if test="dss:TimestampLevel">
 												<xsl:value-of select="dss:TimestampLevel/@description" />
+											</xsl:if>
+											<xsl:if test="dss:AttestationLevel">
+												<xsl:value-of select="dss:AttestationLevel" />
 											</xsl:if>
 										</fo:block>
 									</fo:table-cell>
@@ -504,8 +521,18 @@
 															<xsl:value-of select="dss:QualifiedName" />
 														</fo:inline>
 														<fo:inline>
-															<xsl:if test="@trusted = 'true' and not(dss:TrustAnchors)"> (Trust anchor)</xsl:if>
-															<xsl:apply-templates select="dss:TrustAnchors"/>
+															<xsl:if test="@trusted = 'true'">
+																<xsl:if test="not(dss:TrustAnchors)">
+																	(Trust anchor<xsl:if test="@sunsetDate">, sunset at
+																	<xsl:call-template name="formatdate"><xsl:with-param name="DateTimeStr" select="@sunsetDate"/></xsl:call-template></xsl:if>)
+																</xsl:if>
+																<xsl:if test="dss:TrustAnchors">
+																	<xsl:apply-templates select="dss:TrustAnchors"/>
+																	<xsl:if test="@sunsetDate">
+																		(Sunset at <xsl:call-template name="formatdate"><xsl:with-param name="DateTimeStr" select="@sunsetDate"/></xsl:call-template>)
+																	</xsl:if>
+																</xsl:if>
+															</xsl:if>
 														</fo:inline>
 													</fo:block>
 
@@ -588,6 +615,40 @@
 									</fo:table-cell>
 								</fo:table-row>
 							</xsl:if>
+
+							<!-- Ignore embedded timestamps -->
+							<xsl:if test="((not($nodeName = 'Timestamp') or (count(ancestor::*/dss:Signature) = 0 and count(ancestor::*/dss:EvidenceRecord) = 0)) and not($nodeName = 'Attestation'))">
+								<fo:table-row>
+									<xsl:attribute name="margin-top">1px</xsl:attribute>
+									<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+									<fo:table-cell>
+										<fo:block>
+											<xsl:attribute name="margin-top">1px</xsl:attribute>
+											<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+											<xsl:attribute name="font-weight">bold</xsl:attribute>
+											Maximum validity time:
+										</fo:block>
+									</fo:table-cell>
+									<fo:table-cell>
+										<fo:block>
+											<xsl:attribute name="margin-top">1px</xsl:attribute>
+											<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+											<xsl:choose>
+												<xsl:when test="dss:ExtensionPeriodMax">
+													<xsl:call-template name="formatdate">
+														<xsl:with-param name="DateTimeStr" select="dss:ExtensionPeriodMax"/>
+													</xsl:call-template>
+												</xsl:when>
+												<xsl:otherwise>
+													N/A
+												</xsl:otherwise>
+											</xsl:choose>
+										</fo:block>
+									</fo:table-cell>
+								</fo:table-row>
+							</xsl:if>
 							
 							<xsl:if test="$nodeName = 'Signature'">
 								<fo:table-row>
@@ -616,6 +677,7 @@
 							<xsl:apply-templates select="dss:SignatureScope" />
 							<xsl:apply-templates select="dss:TimestampScope" />
 							<xsl:apply-templates select="dss:EvidenceRecordScope" />
+							<xsl:apply-templates select="dss:AttestationPayload" />
 							
 						</fo:table-body>	
 					</fo:table>
@@ -631,6 +693,11 @@
 							<xsl:when test="$nodeName = 'EvidenceRecord'"><xsl:value-of select="$counter" /></xsl:when>
 						</xsl:choose>
 					</xsl:variable>
+					<xsl:variable name="eaaPosition">
+						<xsl:choose>
+							<xsl:when test="$nodeName = 'EAA'"><xsl:value-of select="$counter" /></xsl:when>
+						</xsl:choose>
+					</xsl:variable>
 		
 					<xsl:apply-templates select="dss:Timestamps">
 						<xsl:with-param name="sigCounter" select="$sigPosition"/>
@@ -640,6 +707,8 @@
 					<xsl:apply-templates select="dss:EvidenceRecords">
 						<xsl:with-param name="sigCounter" select="$counter"/>
 					</xsl:apply-templates>
+
+					<xsl:apply-templates select="dss:AttestationSignature|dss:KeyBindingSignature" />
 		
 		       	</fo:block-container>
 	       	</fo:block-container>
@@ -685,6 +754,234 @@
 				</fo:block>
 			</fo:table-cell>
 		</fo:table-row>
+	</xsl:template>
+
+	<xsl:template match="dss:AttestationPayload">
+		<xsl:apply-templates />
+	</xsl:template>
+
+	<xsl:template name="printClaim">
+		<xsl:variable name="header">
+			<xsl:choose>
+				<xsl:when test="name() = 'Identifier'">Identifier</xsl:when>
+				<xsl:when test="name() = 'Issuer'">Issuer</xsl:when>
+				<xsl:when test="name() = 'Subject'">Subject</xsl:when>
+				<xsl:when test="name() = 'Audience'">Audience</xsl:when>
+				<xsl:when test="name() = 'IssuedAt'">Issuance time</xsl:when>
+				<xsl:when test="name() = 'NotBefore'">Valid from</xsl:when>
+				<xsl:when test="name() = 'Expiration'">Valid until</xsl:when>
+				<xsl:when test="name() = 'UpdatedAt'">Update time</xsl:when>
+				<xsl:when test="name() = 'NextUpdate'">Next update time</xsl:when>
+				<xsl:when test="name() = 'Category'">Category</xsl:when>
+				<xsl:when test="name() = 'VerifiableCredentialsType'">Verifiable credentials type</xsl:when>
+				<xsl:when test="name() = 'StatusIndex'">Status index</xsl:when>
+				<xsl:when test="name() = 'StatusUri'">Status URI</xsl:when>
+				<xsl:when test="name() = 'StatusType'">Status type</xsl:when>
+				<xsl:when test="name() = 'StatusPurpose'">Status purpose</xsl:when>
+				<xsl:when test="name() = 'Nonce'">Nonce</xsl:when>
+
+				<xsl:when test="name() = 'Version'">Version</xsl:when>
+				<xsl:when test="name() = 'DocType'">Document type</xsl:when>
+
+				<xsl:when test="name() = 'AdministrativeIssuanceDate'">Administrative issuance date</xsl:when>
+				<xsl:when test="name() = 'AdministrativeExpirationDate'">Administrative expiration date</xsl:when>
+				<xsl:when test="name() = 'OneTimeUse'">One-time use</xsl:when>
+				<xsl:when test="name() = 'ShortLived'">Short-lived</xsl:when>
+				<xsl:when test="name() = 'Evidence'">Evidence</xsl:when>
+				<xsl:when test="name() = 'AttestedAttributesSubjectId'">Attested attributes subject</xsl:when>
+				<xsl:when test="name() = 'AttestedAttributesSubjectFamilyName'">Attested attributes subject family name</xsl:when>
+				<xsl:when test="name() = 'AttestedAttributesSubjectGivenName'">Attested attributes subject given name</xsl:when>
+				<xsl:when test="name() = 'AttestedAttributesSubjectDocumentNumber'">Attested attributes subject document number</xsl:when>
+				<xsl:when test="name() = 'AttestedAttributesSubjectPseudonym'">Attested attributes subject pseudonym</xsl:when>
+				<xsl:when test="name() = 'AttestedAttributes'">Attested attributes</xsl:when>
+
+				<xsl:when test="name() = 'FullName'">Full name</xsl:when>
+				<xsl:when test="name() = 'GivenName'">Given Name</xsl:when>
+				<xsl:when test="name() = 'FamilyName'">Family Name</xsl:when>
+				<xsl:when test="name() = 'MiddleName'">Middle name</xsl:when>
+				<xsl:when test="name() = 'Nickname'">Nickname</xsl:when>
+				<xsl:when test="name() = 'ShortName'">Short name</xsl:when>
+				<xsl:when test="name() = 'ProfileUrl'">Profile URL</xsl:when>
+				<xsl:when test="name() = 'PictureUrl'">Picture URL</xsl:when>
+				<xsl:when test="name() = 'WebsiteUrl'">Website URL</xsl:when>
+				<xsl:when test="name() = 'Email'">Email</xsl:when>
+				<xsl:when test="name() = 'EmailVerified'">Email verified</xsl:when>
+				<xsl:when test="name() = 'Gender'">Gender</xsl:when>
+				<xsl:when test="name() = 'Birthdate'">Birthdate</xsl:when>
+				<xsl:when test="name() = 'BirthdateApproximateMask'">Birthdate approximate mask</xsl:when>
+				<xsl:when test="name() = 'Timezone'">Timezone</xsl:when>
+				<xsl:when test="name() = 'Locale'">Locale</xsl:when>
+				<xsl:when test="name() = 'AddressPostalAddress'">Postal address</xsl:when>
+				<xsl:when test="name() = 'AddressCity'">City</xsl:when>
+				<xsl:when test="name() = 'AddressStateOrProvince'">State or province</xsl:when>
+				<xsl:when test="name() = 'AddressPostalCode'">Postal Code</xsl:when>
+				<xsl:when test="name() = 'AddressCountryName'">Country</xsl:when>
+				<xsl:when test="name() = 'AddressStreetAddress'">Street address</xsl:when>
+				<xsl:when test="name() = 'PhoneNumber'">Phone number</xsl:when>
+				<xsl:when test="name() = 'PhoneNumberVerified'">Phone number verified</xsl:when>
+				<xsl:when test="name() = 'PlaceOfBirth'">Place of birth</xsl:when>
+				<xsl:when test="name() = 'PlaceOfBirthCountry'">Country of birth</xsl:when>
+				<xsl:when test="name() = 'PlaceOfBirthRegion'">Region of birth</xsl:when>
+				<xsl:when test="name() = 'PlaceOfBirthCity'">City of birth</xsl:when>
+				<xsl:when test="name() = 'Nationalities'">Nationalities</xsl:when>
+				<xsl:when test="name() = 'BirthFamilyName'">Birth Family Name</xsl:when>
+				<xsl:when test="name() = 'BirthGivenName'">Birth Given Name</xsl:when>
+				<xsl:when test="name() = 'BirthMiddleName'">Birth middle name</xsl:when>
+				<xsl:when test="name() = 'Salutation'">Salutation</xsl:when>
+				<xsl:when test="name() = 'Title'">Title</xsl:when>
+				<xsl:when test="name() = 'MobilePhoneNumber'">Mobile phone number</xsl:when>
+				<xsl:when test="name() = 'Pseudonym'">Pseudonym</xsl:when>
+
+				<xsl:when test="name() = 'IssuingCountry'">Issuing country</xsl:when>
+				<xsl:when test="name() = 'IssuingAuthority'">Issuing authority</xsl:when>
+				<xsl:when test="name() = 'IssuingAuthorityRegistrationIdentifier'">Issuing authority registration identifier</xsl:when>
+				<xsl:when test="name() = 'DocumentNumber'">Document number</xsl:when>
+				<xsl:when test="name() = 'Portrait'">Portrait</xsl:when>
+				<xsl:when test="name() = 'DrivingPrivileges'">Driving privileges</xsl:when>
+				<xsl:when test="name() = 'UNDistinguishingSign'">UN distinguishing sign</xsl:when>
+				<xsl:when test="name() = 'PersonalAdministrativeNumber'">Personal administrative number</xsl:when>
+				<xsl:when test="name() = 'Height'">Height</xsl:when>
+				<xsl:when test="name() = 'Weight'">Weight</xsl:when>
+				<xsl:when test="name() = 'EyeColour'">Eye colour</xsl:when>
+				<xsl:when test="name() = 'HairColour'">Hair colour</xsl:when>
+				<xsl:when test="name() = 'ResidentPostalAddress'">Resident postal address</xsl:when>
+				<xsl:when test="name() = 'PortraitCaptureDate'">Portrait capture date</xsl:when>
+				<xsl:when test="name() = 'AgeInYears'">Age in years</xsl:when>
+				<xsl:when test="name() = 'AgeBirthYear'">Age birth year</xsl:when>
+				<xsl:when test="name() = 'AgeOverNN'">Age over <xsl:value-of select="@parameter"/></xsl:when>
+				<xsl:when test="name() = 'IssuingJurisdiction'">Issuing jurisdiction</xsl:when>
+				<xsl:when test="name() = 'ResidentAddressHouseNumber'">Resident address house number</xsl:when>
+				<xsl:when test="name() = 'ResidentAddressStreet'">Resident address street</xsl:when>
+				<xsl:when test="name() = 'ResidentAddressCity'">Resident address city</xsl:when>
+				<xsl:when test="name() = 'ResidentAddressState'">Resident address state</xsl:when>
+				<xsl:when test="name() = 'ResidentAddressPostalCode'">Resident address postal code</xsl:when>
+				<xsl:when test="name() = 'ResidentAddressCountry'">Resident address country</xsl:when>
+				<xsl:when test="name() = 'BiometricTemplate'">Biometric template <xsl:value-of select="@parameter"/></xsl:when>
+				<xsl:when test="name() = 'SignatureUsualMark'">Signature usual mark</xsl:when>
+				<xsl:when test="name() = 'Fingerprint'">Fingerprint</xsl:when>
+				<xsl:when test="name() = 'BusinessName'">Business name</xsl:when>
+				<xsl:when test="name() = 'OrganizationName'">Organization name</xsl:when>
+				<xsl:when test="name() = 'BirthFullName'">Birth full name</xsl:when>
+				<xsl:when test="name() = 'Profession'">Profession</xsl:when>
+				<xsl:when test="name() = 'RelationshipFather'">Relationship father</xsl:when>
+				<xsl:when test="name() = 'RelationshipMother'">Relationship mother</xsl:when>
+				<xsl:when test="name() = 'RelationshipParent'">Relationship parent</xsl:when>
+				<xsl:when test="name() = 'RelationshipSon'">Relationship son</xsl:when>
+				<xsl:when test="name() = 'RelationshipDaughter'">Relationship daughter</xsl:when>
+				<xsl:when test="name() = 'RelationshipBrother'">Relationship brother</xsl:when>
+				<xsl:when test="name() = 'RelationshipSister'">Relationship sister</xsl:when>
+				<xsl:when test="name() = 'RelationshipSibling'">Relationship sibling</xsl:when>
+				<xsl:when test="name() = 'RelationshipSpouse'">Relationship spouse</xsl:when>
+				<xsl:when test="name() = 'RelationshipFatherInLaw'">Relationship father-in-law</xsl:when>
+				<xsl:when test="name() = 'RelationshipMotherInLaw'">Relationship mother-in-law</xsl:when>
+				<xsl:when test="name() = 'RelationshipParentInLaw'">Relationship parent-in-law</xsl:when>
+				<xsl:when test="name() = 'RelationshipSonInLaw'">Relationship son-in-law</xsl:when>
+				<xsl:when test="name() = 'RelationshipDaughterInLaw'">Relationship daughter-in-law</xsl:when>
+				<xsl:when test="name() = 'RelationshipChildInLaw'">Relationship child-in-law</xsl:when>
+				<xsl:when test="name() = 'RelationshipParentalAuthority'">Relationship parental authority</xsl:when>
+				<xsl:when test="name() = 'RelationshipLegalRepresentative'">Relationship legal representative</xsl:when>
+				<xsl:when test="name() = 'RelationshipAgent'">Relationship agent</xsl:when>
+				<xsl:when test="name() = 'DocumentType'">Document type</xsl:when>
+				<xsl:when test="name() = 'TrustAnchorClaim'">Trust anchor</xsl:when>
+
+				<xsl:when test="name() = 'OtherClaim'"><xsl:value-of select="@name"/></xsl:when>
+			</xsl:choose>
+		</xsl:variable>
+
+		<fo:table-row>
+			<xsl:attribute name="margin-top">1px</xsl:attribute>
+			<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+			<xsl:attribute name="page-break-inside">avoid</xsl:attribute>
+
+			<fo:table-cell>
+				<fo:block>
+					<xsl:attribute name="margin-top">1px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+					<xsl:attribute name="font-weight">bold</xsl:attribute>
+					<xsl:value-of select="$header" /><xsl:if test="@disclosure = 'true'"> (disclosure)</xsl:if>:
+				</fo:block>
+			</fo:table-cell>
+			<fo:table-cell>
+				<fo:block>
+					<xsl:attribute name="margin-top">1px</xsl:attribute>
+					<xsl:attribute name="margin-bottom">1px</xsl:attribute>
+
+					<xsl:choose>
+						<xsl:when test="name() = 'Portrait' or name() = 'SignatureUsualMark' or name() = 'Fingerprint'">
+							<fo:external-graphic src="data:image/jpeg;base64,{.}"
+												 content-width="32px"
+												 content-height="32px"
+												 scaling="uniform"
+												 fox:alt-text="{name()}"/>
+						</xsl:when>
+						<xsl:when test="name() = 'Expiration' or name() = 'NotBefore' or name() = 'IssuedAt'
+								 or name() = 'UpdatedAt' or name() = 'NextUpdate' or name() = 'Birthdate'
+								 or name() = 'PortraitCaptureDate' or name() = 'AdministrativeIssuanceDate'
+								 or name() = 'AdministrativeExpirationDate'">
+							<xsl:call-template name="formatdate">
+								<xsl:with-param name="DateTimeStr" select="."/>
+							</xsl:call-template>
+						</xsl:when>
+						<!-- Only trim if it's long -->
+						<xsl:when test="string-length(.) > 500">
+							<xsl:value-of select="substring(., 1, 30)"/>
+							<xsl:text>...</xsl:text>
+							<xsl:value-of select="substring(., string-length(.) - 29)"/>
+						</xsl:when>
+						<!-- Otherwise show full value -->
+						<xsl:otherwise>
+							<xsl:value-of select="."/>
+						</xsl:otherwise>
+
+					</xsl:choose>
+
+				</fo:block>
+			</fo:table-cell>
+		</fo:table-row>
+
+	</xsl:template>
+
+	<!-- Separate to avoid reaching xpath limit -->
+	<xsl:template match="dss:Identifier|dss:Issuer|dss:Subject|dss:Audience|dss:IssuedAt|dss:NotBefore|dss:Expiration|dss:UpdatedAt
+			|dss:NextUpdate|dss:Category|dss:VerifiableCredentialsType|dss:StatusIndex|dss:StatusUri|dss:StatusType|dss:StatusPurpose
+			|dss:Nonce|dss:Version|dss:DocType">
+		<xsl:call-template name="printClaim"/>
+	</xsl:template>
+
+	<xsl:template match="dss:AdministrativeIssuanceDate|dss:AdministrativeExpirationDate|dss:OneTimeUse
+			|dss:ShortLived|dss:Evidence|dss:AttestedAttributesSubjectId|dss:AttestedAttributesSubjectFamilyName
+			|dss:AttestedAttributesSubjectGivenName|dss:AttestedAttributesSubjectDocumentNumber
+			|dss:AttestedAttributesSubjectPseudonym|dss:AttestedAttributes">
+		<xsl:call-template name="printClaim"/>
+	</xsl:template>
+
+	<xsl:template match="dss:FullName|dss:GivenName|dss:FamilyName
+			|dss:MiddleName|dss:Nickname|dss:ShortName|dss:ProfileUrl|dss:PictureUrl|dss:WebsiteUrl|dss:Email
+			|dss:EmailVerified|dss:Gender|dss:Birthdate|dss:BirthdateApproximateMask|dss:Timezone|dss:Locale|dss:AddressPostalAddress
+			|dss:AddressCity|dss:AddressStateOrProvince|dss:AddressPostalCode|dss:AddressCountryName
+			|dss:AddressStreetAddress|dss:PhoneNumber|dss:PhoneNumberVerified|dss:PlaceOfBirth|dss:PlaceOfBirthCountry
+			|dss:PlaceOfBirthRegion|dss:PlaceOfBirthCity|dss:Nationalities|dss:BirthFamilyName|dss:BirthGivenName
+			|dss:BirthMiddleName|dss:Salutation|dss:Title|dss:MobilePhoneNumber|dss:Pseudonym">
+		<xsl:call-template name="printClaim"/>
+	</xsl:template>
+
+	<xsl:template match="dss:IssuingCountry
+			|dss:IssuingAuthority|dss:DocumentNumber|dss:Portrait|dss:DrivingPrivileges|dss:UNDistinguishingSign
+			|dss:PersonalAdministrativeNumber|dss:Height|dss:Weight|dss:EyeColour|dss:HairColour|dss:ResidentPostalAddress
+			|dss:PortraitCaptureDate|dss:AgeInYears|dss:AgeBirthYear|dss:AgeOverNN|dss:IssuingJurisdiction|dss:ResidentAddressCity
+			|dss:ResidentAddressState|dss:ResidentAddressPostalCode|dss:ResidentAddressCountry|dss:BiometricTemplate|dss:SignatureUsualMark
+			|dss:Fingerprint|dss:BusinessName|dss:OrganizationName|dss:BirthFullName|dss:Profession|dss:RelationshipFather
+			|dss:RelationshipMother|dss:RelationshipParent|dss:RelationshipSon|dss:RelationshipDaughter
+			|dss:RelationshipBrother|dss:RelationshipSister|dss:RelationshipSibling|dss:RelationshipSpouse|dss:RelationshipFatherInLaw
+			|dss:RelationshipMotherInLaw|dss:RelationshipParentInLaw|dss:RelationshipSonInLaw|dss:RelationshipDaughterInLaw
+			|dss:RelationshipChildInLaw|dss:RelationshipParentalAuthority|dss:RelationshipLegalRepresentative|dss:RelationshipAgent
+			|dss:DocumentType|dss:IssuingAuthorityRegistrationIdentifier|dss:TrustAnchorClaim|dss:ResidentAddressStreet|dss:ResidentAddressHouseNumber">
+		<xsl:call-template name="printClaim"/>
+	</xsl:template>
+
+	<xsl:template match="dss:OtherClaim">
+		<xsl:call-template name="printClaim"/>
 	</xsl:template>
 
 	<xsl:template match="dss:TrustAnchors">

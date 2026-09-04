@@ -1,19 +1,19 @@
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
- * 
+ * <p>
  * This file is part of the "DSS - Digital Signature Services" project.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -31,9 +31,7 @@ import eu.europa.esig.dss.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 /**
  * This class is used to verify permissions of a PDF document and to check whether modifications are allowed
@@ -117,43 +115,55 @@ public class PdfPermissionsChecker {
             LOG.info("A usage rights signature is present. The feature is deprecated and the entry is not handled.");
         }
 
-        try {
-            String signatureFieldId = fieldParameters.getFieldId();
+        String signatureFieldId = fieldParameters.getFieldId();
 
-            Map<PdfSignatureDictionary, List<PdfSignatureField>> sigDictionaries = documentReader.extractSigDictionaries();
-            for (PdfSignatureDictionary signatureDictionary : sigDictionaries.keySet()) {
-                SigFieldPermissions fieldMDP = signatureDictionary.getFieldMDP();
-                if (fieldMDP != null && isSignatureFieldCreationForbidden(fieldMDP, signatureFieldId)) {
-                    alertOnForbiddenSignatureCreation("FieldMDP dictionary does not permit a new signature creation!");
+        List<PdfSignatureDictionary> sigDictionaries = documentReader.extractSigDictionaries();
+        for (PdfSignatureDictionary signatureDictionary : sigDictionaries) {
+            SigFieldPermissions fieldMDP = signatureDictionary.getFieldMDP();
+            if (fieldMDP != null && isSignatureFieldCreationForbidden(fieldMDP, signatureFieldId)) {
+                alertOnForbiddenSignatureCreation("FieldMDP dictionary does not permit a new signature creation!");
+            }
+            for (PdfSignatureField signatureField : signatureDictionary.getSignatureFields()) {
+                SigFieldPermissions lockDict = signatureField.getLockDictionary();
+                if (lockDict != null && lockDict.getCertificationPermission() != null &&
+                        isSignatureFieldCreationForbidden(lockDict, signatureFieldId)) {
+                    alertOnForbiddenSignatureCreation("Lock dictionary does not permit a new signature creation!");
                 }
             }
-
-            for (List<PdfSignatureField> signatureFieldList : sigDictionaries.values()) {
-                for (PdfSignatureField signatureField : signatureFieldList) {
-                    SigFieldPermissions lockDict = signatureField.getLockDictionary();
-                    if (lockDict != null && lockDict.getCertificationPermission() != null &&
-                            isSignatureFieldCreationForbidden(lockDict, signatureFieldId)) {
-                        alertOnForbiddenSignatureCreation("Lock dictionary does not permit a new signature creation!");
-                    }
-                }
-            }
-
-        } catch (IOException e) {
-            LOG.warn("An error occurred while reading signature dictionary entries : {}", e.getMessage(), e);
         }
     }
 
-    private boolean isDocumentChangeForbidden(CertificationPermission certificationPermission) {
+    /**
+     * This method verifies and returns whether changes within a document are forbidden according to
+     * the defined {@code certificationPermission}
+     *
+     * @param certificationPermission {@link CertificationPermission} to check
+     * @return TRUE if changes are forbidden within the document, FALSE otherwise
+     */
+    protected boolean isDocumentChangeForbidden(CertificationPermission certificationPermission) {
         return CertificationPermission.NO_CHANGE_PERMITTED.equals(certificationPermission);
     }
 
-    private void alertOnForbiddenSignatureCreation(String message) {
+    /**
+     * Executes the {@code alertOnForbiddenSignatureCreation} with the given {@code message}
+     *
+     * @param message {@link String} containing an information about document permissions' failure
+     */
+    protected void alertOnForbiddenSignatureCreation(String message) {
         MessageStatus status = new MessageStatus();
         status.setMessage(String.format("The creation of new signatures is not permitted in the current document. Reason : %s", message));
         alertOnForbiddenSignatureCreation.alert(status);
     }
 
-    private boolean isSignatureFieldCreationForbidden(SigFieldPermissions sigFieldPermissions, String signatureFieldId) {
+    /**
+     * Checks and returns whether a signature field creation if forbidden according to the given configuration
+     * of the {@code signatureFieldId}
+     *
+     * @param sigFieldPermissions {@link SigFieldPermissions} permissions
+     * @param signatureFieldId {@link String} providing the permission configuration
+     * @return TRUE of a signature field cretion is forbidden according to the configuration, FALSE otherwise
+     */
+    protected boolean isSignatureFieldCreationForbidden(SigFieldPermissions sigFieldPermissions, String signatureFieldId) {
         switch (sigFieldPermissions.getAction()) {
             case ALL:
                 return true;
@@ -178,7 +188,7 @@ public class PdfPermissionsChecker {
                         String.format("The action value '%s' is not supported!", sigFieldPermissions.getAction()));
         }
         CertificationPermission certificationPermission = sigFieldPermissions.getCertificationPermission();
-        return CertificationPermission.NO_CHANGE_PERMITTED.equals(certificationPermission);
+        return isDocumentChangeForbidden(certificationPermission);
     }
 
 }
